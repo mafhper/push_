@@ -15,19 +15,18 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Manrope", "system-ui", "-apple-system", "sans-serif"],
-        headline: ["Space Grotesk", "system-ui", "sans-serif"],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       fontSize: {
-        "fluid-xs": "clamp(0.75rem, 1.5vw, 0.875rem)",
-        "fluid-sm": "clamp(0.8rem, 2vw, 0.9375rem)",
-        "fluid-base": "clamp(0.875rem, 2.5vw, 1rem)",
-        "fluid-lg": "clamp(1rem, 3vw, 1.125rem)",
-        "fluid-xl": "clamp(1.125rem, 3.5vw, 1.25rem)",
-        "fluid-2xl": "clamp(1.25rem, 4vw, 1.5rem)",
-        "fluid-3xl": "clamp(1.5rem, 5vw, 1.875rem)",
-        "fluid-4xl": "clamp(1.75rem, 6vw, 2.25rem)",
-        "fluid-5xl": "clamp(2rem, 7vw, 3rem)",
+        'fluid-xs': 'clamp(0.75rem, 1.5vw, 0.875rem)',
+        'fluid-sm': 'clamp(0.8rem, 2vw, 0.9375rem)',
+        'fluid-base': 'clamp(0.875rem, 2.5vw, 1rem)',
+        'fluid-lg': 'clamp(1rem, 3vw, 1.125rem)',
+        'fluid-xl': 'clamp(1.125rem, 3.5vw, 1.25rem)',
+        'fluid-2xl': 'clamp(1.25rem, 4vw, 1.5rem)',
+        'fluid-3xl': 'clamp(1.5rem, 5vw, 1.875rem)',
+        'fluid-4xl': 'clamp(1.75rem, 6vw, 2.25rem)',
+        'fluid-5xl': 'clamp(2rem, 7vw, 3rem)',
       },
       colors: {
         border: "hsl(var(--border))",
@@ -35,15 +34,6 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        surface: "hsl(var(--surface))",
-        "surface-dim": "hsl(var(--surface-dim))",
-        "surface-bright": "hsl(var(--surface-bright))",
-        "surface-container": "hsl(var(--surface-container))",
-        "surface-container-low": "hsl(var(--surface-container-low))",
-        "surface-container-lowest": "hsl(var(--surface-container-lowest))",
-        "surface-container-high": "hsl(var(--surface-container-high))",
-        "surface-container-highest": "hsl(var(--surface-container-highest))",
-        "surface-variant": "hsl(var(--surface-variant))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -51,10 +41,6 @@ export default {
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
-        },
-        tertiary: {
-          DEFAULT: "hsl(var(--tertiary))",
-          foreground: "hsl(var(--tertiary-foreground))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -68,8 +54,6 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
-        outline: "hsl(var(--outline))",
-        "outline-variant": "hsl(var(--outline-variant))",
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",

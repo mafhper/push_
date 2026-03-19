@@ -1,124 +1,261 @@
-import { useRef, type ChangeEvent, type ReactNode } from "react";
-import { useApp } from "@/contexts/AppContext";
-import { useSnapshotManifest } from "@/hooks/useGitHub";
+import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useApp } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { clearOctokit } from '@/services/github';
+import { notifications } from '@/services/notifications';
+import {
+  Settings as SettingsIcon, Palette, Globe, Timer, Trash2, LogOut, Download, Upload, Key, Bell, Check,
+} from 'lucide-react';
+import type { Theme, Language } from '@/types';
 
 export default function SettingsPage() {
-  const { settings, updateSettings } = useApp();
-  const { data: manifest } = useSnapshotManifest();
+  const { t, settings, updateSettings, session, clearAll } = useApp();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
 
-  const themes = [
-    { value: "dark", label: "Semantic Dark" },
-    { value: "golden", label: "Golden Audit" },
-    { value: "emerald", label: "Emerald Console" },
-  ] as const;
+  useEffect(() => {
+    if (!session) navigate('/auth');
+  }, [session, navigate]);
 
-  const languages = [
-    { value: "en", label: "English" },
-    { value: "pt", label: "Portugues (BR)" },
-    { value: "es", label: "Espanol" },
-  ] as const;
+  const handleRequestPermission = async () => {
+    const granted = await notifications.requestPermission();
+    setNotifPermission(granted ? 'granted' : 'denied');
+    if (granted) {
+      updateSettings({ notificationsEnabled: true });
+    }
+  };
 
-  const exportManifest = () => {
-    if (!manifest) return;
-    const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: "application/json" });
+  const handleDisconnect = () => {
+    clearOctokit();
+    clearAll();
+    navigate('/auth');
+  };
+
+  const handleExport = () => {
+    const config = {
+      settings,
+      primaryRepo: localStorage.getItem('gl_primary_repo'),
+      selectedRepos: localStorage.getItem('gl_selected_repos'),
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "push-snapshot-manifest.json";
-    link.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'push-underline-config.json';
+    a.click();
     URL.revokeObjectURL(url);
   };
 
-  const importSettings = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
-    file.text().then((raw) => {
-      const parsed = JSON.parse(raw);
-      if (parsed.theme || parsed.lang || parsed.pollingInterval) {
-        updateSettings(parsed);
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const config = JSON.parse(reader.result as string);
+        if (config.settings) updateSettings(config.settings);
+      } catch {
+        // ignore
       }
-    }).catch(() => undefined);
+    };
+    reader.readAsText(file);
   };
 
+  const handleClearCache = () => {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('gl_cache_')) localStorage.removeItem(k);
+    });
+  };
+
+  const maskedToken = session?.token
+    ? `***...${session.token.slice(-4)}`
+    : '';
+
+  const themes: { value: Theme; label: string }[] = [
+    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Dark' },
+    { value: 'golden', label: 'Golden' },
+    { value: 'nord', label: 'Nord' },
+    { value: 'midnight', label: 'Midnight' },
+    { value: 'emerald', label: 'Emerald' },
+  ];
+
+  const languages: { value: Language; label: string }[] = [
+    { value: 'en', label: 'English' },
+    { value: 'pt', label: 'Portugues (BR)' },
+    { value: 'es', label: 'Espanol' },
+  ];
+
+  const intervals = [30, 60, 120, 300];
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-[0.28em] text-secondary">Preferences and local mode</p>
-        <h1 className="mt-3 text-fluid-4xl font-headline font-bold">Settings</h1>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-fluid-2xl font-bold flex items-center gap-2">
+          <SettingsIcon size={24} strokeWidth={1.5} />
+          {t('settings')}
+        </h1>
+      </motion.div>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr,1.1fr]">
-        <div className="space-y-6">
-          <Panel title="Theme">
-            <div className="flex flex-wrap gap-3">
-              {themes.map((theme) => (
-                <button
-                  key={theme.value}
-                  onClick={() => updateSettings({ theme: theme.value })}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                    settings.theme === theme.value ? "bg-primary text-primary-foreground" : "bg-surface-container-low text-muted-foreground"
-                  }`}
-                >
-                  {theme.label}
-                </button>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Language">
-            <div className="flex flex-wrap gap-3">
-              {languages.map((language) => (
-                <button
-                  key={language.value}
-                  onClick={() => updateSettings({ lang: language.value })}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                    settings.lang === language.value ? "bg-primary text-primary-foreground" : "bg-surface-container-low text-muted-foreground"
-                  }`}
-                >
-                  {language.label}
-                </button>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Snapshot export">
-            <div className="flex flex-wrap gap-3">
-              <button onClick={exportManifest} className="rounded-full bg-surface-container-low px-4 py-2 text-sm font-semibold text-foreground">
-                Export manifest
-              </button>
-              <button onClick={() => fileInputRef.current?.click()} className="rounded-full bg-surface-container-low px-4 py-2 text-sm font-semibold text-foreground">
-                Import local preferences
-              </button>
-              <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={importSettings} />
-            </div>
-          </Panel>
+      {/* Token info */}
+      <Section icon={Key} title={t('tokenMasked')}>
+        <div className="flex items-center justify-between">
+          <code className="text-sm text-muted-foreground font-mono bg-secondary px-2 py-1 rounded">{maskedToken}</code>
         </div>
+      </Section>
 
-        <Panel title="Local secure sync">
-          <ol className="space-y-4 text-sm leading-7 text-muted-foreground">
-            <li>1. Create `main/.env.local` from `.env.example` and set `GH_STATS_TOKEN` or `GITHUB_TOKEN`.</li>
-            <li>2. Run `npm run data:sync` to regenerate the snapshot JSON without exposing the token to the browser bundle.</li>
-            <li>3. Run `npm run dev` or `npm run dev:snapshot` to inspect the new dataset locally.</li>
-            <li>4. For public GitHub Pages, store the same token only as a repository secret used by the Actions workflow.</li>
-          </ol>
-          <div className="mt-6 rounded-2xl bg-surface-container-low p-5 text-sm">
-            <p className="font-semibold text-foreground">Current snapshot</p>
-            <p className="mt-2 text-muted-foreground">Generated: {manifest?.status.generatedAt ? new Date(manifest.status.generatedAt).toLocaleString() : "pending"}</p>
-            <p className="text-muted-foreground">Mode: {manifest?.status.dataMode ?? "pending"}</p>
-            <p className="text-muted-foreground">Origin: {manifest?.status.generatedBy ?? "pending"}</p>
+      {/* Theme */}
+      <Section icon={Palette} title={t('theme')}>
+        <div className="flex gap-2">
+          {themes.map(th => (
+            <button
+              key={th.value}
+              onClick={() => updateSettings({ theme: th.value })}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                settings.theme === th.value
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/30'
+              }`}
+            >
+              {th.label}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* Language */}
+      <Section icon={Globe} title={t('language')}>
+        <div className="flex gap-2">
+          {languages.map(l => (
+            <button
+              key={l.value}
+              onClick={() => updateSettings({ lang: l.value })}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                settings.lang === l.value
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/30'
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* Polling */}
+      <Section icon={Timer} title={t('pollingInterval')}>
+        <div className="flex gap-2">
+          {intervals.map(s => (
+            <button
+              key={s}
+              onClick={() => updateSettings({ pollingInterval: s })}
+              className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                settings.pollingInterval === s
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/30'
+              }`}
+            >
+              {s}s
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* Notifications */}
+      <Section icon={Bell} title={t('notifications')}>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">{t('enableNotifications')}</span>
+            <button
+              onClick={() => updateSettings({ notificationsEnabled: !settings.notificationsEnabled })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                settings.notificationsEnabled ? 'bg-primary' : 'bg-secondary'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  settings.notificationsEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
-        </Panel>
-      </section>
+          
+          {notifPermission !== 'granted' ? (
+            <button
+              onClick={handleRequestPermission}
+              className="flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-all"
+            >
+              <Bell size={14} />
+              {t('requestPermission')}
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 text-xs font-bold text-success">
+              <Check size={14} />
+              Permission Granted
+            </div>
+          )}
+        </div>
+      </Section>
+
+      {/* Export / Import */}
+      <Section icon={Download} title={t('exportConfig')}>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-all"
+          >
+            <Download size={14} /> {t('exportConfig')}
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-all"
+          >
+            <Upload size={14} /> {t('importConfig')}
+          </button>
+          <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+        </div>
+      </Section>
+
+      {/* Cache */}
+      <Section icon={Trash2} title={t('clearCache')}>
+        <button
+          onClick={handleClearCache}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-all"
+        >
+          <Trash2 size={14} /> {t('clearCacheDesc')}
+        </button>
+      </Section>
+
+      {/* Disconnect */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+        <button
+          onClick={handleDisconnect}
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-critical/30 bg-critical/5 px-4 py-3 text-sm font-medium text-critical hover:bg-critical/10 transition-all"
+        >
+          <LogOut size={16} strokeWidth={1.5} />
+          {t('disconnectButton')}
+        </button>
+      </motion.div>
     </div>
   );
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[1.75rem] bg-surface-container p-6">
-      <p className="text-xs uppercase tracking-[0.26em] text-muted-foreground">{title}</p>
-      <div className="mt-5">{children}</div>
-    </section>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl border border-border bg-card p-5 space-y-3"
+    >
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+        <Icon size={14} strokeWidth={1.5} />
+        {title}
+      </h2>
+      {children}
+    </motion.div>
   );
 }

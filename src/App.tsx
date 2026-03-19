@@ -1,25 +1,23 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/contexts/AppContext";
 import { Layout } from "@/components/Layout";
 import ScrollToTop from "@/components/ScrollToTop";
-import HomePage from "@/pages/promo/Home";
-import TechnologyPage from "@/pages/promo/Technology";
-import FAQPage from "@/pages/promo/FAQ";
-import AboutPage from "@/pages/promo/About";
-import Dashboard from "@/pages/Dashboard";
-import RepoDetail from "@/pages/RepoDetail";
-import AlertsPage from "@/pages/Alerts";
-import SettingsPage from "@/pages/Settings";
-import AuthPage from "@/pages/Auth";
-import Index from "@/pages/Index";
-import NotFound from "@/pages/NotFound";
+import Dashboard from "./pages/Dashboard";
+import AuthPage from "./pages/Auth";
+import RepoDetail from "./pages/RepoDetail";
+import AlertsPage from "./pages/Alerts";
+import SettingsPage from "./pages/Settings";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
+      retry: 2,
+      refetchOnWindowFocus: true,
     },
   },
 });
@@ -27,24 +25,23 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AppProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <ScrollToTop />
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/technology" element={<TechnologyPage />} />
-            <Route path="/faq" element={<FAQPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/app" element={<Dashboard />} />
-            <Route path="/app/repo/:owner/:repo" element={<RepoDetail />} />
-            <Route path="/app/alerts" element={<AlertsPage />} />
-            <Route path="/app/settings" element={<SettingsPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/index" element={<Index />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/repo/:owner/:repo" element={<RepoDetail />} />
+              <Route path="/alerts" element={<AlertsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </TooltipProvider>
     </AppProvider>
   </QueryClientProvider>
 );

@@ -1,7 +1,6 @@
 export type Theme = 'light' | 'dark' | 'golden' | 'nord' | 'midnight' | 'emerald';
 export type Language = 'en' | 'pt' | 'es';
 export type HighlightMode = 'primary' | 'recent';
-export type DataMode = 'public' | 'authenticated';
 
 export interface UserSettings {
   theme: Theme;
@@ -104,74 +103,6 @@ export interface RateLimitInfo {
   remaining: number;
   limit: number;
   resetAt: string;
-}
-
-export interface DataAvailability {
-  available: boolean;
-  source: 'public-api' | 'authenticated-api' | 'seed';
-  reason?: string;
-}
-
-export interface SnapshotDataStatus {
-  generatedAt: string;
-  generatedBy: 'seed' | 'local' | 'github-actions';
-  dataMode: DataMode;
-}
-
-export interface RepoAvailabilityMap {
-  repository: DataAvailability;
-  commits: DataAvailability;
-  workflowRuns: DataAvailability;
-  languages: DataAvailability;
-  contributors: DataAvailability;
-  dependabotAlerts: DataAvailability;
-}
-
-export interface RepoSnapshotOverview {
-  repo: RepositoryRef;
-  health: RepoHealth;
-  stats: {
-    totalCommitsTracked: number;
-    contributorsTracked: number;
-    languagesTracked: number;
-    latestWorkflowConclusion: string | null;
-    openAlertCount: number;
-  };
-  availability: RepoAvailabilityMap;
-}
-
-export interface RepoSnapshotDetail {
-  status: SnapshotDataStatus;
-  featured: boolean;
-  repo: RepositoryRef;
-  health: RepoHealth;
-  commits: CommitSummary[];
-  workflowRuns: WorkflowRun[];
-  alerts: DependabotAlert[];
-  languages: LanguageBreakdown;
-  contributors: ContributorSummary[];
-  availability: RepoAvailabilityMap;
-}
-
-export interface DashboardSnapshot {
-  status: SnapshotDataStatus;
-  featuredRepo: string | null;
-  repos: RepoSnapshotOverview[];
-}
-
-export interface SnapshotManifest {
-  site: {
-    name: string;
-    tagline: string;
-    description: string;
-  };
-  status: SnapshotDataStatus;
-  featuredRepo: string | null;
-  routes: {
-    promo: string[];
-    app: string[];
-  };
-  repoFiles: Record<string, string>;
 }
 
 export const LANGUAGE_COLORS: Record<string, string> = {

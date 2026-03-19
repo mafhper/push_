@@ -5,13 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:snapshot": "node scripts/sync-snapshots.mjs && vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "type-check": "tsc -b",
-    "data:sync": "node scripts/sync-snapshots.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "audit": "bun run scripts/audit.ts"

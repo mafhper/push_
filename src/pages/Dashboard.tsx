@@ -1,236 +1,277 @@
-import { Link } from "react-router-dom";
-import { useDashboardSnapshot } from "@/hooks/useGitHub";
-import { formatRelativeTime } from "@/utils/health";
-import { useApp } from "@/contexts/AppContext";
-import { Activity, ArrowRight, FolderKanban, ShieldAlert, Sparkle, Workflow } from "lucide-react";
+import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useApp } from '@/contexts/AppContext';
+import { useRepos, useWorkflowRuns, useDependabotAlerts, useLanguages } from '@/hooks/useGitHub';
+import { RepoCard } from '@/components/RepoCard';
+import { MainRepoHighlight } from '@/components/MainRepoHighlight';
+import { calculateHealth } from '@/utils/health';
+import { initOctokit, validateToken } from '@/services/github';
+import {
+  Package, CheckCircle2, RefreshCw, Search,
+} from 'lucide-react';
+import type { RepositoryRef } from '@/types';
+import { useNavigate } from 'react-router-dom';
+import { ComparisonTable } from '@/components/ComparisonTable';
+import { GlobalHealthSummary } from '@/components/GlobalHealthSummary';
 
 export default function Dashboard() {
-  const { data, isLoading, error } = useDashboardSnapshot();
-  const { t } = useApp();
+  const { t, session, primaryRepo, setPrimaryRepo, selectedRepos, setSelectedRepos, settings, updateSettings, clearAll } = useApp();
+  const navigate = useNavigate();
+  const [searchFilter, setSearchFilter] = useState('');
+  const [onboarding, setOnboarding] = useState(false);
+
+  // Initialize octokit and validate session
+  useEffect(() => {
+    if (!session) {
+      navigate('/auth');
+      return;
+    }
+    initOctokit(session.token);
+    
+    // Optional: Re-validate on mount to catch revoked tokens early
+    validateToken(session.token).then(res => {
+      if (!res) {
+        clearAll();
+        navigate('/auth');
+      }
+    });
+  }, [session, navigate, clearAll]);
+
+  const { data: repos, isLoading, isError, error, refetch } = useRepos();
+
+  // Handle API errors (like 401 Unauthorized)
+  useEffect(() => {
+    if (isError) {
+      const status = typeof error === 'object' && error !== null && 'status' in error
+        ? (error as { status?: number }).status
+        : undefined;
+      if (status === 401 || status === 403) {
+        clearAll();
+        navigate('/auth');
+      }
+    }
+  }, [isError, error, clearAll, navigate]);
+
+  // Check if needs onboarding
+  useEffect(() => {
+    if (repos && repos.length > 0 && !primaryRepo && selectedRepos.length === 0) {
+      setOnboarding(true);
+    }
+  }, [repos, primaryRepo, selectedRepos]);
+
+  const monitoredRepos = useMemo(() => {
+    if (!repos) return [];
+    const names = new Set([...(primaryRepo ? [primaryRepo] : []), ...selectedRepos]);
+    if (names.size === 0) return repos.slice(0, 6);
+    return repos.filter(r => names.has(r.fullName));
+  }, [repos, primaryRepo, selectedRepos]);
+
+  const primaryRepoData = useMemo(() => {
+    if (settings.highlightMode === 'recent') {
+      return [...monitoredRepos].sort((a, b) => 
+        new Date(b.lastPushAt).getTime() - new Date(a.lastPushAt).getTime()
+      )[0];
+    }
+    return monitoredRepos.find(r => r.fullName === primaryRepo);
+  }, [monitoredRepos, primaryRepo, settings.highlightMode]);
+
+  const otherMonitoredRepos = useMemo(() => {
+    if (!primaryRepoData) return monitoredRepos;
+    return monitoredRepos.filter(r => r.fullName !== primaryRepoData.fullName);
+  }, [monitoredRepos, primaryRepoData]);
+
+  const filteredForOnboarding = useMemo(() => {
+    if (!repos) return [];
+    const q = searchFilter.toLowerCase();
+    return repos.filter(r =>
+      r.name.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q)
+    );
+  }, [repos, searchFilter]);
+
+  if (!session) return null;
 
   if (isLoading) {
-    return <LoadingState label="Loading snapshot overview" />;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <RefreshCw size={24} className="animate-spin" />
+          <p className="text-sm">{t('refreshNow')}...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!data || error) {
-    return <EmptyState title="Snapshot unavailable" body="The secure dataset could not be loaded. Run the local sync or regenerate the Pages snapshot." />;
-  }
+  // Onboarding
+  if (onboarding) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+          <h1 className="text-3xl font-black tracking-tighter">{t('selectPrimary')}</h1>
+          <p className="text-muted-foreground text-sm">{t('selectAdditional')}</p>
+        </motion.div>
 
-  const averageHealth = Math.round(
-    data.repos.reduce((sum, repo) => sum + repo.health.score, 0) / Math.max(data.repos.length, 1),
-  );
-  const totalAlerts = data.repos.reduce((sum, repo) => sum + repo.health.dependabotOpenCount, 0);
-  const featured = data.repos.find((repo) => repo.repo.fullName === data.featuredRepo) || data.repos[0];
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={e => setSearchFilter(e.target.value)}
+            placeholder={t('search')}
+            className="w-full h-12 rounded-2xl border border-input bg-secondary/30 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+        </div>
+
+        <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+          {filteredForOnboarding.map(repo => {
+            const isPrimary = primaryRepo === repo.fullName;
+            const isSelected = selectedRepos.includes(repo.fullName);
+            return (
+              <div
+                key={repo.id}
+                className={`flex items-center justify-between gap-3 rounded-2xl border p-4 cursor-pointer transition-all ${
+                  isPrimary ? 'border-primary bg-primary/5 ring-1 ring-primary/20' :
+                  isSelected ? 'border-accent-foreground/20 bg-accent/30' : 'border-border hover:border-primary/30'
+                }`}
+                onClick={() => {
+                  if (!primaryRepo) {
+                    setPrimaryRepo(repo.fullName);
+                  } else if (isPrimary) {
+                    setPrimaryRepo(null);
+                  } else if (isSelected) {
+                    setSelectedRepos(selectedRepos.filter(r => r !== repo.fullName));
+                  } else if (selectedRepos.length < 9) {
+                    setSelectedRepos([...selectedRepos, repo.fullName]);
+                  }
+                }}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-bold truncate">{repo.fullName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{repo.description || t('noDescription')}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {repo.language && (
+                    <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{repo.language}</span>
+                  )}
+                  {isPrimary && (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
+                      PRIMARY
+                    </span>
+                  )}
+                  {isSelected && !isPrimary && (
+                    <CheckCircle2 size={18} className="text-success" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {primaryRepo && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => setOnboarding(false)}
+            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+          >
+            {t('dashboard')} →
+          </motion.button>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-10">
-      <section className="grid gap-6 xl:grid-cols-[1.4fr,1fr]">
-        <div className="rounded-[2rem] bg-surface-container p-7 shadow-[0_0_40px_rgba(0,0,0,0.18)]">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary">Fleet health</p>
-          <h1 className="mt-4 max-w-3xl text-fluid-4xl font-headline font-bold text-balance">
-            Dashboard overview for the repositories that define your public surface area.
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-            The Pages build consumes static JSON snapshots only. Public deployments remain secret-free while local sync can enrich the dataset.
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black tracking-tighter uppercase">{t('dashboard')}</h1>
+          <p className="text-sm text-muted-foreground">
+            {monitoredRepos.length} {t('monitoredRepos')}
           </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <MetricPanel label="Average integrity" value={`${averageHealth}%`} icon={Sparkle} />
-            <MetricPanel label="Tracked repos" value={String(data.repos.length)} icon={FolderKanban} />
-            <MetricPanel label="Open alerts" value={String(totalAlerts)} icon={ShieldAlert} tone={totalAlerts > 0 ? "warning" : "success"} />
-          </div>
         </div>
-        <div className="rounded-[2rem] bg-surface-container-low p-7">
-          <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">Snapshot status</p>
-          <dl className="mt-5 space-y-5">
-            <StatusRow label="Generated" value={new Date(data.status.generatedAt).toLocaleString()} />
-            <StatusRow label="Mode" value={data.status.dataMode} />
-            <StatusRow label="Origin" value={data.status.generatedBy} />
-            <StatusRow label="Freshness" value={featured ? formatRelativeTime(featured.repo.lastPushAt, t) : "n/a"} />
-          </dl>
-        </div>
-      </section>
-
-      {featured && (
-        <section className="grid gap-6 xl:grid-cols-[1.3fr,0.9fr]">
-          <div className="rounded-[2rem] bg-surface-container p-7">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-secondary">Featured repository</p>
-                <h2 className="mt-3 text-4xl font-headline font-bold">{featured.repo.name}</h2>
-                <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-                  {featured.repo.description || "Public repository with generated overview data."}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-surface-container-high px-5 py-4 text-right">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Health</p>
-                <p className="mt-2 text-4xl font-headline font-bold text-primary">{featured.health.score}</p>
-              </div>
-            </div>
-            <div className="mt-7 grid gap-4 md:grid-cols-4">
-              <MetricChip label="Stars" value={featured.repo.stars} />
-              <MetricChip label="Forks" value={featured.repo.forks} />
-              <MetricChip label="CI" value={featured.health.workflowSuccessRate ? `${featured.health.workflowSuccessRate}%` : "--"} />
-              <MetricChip label="Alerts" value={featured.health.dependabotOpenCount} />
-            </div>
-            <div className="mt-7 flex flex-wrap gap-3">
-              {featured.repo.topics.map((topic) => (
-                <span key={topic} className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  {topic}
-                </span>
-              ))}
-            </div>
-            <Link
-              to={`/app/repo/${featured.repo.owner}/${featured.repo.name}`}
-              className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-primary"
+        <div className="flex items-center gap-2">
+          <div className="flex p-1 rounded-xl bg-secondary/50 border border-border">
+            <button
+              onClick={() => updateSettings({ highlightMode: 'primary' })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                settings.highlightMode === 'primary' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              Open repository detail
-              <ArrowRight size={14} />
-            </Link>
+              ★ {t('primaryRepo')}
+            </button>
+            <button
+              onClick={() => updateSettings({ highlightMode: 'recent' })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                settings.highlightMode === 'recent' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              ⚡ {t('recentActivity')}
+            </button>
           </div>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold text-foreground hover:bg-secondary transition-all"
+          >
+            <RefreshCw size={16} strokeWidth={2} />
+            {t('refreshNow')}
+          </button>
+          <button
+            onClick={() => setOnboarding(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold text-foreground hover:bg-secondary transition-all"
+          >
+            <Package size={16} strokeWidth={2} />
+            {t('repos')}
+          </button>
+        </div>
+      </div>
 
-          <div className="rounded-[2rem] bg-surface-container-lowest p-7 editorial-grid">
-            <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">Availability matrix</p>
-            <div className="mt-5 space-y-3 rounded-[1.5rem] bg-surface-container/90 p-5">
-              {Object.entries(featured.availability).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between text-sm">
-                  <span className="capitalize text-muted-foreground">{key.replace(/([A-Z])/g, " $1")}</span>
-                  <span className={value.available ? "text-success" : "text-warning"}>
-                    {value.available ? value.source : value.reason || "Unavailable"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      <GlobalHealthSummary repos={monitoredRepos} />
+
+      {/* Main Repo Highlight */}
+      {primaryRepoData && (
+        <MainRepoHighlight repo={primaryRepoData} />
       )}
 
-      <section className="space-y-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-headline font-bold">Repository matrix</h2>
-          <Link to="/app/alerts" className="inline-flex items-center gap-2 text-sm font-bold text-primary">
-            Review alerts
-            <ArrowRight size={14} />
-          </Link>
+      {/* Other Repos Section */}
+      {otherMonitoredRepos.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">
+            {t('monitoredRepos')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {otherMonitoredRepos.map(repo => (
+              <MonitoredRepoCard key={repo.id} repo={repo} />
+            ))}
+          </div>
         </div>
-        <div className="grid gap-5 xl:grid-cols-3">
-          {data.repos.map((item) => (
-            <Link
-              key={item.repo.id}
-              to={`/app/repo/${item.repo.owner}/${item.repo.name}`}
-              className="rounded-[1.75rem] bg-surface-container p-6 transition-colors hover:bg-surface-container-high"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-muted-foreground">{item.repo.owner}</p>
-                  <h3 className="mt-2 text-2xl font-headline font-bold">{item.repo.name}</h3>
-                </div>
-                <span className="rounded-full bg-surface-container-high px-3 py-1 text-sm font-bold text-primary">
-                  {item.health.score}
-                </span>
-              </div>
-              <p className="mt-4 min-h-[72px] text-sm leading-6 text-muted-foreground">
-                {item.repo.description || "Public repository snapshot."}
-              </p>
-              <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
-                <MiniStat icon={Workflow} label="CI" value={item.health.workflowSuccessRate ? `${item.health.workflowSuccessRate}%` : "--"} />
-                <MiniStat icon={ShieldAlert} label="Alerts" value={item.health.dependabotOpenCount} />
-                <MiniStat icon={Activity} label="Stale" value={`${item.health.stalenessDays}d`} />
-                <MiniStat icon={FolderKanban} label="Commits" value={item.stats.totalCommitsTracked} />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      )}
 
-      <section className="rounded-[2rem] bg-surface-container-low p-4 sm:p-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left">
-            <thead className="text-xs uppercase tracking-[0.26em] text-muted-foreground">
-              <tr>
-                <th className="pb-4 font-medium">Repository</th>
-                <th className="pb-4 font-medium">Health</th>
-                <th className="pb-4 font-medium">Last run</th>
-                <th className="pb-4 font-medium">Languages</th>
-                <th className="pb-4 font-medium">Alerts</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/10">
-              {data.repos.map((item) => (
-                <tr key={item.repo.id}>
-                  <td className="py-4 pr-6">
-                    <Link to={`/app/repo/${item.repo.owner}/${item.repo.name}`} className="font-semibold hover:text-primary">
-                      {item.repo.fullName}
-                    </Link>
-                  </td>
-                  <td className="py-4 pr-6 font-bold text-primary">{item.health.score}</td>
-                  <td className="py-4 pr-6 text-muted-foreground">{item.stats.latestWorkflowConclusion ?? "unavailable"}</td>
-                  <td className="py-4 pr-6 text-muted-foreground">{item.stats.languagesTracked}</td>
-                  <td className="py-4 font-semibold text-warning">{item.health.dependabotOpenCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {/* Comparison Table */}
+      {monitoredRepos.length > 1 && (
+        <ComparisonTable repos={monitoredRepos} />
+      )}
     </div>
   );
 }
 
-function MetricPanel({ label, value, icon: Icon, tone = "default" }: { label: string; value: string; icon: typeof Sparkle; tone?: "default" | "warning" | "success"; }) {
-  return (
-    <div className="rounded-[1.5rem] bg-surface-container-high p-5">
-      <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{label}</p>
-        <Icon size={16} className={tone === "warning" ? "text-secondary" : tone === "success" ? "text-success" : "text-primary"} />
-      </div>
-      <p className="mt-4 text-3xl font-headline font-bold">{value}</p>
-    </div>
-  );
-}
+// Sub-component to manage its own health data
+function MonitoredRepoCard({ repo }: { repo: RepositoryRef }) {
+  const { data: runs } = useWorkflowRuns(repo.owner, repo.name);
+  const { data: alerts } = useDependabotAlerts(repo.owner, repo.name);
+  const { data: languages } = useLanguages(repo.owner, repo.name);
 
-function MetricChip({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-[1.25rem] bg-surface-container-low p-4">
-      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
-      <p className="mt-2 text-xl font-headline font-bold">{value}</p>
-    </div>
-  );
-}
+  const health = useMemo(() => {
+    if (!runs || !alerts) return null;
+    return calculateHealth(repo, runs, alerts);
+  }, [repo, runs, alerts]);
 
-function MiniStat({ icon: Icon, label, value }: { icon: typeof Activity; label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl bg-surface-container-low px-4 py-3">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
-        <Icon size={12} />
-        {label}
-      </div>
-      <p className="mt-2 text-lg font-bold">{value}</p>
-    </div>
-  );
-}
-
-function StatusRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-outline-variant/10 pb-3 text-sm">
-      <span className="uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
-      <span className="font-semibold text-foreground">{value}</span>
-    </div>
-  );
-}
-
-function LoadingState({ label }: { label: string }) {
-  return (
-    <div className="rounded-[2rem] bg-surface-container p-8 text-sm text-muted-foreground">
-      {label}
-    </div>
-  );
-}
-
-function EmptyState({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-[2rem] bg-surface-container p-8">
-      <h1 className="text-3xl font-headline font-bold">{title}</h1>
-      <p className="mt-3 max-w-2xl text-muted-foreground">{body}</p>
-    </div>
+    <RepoCard
+      repo={repo}
+      health={health}
+      languages={languages}
+      runs={runs}
+    />
   );
 }
