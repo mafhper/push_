@@ -1,27 +1,59 @@
-import { spawnSync } from "child_process";
+import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import path from "node:path";
 
-const run = (command: string, args: string[]) => {
-  console.log(`\n🚀 Running: ${command} ${args.join(" ")}...`);
+function run(command: string, args: string[]) {
   const result = spawnSync(command, args, { stdio: "inherit", shell: true });
   if (result.status !== 0) {
-    console.error(`\n❌ Error: ${command} failed with exit code ${result.status}`);
-    process.exit(1);
+    process.exit(result.status ?? 1);
   }
-};
+}
 
-console.log("🛡️ Starting Push_Underline Quality Audit\n" + "=".repeat(40));
+function walkFiles(directory: string): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    const fullPath = path.join(directory, entry);
+    const stats = statSync(fullPath);
+    if (stats.isDirectory()) {
+      return walkFiles(fullPath);
+    }
+    return [fullPath];
+  });
+}
 
-// 1. Linting
-run("bun", ["run", "lint"]);
+function assertBuildFreeOfSecretsAndLocalAuth() {
+  const distDirectory = path.resolve("dist");
+  if (!existsSync(distDirectory)) {
+    throw new Error("Build output directory not found.");
+  }
 
-// 2. Type Checking
-run("bun", ["x", "tsc", "--noEmit"]);
+  const files = walkFiles(distDirectory);
+  const combined = files
+    .filter((file) => /\.(html|js|css|json|txt)$/.test(file))
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
 
-// 3. Unit Tests
-run("bun", ["test"]);
+  const blockedPatterns = [
+    { pattern: /ghp_[A-Za-z0-9_]+/g, label: "GitHub classic PAT prefix" },
+    { pattern: /github_pat_[A-Za-z0-9_]+/g, label: "GitHub fine-grained PAT prefix" },
+    { pattern: /Authorization:\s*Bearer/g, label: "Authorization bearer header" },
+    { pattern: /document\.cookie/g, label: "cookie access" },
+    { pattern: /Current identity/g, label: "local session UI copy" },
+    { pattern: /Token is memory-only in this tab/g, label: "local auth helper copy" },
+    { pattern: /Awaiting Token/g, label: "local auth status copy" },
+    { pattern: /Cole um GitHub Personal Access Token/g, label: "PAT input placeholder" },
+    { pattern: /Atualizar token/g, label: "local token refresh action" },
+  ];
 
-// 4. Production Build
-run("bun", ["run", "build"]);
+  const matches = blockedPatterns
+    .filter(({ pattern }) => pattern.test(combined))
+    .map(({ label }) => label);
 
-console.log("\n" + "=".repeat(40));
-console.log("✅ Quality Audit Passed! The application is ready for deployment.");
+  if (matches.length > 0) {
+    throw new Error(`Public build contains blocked runtime markers: ${matches.join(", ")}`);
+  }
+}
+
+run("npm", ["run", "lint"]);
+run("npm", ["run", "test"]);
+run("npm", ["run", "build"]);
+assertBuildFreeOfSecretsAndLocalAuth();

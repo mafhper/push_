@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useWorkflowRuns } from '@/hooks/useGitHub';
 import { notifications } from '@/services/notifications';
 import type { WorkflowRun } from '@/types';

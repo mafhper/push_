@@ -1,117 +1,88 @@
-import { useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { useApp } from '@/contexts/AppContext';
-import { useDependabotAlerts } from '@/hooks/useGitHub';
-import { initOctokit } from '@/services/github';
-import { useNavigate } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+import { useDashboardSnapshot, useRepoSnapshot } from "@/hooks/useGitHub";
+import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { isLocalSecureRuntime } from "@/config/site";
+import { useApp } from "@/contexts/useApp";
 
 export default function AlertsPage() {
-  const { t, session, primaryRepo, selectedRepos } = useApp();
-  const navigate = useNavigate();
+  const { session } = useApp();
+  const { data, isLoading, error } = useDashboardSnapshot();
+  const localRuntime = isLocalSecureRuntime();
+  const isLocalAuthenticated = localRuntime && Boolean(session?.token);
 
-  useEffect(() => {
-    if (!session) { navigate('/auth'); return; }
-    initOctokit(session.token);
-  }, [session, navigate]);
+  if (isLoading) {
+    return <EmptyPanel title="Loading alerts" body="Scanning repository snapshots for security findings and degraded states." />;
+  }
 
-  const monitoredNames = useMemo(() => {
-    const names = new Set([...(primaryRepo ? [primaryRepo] : []), ...selectedRepos]);
-    return Array.from(names);
-  }, [primaryRepo, selectedRepos]);
+  if (!data || error) {
+    return <EmptyPanel title="Alert dataset unavailable" body="The overview snapshot failed to load." />;
+  }
+
+  if (data.repos.length === 0) {
+    return (
+      <EmptyPanel
+        title="No repositories selected"
+        body={
+          isLocalAuthenticated
+            ? "Conecte o token e escolha os repositorios que devem entrar no dashboard antes de abrir a visao consolidada de alertas."
+            : "The published snapshot currently has no tracked repositories for the alerts surface."
+        }
+      />
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-fluid-2xl font-bold flex items-center gap-2">
-          <Shield size={24} strokeWidth={1.5} />
-          {t('alerts')}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t('security')} — {monitoredNames.length} {t('repos').toLowerCase()} {t('monitored').toLowerCase()}
-        </p>
-      </motion.div>
+    <div className="space-y-8">
+      <SectionHeading
+        kicker="Security Surface"
+        title="Dependabot and operational warnings"
+        body={
+          isLocalAuthenticated
+            ? "This view aggregates the alert posture across the repositories selected in your local authenticated session."
+            : "This view aggregates the alert posture across every repository currently tracked by the published snapshot."
+        }
+      />
 
-      {monitoredNames.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card p-8 text-center">
-          <Shield size={32} strokeWidth={1} className="mx-auto mb-3 text-muted-foreground" />
-          <p className="text-muted-foreground">{t('noAlerts')}</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {monitoredNames.map(fullName => {
-            const [owner, repo] = fullName.split('/');
-            return <AlertsForRepo key={fullName} owner={owner} repo={repo} />;
-          })}
-        </div>
-      )}
+      <div className="space-y-5">
+        {data.repos.map((entry) => (
+          <AlertCard key={entry.repo.id} owner={entry.repo.owner} repo={entry.repo.name} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function AlertsForRepo({ owner, repo }: { owner: string; repo: string }) {
-  const { t } = useApp();
-  const { data: alerts, isLoading } = useDependabotAlerts(owner, repo);
+function AlertCard({ owner, repo }: { owner: string; repo: string }) {
+  const { data } = useRepoSnapshot(owner, repo);
 
-  if (isLoading) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-4 animate-pulse">
-        <div className="h-4 bg-secondary rounded w-1/3" />
-      </div>
-    );
-  }
-
-  if (!alerts || alerts.length === 0) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">{owner}/{repo}</span>
-          <span className="text-xs text-success flex items-center gap-1">
-            <Shield size={12} /> {t('noAlerts')}
-          </span>
-        </div>
-      </div>
-    );
-  }
+  if (!data) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border border-border bg-card p-4 space-y-3"
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">{owner}/{repo}</span>
-        <span className="text-xs text-critical font-medium">{alerts.length} alerts</span>
+    <div className="rounded-3xl surface-panel p-6">
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <p className="font-headline text-2xl font-bold tracking-tight">{owner}/{repo}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {data.alerts.length > 0
+              ? `${data.alerts.length} open alerts in the current ${data.status.dataMode === "authenticated" ? "authenticated session" : "snapshot"}.`
+              : "No open alerts detected for this repository."}
+          </p>
+        </div>
+        <StatusPill tone={data.alerts.length > 0 ? "warning" : "success"}>{data.alerts.length > 0 ? "Review" : "Clean"}</StatusPill>
       </div>
-      <div className="space-y-2">
-        {alerts.slice(0, 10).map(a => (
-          <a
-            key={a.id}
-            href={a.htmlUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-start gap-2 rounded-lg p-2 hover:bg-secondary/50 transition-colors text-sm"
-          >
-            <Shield size={13} className={
-              a.severity === 'critical' ? 'text-critical mt-0.5' :
-              a.severity === 'high' ? 'text-destructive mt-0.5' :
-              a.severity === 'medium' ? 'text-warning mt-0.5' : 'text-muted-foreground mt-0.5'
-            } />
-            <div className="min-w-0 flex-1">
-              <span>{a.summary}</span>
-              <span className="text-xs text-muted-foreground ml-2">{a.packageName}</span>
+
+      <div className="mt-6 space-y-3">
+        {data.alerts.length > 0 ? data.alerts.map((alert) => (
+          <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-2xl bg-black/18 p-4">
+            <div>
+              <p className="font-semibold">{alert.summary}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{alert.packageName} · {alert.ecosystem}</p>
             </div>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-              a.severity === 'critical' ? 'bg-critical/10 text-critical' :
-              a.severity === 'high' ? 'bg-destructive/10 text-destructive' :
-              a.severity === 'medium' ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'
-            }`}>
-              {a.severity}
-            </span>
+            <StatusPill tone={alert.severity === "critical" ? "critical" : "warning"}>{alert.severity}</StatusPill>
           </a>
-        ))}
+        )) : (
+          <div className="rounded-2xl bg-black/18 p-4 text-sm text-muted-foreground">{data.availability.dependabotAlerts.reason ?? "Dependabot endpoint returned no active issues."}</div>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 }

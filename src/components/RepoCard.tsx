@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, GitFork, Clock, Shield, Activity, XCircle, ChevronRight, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { ProjectImage } from '@/components/ProjectImage';
 import { formatRelativeTime } from '@/utils/health';
 import type { RepositoryRef, RepoHealth, LanguageBreakdown, WorkflowRun } from '@/types';

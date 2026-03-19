@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useCommits, useWorkflowRuns, useDependabotAlerts, useLanguages } from '@/hooks/useGitHub';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { calculateHealth, formatRelativeTime } from '@/utils/health';
 import { HealthBadge } from '@/components/HealthBadge';
 import { LanguageBar } from '@/components/LanguageBar';

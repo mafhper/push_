@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { afterEach, vi } from "vitest";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -12,4 +13,9 @@ Object.defineProperty(window, "matchMedia", {
     removeEventListener: () => {},
     dispatchEvent: () => {},
   }),
+});
+
+afterEach(() => {
+  window.localStorage.clear();
+  vi.clearAllMocks();
 });

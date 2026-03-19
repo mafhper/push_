@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useWorkflowRuns, useDependabotAlerts } from '@/hooks/useGitHub';
 import { calculateHealth } from '@/utils/health';
 import { Shield, Activity, CheckCircle2, AlertTriangle, XCircle, Heart, Zap, Globe, GitCommit } from 'lucide-react';

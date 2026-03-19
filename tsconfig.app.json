@@ -19,6 +19,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@runtime-app": [
+        "./src/app/LocalApp.tsx"
       ]
     },
     "skipLibCheck": true,
