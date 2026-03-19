@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+    --font-headline: 'Space Grotesk', system-ui, sans-serif;
+    --background: 0 0% 7%;
+    --foreground: 24 9% 90%;
+    --surface: 0 0% 7%;
+    --surface-dim: 0 0% 7%;
+    --surface-bright: 0 0% 23%;
+    --surface-container-lowest: 0 0% 5%;
+    --surface-container-low: 0 0% 11%;
+    --surface-container: 0 3% 13%;
+    --surface-container-high: 0 0% 16%;
+    --surface-container-highest: 0 0% 21%;
+    --surface-variant: 0 0% 21%;
+    --card: var(--surface-container);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface-container-high);
+    --popover-foreground: var(--foreground);
+    --primary: 101 100% 95%;
+    --primary-foreground: 137 100% 11%;
+    --secondary: 46 79% 60%;
+    --secondary-foreground: 39 100% 11%;
+    --tertiary: 108 100% 95%;
+    --tertiary-foreground: 138 100% 11%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 102 15% 75%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 24 9% 90%;
+    --destructive: 7 100% 83%;
+    --destructive-foreground: 0 0% 13%;
+    --success: 120 100% 63%;
+    --success-foreground: 137 100% 11%;
+    --warning: 46 79% 60%;
+    --warning-foreground: 39 100% 11%;
+    --critical: 7 100% 83%;
+    --critical-foreground: 0 0% 13%;
+    --info: 135 90% 70%;
+    --info-foreground: 137 100% 11%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 120 100% 50%;
+    --outline: 108 10% 52%;
+    --outline-variant: 101 15% 26%;
+    --radius: 0.85rem;
+    --sidebar-background: var(--surface-dim);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--surface-container);
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
+    --chart-1: 120 100% 63%;
+    --chart-2: 46 79% 60%;
+    --chart-3: 7 100% 83%;
+    --chart-4: 140 48% 65%;
+    --chart-5: 24 9% 90%;
+  }
+
+  .dark,
+  .nord,
+  .midnight {
+    color-scheme: dark;
+  }
+
+  .golden {
+    color-scheme: dark;
+    --primary: 46 79% 60%;
+    --primary-foreground: 39 100% 11%;
+    --secondary: 101 100% 95%;
+    --secondary-foreground: 137 100% 11%;
+    --surface-container: 28 8% 14%;
+    --surface-container-low: 28 8% 11%;
+    --surface-container-high: 30 8% 18%;
+    --surface-container-highest: 32 8% 21%;
+    --outline-variant: 42 20% 24%;
+  }
+
+  .emerald {
+    color-scheme: dark;
+    --primary: 140 68% 78%;
+    --primary-foreground: 152 100% 10%;
+    --secondary: 101 100% 95%;
+    --secondary-foreground: 137 100% 11%;
+    --surface-container: 160 18% 12%;
+    --surface-container-low: 160 22% 9%;
+    --surface-container-high: 160 18% 15%;
+    --surface-container-highest: 160 18% 18%;
+    --outline-variant: 160 14% 23%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at top left, rgba(0, 255, 65, 0.08), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(233, 195, 73, 0.08), transparent 22%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-headline);
+    letter-spacing: -0.04em;
+    font-weight: 700;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--surface-container-lowest));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-outline-variant/70 hover:bg-outline;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--outline-variant)) hsl(var(--surface-container-lowest));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .transition-theme {
+    transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease;
+  }
+
+  .surface-glass {
+    background: hsl(var(--surface-container) / 0.72);
+    backdrop-filter: blur(18px);
+  }
+
+  .ghost-outline {
+    box-shadow: inset 0 0 0 1px hsl(var(--outline-variant) / 0.2);
+  }
+
+  .editorial-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--outline-variant) / 0.12) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--outline-variant) / 0.12) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+}

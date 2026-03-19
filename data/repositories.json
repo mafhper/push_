@@ -1,0 +1,22 @@
+{
+  "site": {
+    "name": "Push_",
+    "tagline": "A semantic command center for your public GitHub footprint.",
+    "description": "Promo site and static dashboard for published repositories, generated securely from snapshots."
+  },
+  "featuredRepo": "mafhper/push_",
+  "repositories": [
+    {
+      "owner": "mafhper",
+      "repo": "push_",
+      "tier": "flagship",
+      "headline": "The semantic terminal for repository health.",
+      "summary": "Static-first promo site and dashboard for public GitHub repositories.",
+      "topics": [
+        "github-pages",
+        "dashboard",
+        "typescript"
+      ]
+    }
+  ]
+}

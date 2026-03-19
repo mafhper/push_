@@ -1,0 +1,24 @@
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+.text-fluid-sm { font-size: clamp(0.875rem, 0.8rem + 0.375vw, 1rem); }
+.text-fluid-base { font-size: clamp(1rem, 0.925rem + 0.375vw, 1.125rem); }
+.text-fluid-lg { font-size: clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem); }
+.text-fluid-xl { font-size: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem); }
+.text-fluid-2xl { font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2rem); }
+.text-fluid-3xl { font-size: clamp(2rem, 1.55rem + 2.25vw, 2.75rem); }
+.text-fluid-4xl { font-size: clamp(2.5rem, 1.9rem + 3vw, 3.5rem); }
