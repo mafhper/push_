@@ -1,24 +1,38 @@
+import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Github, History, Shield, Star } from "lucide-react";
 import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { usePublicRuntime } from "@/contexts/usePublicRuntime";
 import { usePublicRepoSnapshot } from "@/hooks/useGitHubPublic";
 import { LANGUAGE_COLORS, type WorkflowRun } from "@/types";
 
 export default function PublicRepoDetail() {
+  const { mode } = usePublicRuntime();
   const { owner = "", repo = "" } = useParams();
   const { data, isLoading, error } = usePublicRepoSnapshot(owner, repo);
 
   if (isLoading) {
-    return <EmptyPanel title="Loading repository detail" body="Resolving workflow history, languages, contributors and alerts from the snapshot." />;
+    return (
+      <EmptyPanel
+        title="Loading repository detail"
+        body={mode === "public-profile" ? "Resolving public repository data from the GitHub API." : "Resolving workflow history, languages, contributors and alerts from the snapshot."}
+      />
+    );
   }
 
   if (!data || error) {
-    return <EmptyPanel title="Snapshot detail unavailable" body="The repository detail file was not found in the current published dataset." />;
+    return (
+      <EmptyPanel
+        title="Repository detail unavailable"
+        body={mode === "public-profile" ? "The public GitHub API could not resolve this repository." : "The repository detail file was not found in the current published dataset."}
+      />
+    );
   }
 
   const languageEntries = Object.entries(data.languages);
   const totalLanguageBytes = languageEntries.reduce((sum, [, value]) => sum + value, 0);
   const pipelineBars: WorkflowRun[] = data.workflowRuns.slice(0, 14);
+  const sourceLabel = mode === "public-profile" ? "public api" : "snapshot";
 
   return (
     <div className="space-y-8">
@@ -26,18 +40,18 @@ export default function PublicRepoDetail() {
         <div className="space-y-4">
           <Link to="/app" className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/55 hover:text-primary">
             <ArrowLeft size={12} />
-            Voltar
+            Back
           </Link>
           <div>
             <div className="mb-4 flex items-center gap-3">
-              <StatusPill tone="success">snapshot</StatusPill>
+              <StatusPill tone="success">{sourceLabel}</StatusPill>
               <StatusPill tone={data.health.status === "healthy" ? "success" : data.health.status === "warning" ? "warning" : "critical"}>
                 {data.health.status}
               </StatusPill>
             </div>
             <h1 className="text-fluid-4xl font-black tracking-tighter">{data.repo.name}</h1>
             <p className="mt-3 max-w-3xl text-lg leading-8 text-muted-foreground">
-              {data.repo.description || "No repository description in the current snapshot."}
+              {data.repo.description || "No repository description is available for this repository."}
             </p>
           </div>
         </div>
@@ -59,7 +73,11 @@ export default function PublicRepoDetail() {
           <div className="mb-6 flex items-start justify-between gap-4">
             <SectionHeading
               title="CI/CD Pipeline History"
-              body={`${data.workflowRuns.length} workflow executions available in the published snapshot.`}
+              body={
+                mode === "public-profile"
+                  ? `${data.workflowRuns.length} public workflow executions available from GitHub.`
+                  : `${data.workflowRuns.length} workflow executions available in the published snapshot.`
+              }
             />
             <div className="flex gap-2">
               <StatusPill tone="success">Success</StatusPill>
@@ -88,13 +106,15 @@ export default function PublicRepoDetail() {
                   })}
                 </div>
                 <div className="mt-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/35">
-                  <span>Snapshot history</span>
+                  <span>{mode === "public-profile" ? "Public history" : "Snapshot history"}</span>
                   <span>{data.workflowRuns[0]?.id ? `Latest run #${data.workflowRuns[0].id}` : "No workflow data"}</span>
                 </div>
               </>
             ) : (
               <div className="rounded-2xl border border-dashed border-white/8 px-4 py-10 text-sm text-muted-foreground">
-                No workflow executions are available for this repository in the current snapshot.
+                {mode === "public-profile"
+                  ? "No public workflow executions are available for this repository."
+                  : "No workflow executions are available for this repository in the current snapshot."}
               </div>
             )}
           </div>
@@ -136,7 +156,7 @@ export default function PublicRepoDetail() {
               <div>
                 <h2 className="font-headline text-xl font-bold">Recent Pushes</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Latest commit activity captured by the published snapshot.
+                  {mode === "public-profile" ? "Latest public commit activity from GitHub." : "Latest commit activity captured by the published snapshot."}
                 </p>
               </div>
               <History size={16} className="text-foreground/30" />
@@ -156,7 +176,7 @@ export default function PublicRepoDetail() {
                   </div>
                 </a>
               ))}
-              {data.commits.length === 0 ? <p className="text-sm text-muted-foreground">No commit data available in the current snapshot.</p> : null}
+              {data.commits.length === 0 ? <p className="text-sm text-muted-foreground">{mode === "public-profile" ? "No public commit data is available." : "No commit data available in the current snapshot."}</p> : null}
             </div>
           </div>
         </section>
@@ -168,7 +188,7 @@ export default function PublicRepoDetail() {
             <div>
               <h2 className="font-headline text-xl font-bold">Dependabot Alerts</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                {data.alerts.length > 0 ? `${data.alerts.length} vulnerabilities identified in manifest files.` : "No open alerts in the current snapshot."}
+                {data.alerts.length > 0 ? `${data.alerts.length} vulnerabilities identified in manifest files.` : data.availability.dependabotAlerts.reason ?? "No open alerts in the current dataset."}
               </p>
             </div>
             <a href={`${data.repo.htmlUrl}/security/dependabot`} className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary hover:underline">
@@ -200,7 +220,7 @@ export default function PublicRepoDetail() {
         <section className="rounded-3xl surface-panel p-6">
           <div className="mb-6 flex items-center gap-3">
             <Shield size={16} className="text-primary" />
-            <h2 className="font-headline text-xl font-bold">Snapshot Metadata</h2>
+            <h2 className="font-headline text-xl font-bold">Source Metadata</h2>
           </div>
           <div className="rounded-2xl bg-black/18 p-4">
             <p className="text-sm font-semibold">
@@ -208,7 +228,7 @@ export default function PublicRepoDetail() {
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               {data.availability.dependabotAlerts.available
-                ? "Security endpoint was available in the current snapshot."
+                ? "Security endpoint was available in the current dataset."
                 : data.availability.dependabotAlerts.reason}
             </p>
           </div>
@@ -234,7 +254,7 @@ function DetailRow({
   highlighted = false,
 }: {
   label: string;
-  value: React.ReactNode;
+  value: ReactNode;
   highlighted?: boolean;
 }) {
   return (

@@ -1,8 +1,51 @@
-import { usePublicDashboardSnapshot, usePublicRepoSnapshot } from "@/hooks/useGitHubPublic";
+import { usePublicRuntime } from "@/contexts/usePublicRuntime";
+import { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRepoSnapshot } from "@/hooks/useGitHubPublic";
 import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
 
 export default function PublicAlertsPage() {
-  const { data, isLoading, error } = usePublicDashboardSnapshot();
+  const { mode, username } = usePublicRuntime();
+  const snapshotQuery = usePublicDashboardSnapshot();
+  const publicProfileQuery = usePublicProfileRepos();
+
+  if (mode === "public-profile") {
+    const { data: repos = [], isLoading, error } = publicProfileQuery;
+
+    if (isLoading) {
+      return <EmptyPanel title="Loading public repositories" body="Resolving repositories from the GitHub public API." />;
+    }
+
+    if (error) {
+      return <EmptyPanel title="Public profile unavailable" body={`The public GitHub API could not resolve @${username}.`} />;
+    }
+
+    return (
+      <div className="space-y-8">
+        <SectionHeading
+          kicker="Security Surface"
+          title="Authenticated data required"
+          body={`Dependabot alerts are not available from the public GitHub API for @${username}. Use the published snapshot or localhost with a token for security data.`}
+        />
+
+        <div className="space-y-5">
+          {repos.map((repo) => (
+            <div key={repo.id} className="rounded-3xl surface-panel p-6">
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="font-headline text-2xl font-bold tracking-tight">{repo.fullName}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Public mode can load repository metadata, commits, languages and workflow history. Security alerts stay unavailable without authentication.
+                  </p>
+                </div>
+                <StatusPill tone="neutral">Unavailable</StatusPill>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const { data, isLoading, error } = snapshotQuery;
 
   if (isLoading) {
     return <EmptyPanel title="Loading alerts" body="Scanning the published snapshot for security findings." />;

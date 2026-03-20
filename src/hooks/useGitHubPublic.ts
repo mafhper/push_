@@ -1,27 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
+import { usePublicRuntime } from "@/contexts/usePublicRuntime";
 import {
   fetchDashboardSnapshot,
+  fetchPublicProfileRepos,
+  fetchPublicProfileRepo,
+  fetchPublicRateLimit,
   fetchRateLimit,
   fetchRepoSnapshot,
   fetchSnapshotManifest,
-  fetchUserRepos,
 } from "@/services/github-public";
-
-export function usePublicRepos() {
-  return useQuery({
-    queryKey: ["public-repos"],
-    queryFn: fetchUserRepos,
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function usePublicRateLimit() {
-  return useQuery({
-    queryKey: ["public-rateLimit"],
-    queryFn: fetchRateLimit,
-    staleTime: 5 * 60 * 1000,
-  });
-}
 
 export function usePublicSnapshotManifest() {
   return useQuery({
@@ -39,10 +26,33 @@ export function usePublicDashboardSnapshot() {
   });
 }
 
-export function usePublicRepoSnapshot(owner: string, repo: string) {
+export function usePublicProfileRepos() {
+  const { username } = usePublicRuntime();
+
   return useQuery({
-    queryKey: ["public-repo-snapshot", owner, repo],
-    queryFn: () => fetchRepoSnapshot(owner, repo),
+    queryKey: ["public-profile-repos", username ?? "none"],
+    queryFn: () => fetchPublicProfileRepos(username ?? ""),
+    enabled: Boolean(username),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePublicRateLimit() {
+  const { mode } = usePublicRuntime();
+
+  return useQuery({
+    queryKey: ["public-rateLimit", mode],
+    queryFn: () => (mode === "public-profile" ? fetchPublicRateLimit() : fetchRateLimit()),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePublicRepoSnapshot(owner: string, repo: string) {
+  const { mode } = usePublicRuntime();
+
+  return useQuery({
+    queryKey: ["public-repo-snapshot", mode, owner, repo],
+    queryFn: () => (mode === "public-profile" ? fetchPublicProfileRepo(owner, repo) : fetchRepoSnapshot(owner, repo)),
     enabled: !!owner && !!repo,
     staleTime: 10 * 60 * 1000,
   });

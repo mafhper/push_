@@ -8,10 +8,21 @@ vi.mock("@/hooks/useGitHubPublic", () => ({
   usePublicRepoSnapshot: vi.fn(),
 }));
 
+vi.mock("@/contexts/usePublicRuntime", () => ({
+  usePublicRuntime: vi.fn(),
+}));
+
 describe("PublicRepoDetail", () => {
   it("shows explicit absence for optional fields", async () => {
     const { usePublicRepoSnapshot } = await import("@/hooks/useGitHubPublic");
+    const { usePublicRuntime } = await import("@/contexts/usePublicRuntime");
     const detail = createRepoDetail();
+    vi.mocked(usePublicRuntime).mockReturnValue({
+      mode: "snapshot",
+      username: null,
+      setUsername: vi.fn(),
+      clearUsername: vi.fn(),
+    } as never);
     vi.mocked(usePublicRepoSnapshot).mockReturnValue({
       data: createRepoDetail({
         workflowRuns: [],
