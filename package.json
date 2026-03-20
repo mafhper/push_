@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit": "bun run scripts/audit.ts"
+    "audit": "node scripts/audit.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

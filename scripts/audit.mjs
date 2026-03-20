@@ -2,14 +2,14 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
-function run(command: string, args: string[]) {
+function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit", shell: true });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
 }
 
-function walkFiles(directory: string): string[] {
+function walkFiles(directory) {
   return readdirSync(directory).flatMap((entry) => {
     const fullPath = path.join(directory, entry);
     const stats = statSync(fullPath);
