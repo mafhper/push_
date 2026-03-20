@@ -18,11 +18,19 @@ import {
   fetchSnapshotManifest,
 } from '@/services/github';
 
+function getRuntimeQueryKey(localRuntime: boolean, username?: string, authenticatedAt?: string) {
+  if (!localRuntime || !username || !authenticatedAt) {
+    return 'snapshot';
+  }
+
+  return `${username}:${authenticatedAt}`;
+}
+
 export function useRepos() {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = localRuntime && session ? session.username || session.authenticatedAt : 'snapshot';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
 
   return useQuery({
     queryKey: ['repos', tokenKey],
@@ -80,7 +88,7 @@ export function useRateLimit() {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = localRuntime && session ? session.username || session.authenticatedAt : 'snapshot';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
 
   return useQuery({
     queryKey: ['rateLimit', tokenKey],
@@ -101,7 +109,7 @@ export function useDashboardSnapshot() {
   const { session, selectedRepos, primaryRepo } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = localRuntime && session ? session.username || session.authenticatedAt : 'snapshot';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
 
   return useQuery({
     queryKey: ['dashboard-overview', tokenKey, selectedRepos.join('|'), primaryRepo ?? 'default'],
@@ -114,7 +122,7 @@ export function useRepoSnapshot(owner: string, repo: string) {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = localRuntime && session ? session.username || session.authenticatedAt : 'snapshot';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
 
   return useQuery({
     queryKey: ['repo-snapshot', owner, repo, tokenKey],
