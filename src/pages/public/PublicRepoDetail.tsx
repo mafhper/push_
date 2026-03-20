@@ -151,7 +151,7 @@ export default function PublicRepoDetail() {
                   <div className="min-w-0">
                     <p className="line-clamp-2 font-semibold">{commit.message}</p>
                     <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/35">
-                      {commit.authorLogin} · {commit.sha.slice(0, 7)}
+                      {commit.authorLogin} | {commit.sha.slice(0, 7)}
                     </p>
                   </div>
                 </a>
@@ -183,7 +183,7 @@ export default function PublicRepoDetail() {
                   <div>
                     <p className="font-semibold">{alert.summary}</p>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Dependency: {alert.packageName} · {alert.ecosystem}
+                      Dependency: {alert.packageName} | {alert.ecosystem}
                     </p>
                   </div>
                   <StatusPill tone={alert.severity === "critical" ? "critical" : alert.severity === "high" ? "warning" : "neutral"}>

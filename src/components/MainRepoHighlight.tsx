@@ -132,7 +132,7 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
                     <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
                       <img src={commit.authorAvatar} alt="" className="h-5 w-5 rounded-full" />
                       <span>{commit.authorLogin}</span>
-                      <span>•</span>
+                      <span>|</span>
                       <span>{formatRelativeTime(commit.date, t)}</span>
                     </div>
                   </div>

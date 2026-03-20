@@ -1,4 +1,5 @@
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { Link } from "react-router-dom";
 
 const stack = [
   { title: "TypeScript", body: "Typed routes, snapshot data and safer UI changes.", tone: "success" },
@@ -80,14 +81,14 @@ export default function TechnologyPage() {
       </section>
 
       <section className="rounded-[2.5rem] surface-panel-deep px-6 py-20 text-center md:px-10">
-        <StatusPill tone="success">∞</StatusPill>
+        <StatusPill tone="success">OPEN</StatusPill>
         <h2 className="mt-8 text-fluid-3xl font-black tracking-tighter">Open source stack</h2>
         <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">
           Everything runs from one repository: promo site at `/` and dashboard at `/app`.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <a href="https://github.com/mafhper/push_" className="button-secondary-terminal">Clone Repository</a>
-          <a href="/app" className="button-primary-terminal">Explore Dashboard</a>
+          <Link to="/app" className="button-primary-terminal">Explore Dashboard</Link>
         </div>
       </section>
     </div>

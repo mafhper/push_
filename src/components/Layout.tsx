@@ -25,7 +25,7 @@ function PromoFooter() {
           <div className="space-y-3 text-left md:text-right">
             <p className="terminal-label">Push_ Ready</p>
             <p className="text-sm text-foreground/55">Selected public repositories. One view.</p>
-            <p className="text-sm font-semibold text-primary">© 2026 Push_ Terminal.</p>
+            <p className="text-sm font-semibold text-primary">2026 Push_ Terminal.</p>
           </div>
         </div>
         <div className="flex items-center justify-between border-t border-white/5 pt-5 text-xs tracking-[0.18em] text-foreground/55">

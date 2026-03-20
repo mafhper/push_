@@ -20,7 +20,7 @@ function AppFooter({ modeLabel }: { modeLabel: string }) {
       <div className="editorial-frame relative flex flex-col justify-between gap-8 px-6 md:flex-row md:items-end md:px-10">
         <div className="space-y-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/55">
-            © 2026 PUSH_ SEMANTIC TERMINAL. ALL SYSTEMS OPERATIONAL.
+            2026 PUSH_ SEMANTIC TERMINAL. ALL SYSTEMS OPERATIONAL.
           </p>
           <div className="flex flex-wrap gap-6 font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/55">
             <Link to="/faq" className="hover:text-primary">Privacy</Link>

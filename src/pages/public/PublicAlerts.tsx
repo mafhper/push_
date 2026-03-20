@@ -57,7 +57,7 @@ function AlertCard({ owner, repo }: { owner: string; repo: string }) {
           <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-2xl bg-black/18 p-4">
             <div>
               <p className="font-semibold">{alert.summary}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{alert.packageName} · {alert.ecosystem}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{alert.packageName} | {alert.ecosystem}</p>
             </div>
             <StatusPill tone={alert.severity === "critical" ? "critical" : "warning"}>{alert.severity}</StatusPill>
           </a>

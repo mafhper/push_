@@ -6,7 +6,7 @@ Push_Underline (`Push_`) is a personal dashboard for GitHub with two distinct ru
 - `GitHub Pages`: public, static, snapshot-only
 - `localhost`: local secure mode with memory-only GitHub token access for repository discovery and selection
 
-## 🚀 Key Features
+## Key Features
 
 - **Personal Dashboard**: A unified view of all your monitored repositories.
 - **Active Development Focus**: Highlight your primary project with deep insights.
@@ -17,7 +17,7 @@ Push_Underline (`Push_`) is a personal dashboard for GitHub with two distinct ru
 - **Pages-safe**: the published site consumes only generated snapshot JSON and never asks for a token.
 - **Local secure mode**: on `localhost`, the token lives only in tab memory and is cleared on reload/disconnect.
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 - **Vite + React + TypeScript**
 - **Tailwind CSS**: Modern UI with fluid typography.
@@ -26,7 +26,7 @@ Push_Underline (`Push_`) is a personal dashboard for GitHub with two distinct ru
 - **Recharts**: Visual data representation for CI history.
 - **Framer Motion**: Smooth, high-fidelity interactions.
 
-## 📦 Getting Started
+## Getting Started
 
 1. **Clone the repository**
 2. **Install dependencies**: `bun install` or `npm install`
@@ -34,7 +34,7 @@ Push_Underline (`Push_`) is a personal dashboard for GitHub with two distinct ru
 4. **Optional local auth**: open `/app/settings`, paste a GitHub token, inspect only your public repositories, and choose which ones should be observed locally
 5. **Deploy**: GitHub Actions generates snapshots and publishes the static bundle to GitHub Pages
 
-## 🔑 Permissions
+## Permissions
 
 For local secure mode or authenticated snapshot generation, your fine-grained Personal Access Token needs the following **read** permissions:
 - `Metadata` (Repositories)

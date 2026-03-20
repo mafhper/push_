@@ -285,6 +285,7 @@ function calculateHealth(repo: RepositoryRef, runs: WorkflowRun[], alerts: Depen
   if (stalenessDays > 90) score -= 15;
   else if (stalenessDays > 30) score -= 10;
   else if (stalenessDays > 14) score -= 5;
+  if (repo.openIssues > 50) score -= 5;
 
   score = Math.max(0, Math.min(100, score));
 
