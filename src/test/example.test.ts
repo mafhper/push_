@@ -13,6 +13,7 @@ describe("Health Calculation", () => {
     archived: false,
     htmlUrl: "",
     description: "",
+    license: null,
     language: "TypeScript",
     stars: 10,
     forks: 2,

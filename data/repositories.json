@@ -1,0 +1,14 @@
+{
+  "site": {
+    "name": "Push_",
+    "tagline": "A semantic command center for your public GitHub footprint.",
+    "description": "Promo site and static dashboard for published repositories, generated securely from snapshots."
+  },
+  "featuredRepo": "mafhper/push_",
+  "repositories": [
+    {
+      "owner": "mafhper",
+      "repo": "push_"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "status": {
+    "generatedAt": "2026-03-19T13:42:11.092Z",
+    "generatedBy": "seed",
+    "dataMode": "public"
+  },
+  "featured": true,
+  "repo": {
+    "id": 1186274351,
+    "owner": "mafhper",
+    "name": "push_",
+    "fullName": "mafhper/push_",
+    "defaultBranch": "main",
+    "isPrivate": false,
+    "archived": false,
+    "htmlUrl": "https://github.com/mafhper/push_",
+    "description": "Promo site and secure GitHub Pages dashboard for published repositories.",
+    "language": "TypeScript",
+    "stars": 0,
+    "forks": 0,
+    "openIssues": 0,
+    "watchers": 0,
+    "lastPushAt": "2026-03-19T13:04:23Z",
+    "size": 132,
+    "topics": [
+      "vite",
+      "react",
+      "github-pages",
+      "dashboard"
+    ],
+    "createdAt": "2026-03-19T13:04:23Z",
+    "updatedAt": "2026-03-19T13:04:23Z",
+    "socialImageUrl": "https://opengraph.githubassets.com/1/mafhper/push_"
+  },
+  "health": {
+    "score": 100,
+    "status": "healthy",
+    "lastCommitAt": "2026-03-19T13:04:23Z",
+    "workflowSuccessRate": null,
+    "failedRuns7d": 0,
+    "dependabotOpenCount": 0,
+    "dependabotCriticalCount": 0,
+    "stalenessDays": 0
+  },
+  "commits": [],
+  "workflowRuns": [],
+  "alerts": [],
+  "languages": {
+    "TypeScript": 123000,
+    "CSS": 18000,
+    "HTML": 6000
+  },
+  "contributors": [],
+  "availability": {
+    "repository": {
+      "available": true,
+      "source": "public-api"
+    },
+    "commits": {
+      "available": false,
+      "source": "public-api",
+      "reason": "Git repository is still empty in the seed snapshot."
+    },
+    "workflowRuns": {
+      "available": true,
+      "source": "public-api"
+    },
+    "languages": {
+      "available": true,
+      "source": "public-api"
+    },
+    "contributors": {
+      "available": true,
+      "source": "public-api"
+    },
+    "dependabotAlerts": {
+      "available": false,
+      "source": "public-api",
+      "reason": "Dependabot alerts require authenticated access."
+    }
+  }
+}

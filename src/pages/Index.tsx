@@ -1,19 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/contexts/AppContext';
-import { useEffect } from 'react';
+import { Navigate } from "react-router-dom";
 
-const Index = () => {
-  const { session } = useApp();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!session) {
-      navigate('/auth');
-    }
-  }, [session, navigate]);
-
-  // If session exists, Dashboard is rendered at "/" route
-  return null;
-};
+const Index = () => <Navigate to="/app" replace />;
 
 export default Index;

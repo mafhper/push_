@@ -1,4 +1,4 @@
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useRateLimit } from '@/hooks/useGitHub';
 import { Activity } from 'lucide-react';
 

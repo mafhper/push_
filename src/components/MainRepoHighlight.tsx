@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useCommits, useWorkflowRuns, useDependabotAlerts, useLanguages } from '@/hooks/useGitHub';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { calculateHealth, formatRelativeTime } from '@/utils/health';
 import { HealthBadge } from '@/components/HealthBadge';
 import { LanguageBar } from '@/components/LanguageBar';
@@ -132,7 +132,7 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
                     <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
                       <img src={commit.authorAvatar} alt="" className="h-5 w-5 rounded-full" />
                       <span>{commit.authorLogin}</span>
-                      <span>•</span>
+                      <span>|</span>
                       <span>{formatRelativeTime(commit.date, t)}</span>
                     </div>
                   </div>

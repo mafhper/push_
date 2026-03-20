@@ -1,15 +1,13 @@
-export type Theme = 'light' | 'dark' | 'golden' | 'nord' | 'midnight' | 'emerald';
+export type Theme = 'terminal' | 'contrast';
 export type Language = 'en' | 'pt' | 'es';
-export type HighlightMode = 'primary' | 'recent';
 
 export interface UserSettings {
   theme: Theme;
   lang: Language;
-  pollingInterval: number; // seconds
-  maxRepos: number;
-  rememberToken: boolean;
-  notificationsEnabled: boolean;
-  highlightMode: HighlightMode;
+  dashboardDensity: 'balanced' | 'dense';
+  pollingInterval?: number;
+  notificationsEnabled?: boolean;
+  highlightMode?: 'primary' | 'recent';
 }
 
 export interface UserSession {
@@ -29,6 +27,7 @@ export interface RepositoryRef {
   archived: boolean;
   htmlUrl: string;
   description: string | null;
+  license: string | null;
   language: string | null;
   stars: number;
   forks: number;
@@ -103,6 +102,74 @@ export interface RateLimitInfo {
   remaining: number;
   limit: number;
   resetAt: string;
+}
+
+export interface AvailabilityInfo {
+  available: boolean;
+  source: string;
+  reason?: string;
+}
+
+export interface SnapshotStatus {
+  generatedAt: string;
+  generatedBy: 'seed' | 'local' | 'github-actions';
+  dataMode: 'public' | 'authenticated';
+}
+
+export interface SiteManifest {
+  name: string;
+  tagline: string;
+  description: string;
+}
+
+export interface OverviewRepoSnapshot {
+  repo: RepositoryRef;
+  health: RepoHealth;
+  stats: {
+    totalCommitsTracked: number;
+    contributorsTracked: number;
+    languagesTracked: number;
+    latestWorkflowConclusion: string | null;
+    openAlertCount: number;
+  };
+  availability: {
+    repository: AvailabilityInfo;
+    commits: AvailabilityInfo;
+    workflowRuns: AvailabilityInfo;
+    languages: AvailabilityInfo;
+    contributors: AvailabilityInfo;
+    dependabotAlerts: AvailabilityInfo;
+  };
+}
+
+export interface SnapshotManifest {
+  site: SiteManifest;
+  status: SnapshotStatus;
+  featuredRepo: string;
+  routes: {
+    promo: string[];
+    app: string[];
+  };
+  repoFiles: Record<string, string>;
+}
+
+export interface SnapshotOverview {
+  status: SnapshotStatus;
+  featuredRepo: string;
+  repos: OverviewRepoSnapshot[];
+}
+
+export interface RepoSnapshotDetail {
+  status: SnapshotStatus;
+  featured: boolean;
+  repo: RepositoryRef;
+  health: RepoHealth;
+  commits: CommitSummary[];
+  workflowRuns: WorkflowRun[];
+  alerts: DependabotAlert[];
+  languages: LanguageBreakdown;
+  contributors: ContributorSummary[];
+  availability: OverviewRepoSnapshot['availability'];
 }
 
 export const LANGUAGE_COLORS: Record<string, string> = {

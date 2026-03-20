@@ -38,14 +38,14 @@ class NotificationService {
   }
 
   notifyCIFailure(repoName: string, workflowName: string) {
-    this.notify(`❌ Build Failure: ${repoName}`, {
+    this.notify(`Build Failure: ${repoName}`, {
       body: `Workflow "${workflowName}" failed. Check it now.`,
       tag: `ci-fail-${repoName}`,
     });
   }
 
   notifySecurityAlert(repoName: string, severity: string) {
-    this.notify(`⚠️ Security Alert: ${repoName}`, {
+    this.notify(`Security Alert: ${repoName}`, {
       body: `New ${severity} vulnerability detected by Dependabot.`,
       tag: `sec-alert-${repoName}`,
     });

@@ -7,15 +7,19 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "data:sync": "node scripts/sync-snapshots.mjs",
+    "dev:snapshot": "npm run data:sync && npm run dev",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit": "bun run scripts/audit.ts"
+    "audit": "node scripts/audit.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@octokit/rest": "^22.0.1",
+    "@fontsource/manrope": "^5.2.6",
+    "@fontsource/space-grotesk": "^5.2.6",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -75,7 +79,7 @@
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
-    "@vitejs/plugin-react-swc": "^3.11.0",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
@@ -87,6 +91,6 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^8.0.0",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.0"
   }
 }

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/useApp';
 import { useWorkflowRuns, useDependabotAlerts } from '@/hooks/useGitHub';
 import { calculateHealth, formatRelativeTime } from '@/utils/health';
 import { Shield, Activity, CheckCircle2, AlertTriangle, XCircle, BarChart3, Clock, Star } from 'lucide-react';
