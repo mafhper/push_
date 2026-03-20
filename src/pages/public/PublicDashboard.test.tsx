@@ -6,16 +6,29 @@ import { createOverview } from "@/test/factories";
 
 vi.mock("@/hooks/useGitHubPublic", () => ({
   usePublicDashboardSnapshot: vi.fn(),
+  usePublicProfileRepos: vi.fn(),
+}));
+
+vi.mock("@/contexts/usePublicRuntime", () => ({
+  usePublicRuntime: vi.fn(),
 }));
 
 describe("PublicDashboard", () => {
   it("renders real metrics only", async () => {
-    const { usePublicDashboardSnapshot } = await import("@/hooks/useGitHubPublic");
+    const { usePublicDashboardSnapshot, usePublicProfileRepos } = await import("@/hooks/useGitHubPublic");
+    const { usePublicRuntime } = await import("@/contexts/usePublicRuntime");
+    vi.mocked(usePublicRuntime).mockReturnValue({
+      mode: "snapshot",
+      username: null,
+      setUsername: vi.fn(),
+      clearUsername: vi.fn(),
+    } as never);
     vi.mocked(usePublicDashboardSnapshot).mockReturnValue({
       data: createOverview(),
       isLoading: false,
       error: null,
     } as never);
+    vi.mocked(usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
 
     render(
       <MemoryRouter>
@@ -29,12 +42,20 @@ describe("PublicDashboard", () => {
   });
 
   it("renders an empty state when no repositories are tracked", async () => {
-    const { usePublicDashboardSnapshot } = await import("@/hooks/useGitHubPublic");
+    const { usePublicDashboardSnapshot, usePublicProfileRepos } = await import("@/hooks/useGitHubPublic");
+    const { usePublicRuntime } = await import("@/contexts/usePublicRuntime");
+    vi.mocked(usePublicRuntime).mockReturnValue({
+      mode: "snapshot",
+      username: null,
+      setUsername: vi.fn(),
+      clearUsername: vi.fn(),
+    } as never);
     vi.mocked(usePublicDashboardSnapshot).mockReturnValue({
       data: createOverview({ repos: [] }),
       isLoading: false,
       error: null,
     } as never);
+    vi.mocked(usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
 
     render(
       <MemoryRouter>

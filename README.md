@@ -1,8 +1,8 @@
-# Push_Underline
+# Push_
 
 **Command your GitHub code frontier.**
 
-Push_Underline (`Push_`) is a personal dashboard for GitHub with two distinct runtimes:
+Push_ is a personal dashboard for GitHub with two distinct runtimes:
 - `GitHub Pages`: public, static, snapshot-only
 - `localhost`: local secure mode with memory-only GitHub token access for repository discovery and selection
 

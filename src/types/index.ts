@@ -112,7 +112,7 @@ export interface AvailabilityInfo {
 
 export interface SnapshotStatus {
   generatedAt: string;
-  generatedBy: 'seed' | 'local' | 'github-actions';
+  generatedBy: 'seed' | 'local' | 'github-actions' | 'public-api';
   dataMode: 'public' | 'authenticated';
 }
 

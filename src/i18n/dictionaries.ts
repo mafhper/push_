@@ -1,6 +1,6 @@
 export const dict = {
   en: {
-    appName: 'Push_Underline',
+    appName: 'Push_',
     search: 'Search GitHub user',
     repos: 'Repositories',
     followers: 'Followers',
@@ -98,7 +98,7 @@ export const dict = {
     requestPermission: 'Allow Access',
   },
   pt: {
-    appName: 'Push_Underline',
+    appName: 'Push_',
     search: 'Buscar usuário GitHub',
     repos: 'Repositórios',
     followers: 'Seguidores',
@@ -196,7 +196,7 @@ export const dict = {
     requestPermission: 'Permitir Acesso',
   },
   es: {
-    appName: 'Push_Underline',
+    appName: 'Push_',
     search: 'Buscar usuario GitHub',
     repos: 'Repositorios',
     followers: 'Seguidores',

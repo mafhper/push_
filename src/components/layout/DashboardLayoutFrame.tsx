@@ -7,17 +7,24 @@ function AppFooter({ modeLabel }: { modeLabel: string }) {
   const syncLabel =
     modeLabel === "local-authenticated"
       ? "LOCAL_SESSION: AUTHENTICATED"
+      : modeLabel === "public-profile"
+        ? "SOURCE: PUBLIC GITHUB API"
       : modeLabel === "authenticated-snapshot"
         ? "LAST_SYNC: AUTHENTICATED SNAPSHOT"
         : "LAST_SYNC: STATIC SNAPSHOT";
-  const clusterLabel = modeLabel === "local-authenticated" ? "CLUSTER: BROWSER-GH-API" : "CLUSTER: GH-PAGES-EDGE-1";
+  const clusterLabel =
+    modeLabel === "local-authenticated"
+      ? "CLUSTER: BROWSER-GH-API"
+      : modeLabel === "public-profile"
+        ? "CLUSTER: API.GITHUB.COM"
+        : "CLUSTER: GH-PAGES-EDGE-1";
 
   return (
-    <footer className="terminal-footer full-bleed mt-auto py-12">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="wordmark-ghost text-[28vw] leading-none">PUSH_</div>
+    <footer className="terminal-footer full-bleed mt-auto min-h-[16rem] py-12">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center overflow-hidden">
+        <div className="wordmark-ghost translate-y-[18%] text-[28vw] leading-none">PUSH_</div>
       </div>
-      <div className="editorial-frame relative flex flex-col justify-between gap-8 px-6 md:flex-row md:items-end md:px-10">
+      <div className="editorial-frame relative flex min-h-[10rem] flex-col justify-between gap-8 px-6 md:flex-row md:items-end md:px-10">
         <div className="space-y-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/55">
             2026 PUSH_ SEMANTIC TERMINAL. ALL SYSTEMS OPERATIONAL.
@@ -123,7 +130,7 @@ export function DashboardLayoutFrame({
           <div className="flex items-center justify-between gap-4 px-6 py-4 md:px-8">
             <div className="space-y-1">
               <p className="font-headline text-xl font-bold tracking-tight text-foreground">
-                {SITE_NAME}_<span className="text-primary">Terminal</span>
+                {SITE_NAME} <span className="text-primary">Terminal</span>
               </p>
             </div>
             <div className="flex items-center gap-3">
