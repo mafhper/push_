@@ -1,10 +1,13 @@
-import { Link, useParams } from "react-router-dom";
-import { useRepoSnapshot } from "@/hooks/useGitHub";
-import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import type { ReactNode } from "react";
+import { useParams } from "react-router-dom";
+import { ExternalLink, History } from "lucide-react";
+import { RepositoryHero } from "@/components/repository/RepositoryHero";
+import { WorkflowPulsePanel } from "@/components/repository/WorkflowPulsePanel";
+import { EmptyPanel, StatusPill } from "@/components/site/TerminalPrimitives";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
-import { ArrowLeft, ExternalLink, Github, History, Shield, Star } from "lucide-react";
-import { LANGUAGE_COLORS, type WorkflowRun } from "@/types";
+import { useRepoSnapshot } from "@/hooks/useGitHub";
+import { LANGUAGE_COLORS } from "@/types";
 
 export default function RepoDetail() {
   const { owner = "", repo = "" } = useParams();
@@ -15,108 +18,98 @@ export default function RepoDetail() {
   const modeLabel = data?.status.dataMode === "authenticated" || isLocalAuthenticated ? "local auth" : "snapshot";
 
   if (isLoading) {
-    return <EmptyPanel title="Loading repository detail" body="Resolving workflow history, languages, contributors and alert availability." />;
+    return <EmptyPanel title="Loading repository" body="Loading workflows, languages, commits, and alerts." />;
   }
 
   if (!data || error) {
-    return <EmptyPanel title="Snapshot detail unavailable" body="The repository detail file was not found in the current snapshot dataset." />;
+    return <EmptyPanel title="Repository unavailable" body="Repository data was not found in the current snapshot." />;
   }
 
   const languageEntries = Object.entries(data.languages);
   const totalLanguageBytes = languageEntries.reduce((sum, [, value]) => sum + value, 0);
-  const pipelineBars: WorkflowRun[] = data.workflowRuns.slice(0, 14);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between gap-6">
-        <div className="space-y-4">
-          <Link to="/app" className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/55 hover:text-primary">
-            <ArrowLeft size={12} />
-            Voltar
-          </Link>
-          <div>
-            <div className="mb-4 flex items-center gap-3">
-              <StatusPill tone={modeLabel === "local auth" ? "warning" : "neutral"}>{modeLabel}</StatusPill>
-              <StatusPill tone={data.health.status === "healthy" ? "success" : data.health.status === "warning" ? "warning" : "critical"}>
-                {data.health.status}
-              </StatusPill>
+    <div className="space-y-6">
+      <RepositoryHero
+        backLabel="Back"
+        sourceLabel={modeLabel === "local auth" ? "Local data" : "Snapshot"}
+        sourceTone={modeLabel === "local auth" ? "warning" : "neutral"}
+        healthLabel={data.health.status === "healthy" ? "Healthy" : data.health.status === "warning" ? "Watch" : "Critical"}
+        healthTone={data.health.status === "healthy" ? "success" : data.health.status === "warning" ? "warning" : "critical"}
+        name={data.repo.name}
+        description={data.repo.description || "Repository overview and live telemetry."}
+        repoUrl={data.repo.htmlUrl}
+        stars={data.repo.stars}
+        score={data.health.score}
+        workflowSuccessRate={data.health.workflowSuccessRate}
+        openAlerts={data.health.dependabotOpenCount}
+        criticalAlerts={data.health.dependabotCriticalCount}
+        failedRuns7d={data.health.failedRuns7d}
+        stalenessDays={data.health.stalenessDays}
+        lastPushAt={data.repo.lastPushAt}
+        runs={data.workflowRuns}
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[1.48fr_1fr] xl:items-start">
+        <WorkflowPulsePanel
+          runs={data.workflowRuns}
+          title="Pipeline"
+          body={`${data.workflowRuns.length} recent workflow runs in the current ${modeLabel === "local auth" ? "session" : "snapshot"}.`}
+          historyLabel={modeLabel === "local auth" ? "Local runs" : "Snapshot runs"}
+          emptyMessage={`No workflow runs are available for this repository in the current ${modeLabel === "local auth" ? "session" : "snapshot"}.`}
+        />
+
+        <div className="space-y-6">
+          <section className="rounded-[2rem] ops-surface p-6">
+            <div className="mb-6">
+              <p className="terminal-label">Alerts</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">Open Alerts</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {data.alerts.length > 0 ? `${data.alerts.length} alert${data.alerts.length > 1 ? "s" : ""} still need review.` : "No open alerts right now."}
+              </p>
             </div>
-            <h1 className="text-fluid-4xl font-black tracking-tighter">{data.repo.name}</h1>
-            <p className="mt-3 max-w-3xl text-lg leading-8 text-muted-foreground">
-              {data.repo.description || "Semantic command layer for published repository telemetry."}
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <a href={data.repo.htmlUrl} className="button-primary-terminal px-5 py-3 text-sm">
-            <Github size={15} />
-            Open Repo
-          </a>
-          <div className="rounded-2xl surface-panel px-5 py-3">
-            <p className="terminal-label">Stars</p>
-            <p className="mt-2 inline-flex items-center gap-2 text-lg font-bold"><Star size={15} className="text-secondary" />{data.repo.stars}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
-        <section className="rounded-3xl surface-panel p-6">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <SectionHeading
-              title="CI/CD Pipeline History"
-              body={`${data.workflowRuns.length} workflow executions available in the current ${modeLabel === "local auth" ? "authenticated session" : "snapshot"}.`}
-            />
-            <div className="flex gap-2">
-              <StatusPill tone="success">Success</StatusPill>
-              <StatusPill tone="critical">Failed</StatusPill>
-              <StatusPill tone="warning">Warning</StatusPill>
+            <div className="space-y-3">
+              {data.alerts.length > 0 ? (
+                data.alerts.slice(0, 3).map((alert) => (
+                  <a key={alert.id} href={alert.htmlUrl} className="block rounded-[1.35rem] ops-surface-soft px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-sm font-semibold text-foreground">{alert.summary}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {alert.packageName} / {alert.ecosystem}
+                        </p>
+                      </div>
+                      <StatusPill tone={alert.severity === "critical" ? "critical" : alert.severity === "high" ? "warning" : "neutral"}>
+                        {alert.severity}
+                      </StatusPill>
+                    </div>
+                  </a>
+                ))
+              ) : (
+                <div className="rounded-[1.35rem] ops-surface-soft px-4 py-4 text-sm text-muted-foreground">
+                  Dependabot data is unavailable or there are no open issues.
+                </div>
+              )}
             </div>
-          </div>
 
-          <div className="rounded-3xl bg-black/18 p-5">
-            {pipelineBars.length > 0 ? (
-              <>
-                <div className="flex min-h-[12rem] items-end gap-2">
-                  {pipelineBars.map((run) => {
-                    const conclusion = run.conclusion ?? null;
-                    const height = Math.max(18, Math.min(120, Math.round(run.durationMs / 1000)));
-                    const bg =
-                      conclusion === "success"
-                        ? "bg-primary"
-                        : conclusion === "failure"
-                          ? "bg-destructive/70"
-                          : conclusion === "cancelled"
-                            ? "bg-secondary"
-                            : "bg-white/20";
+            <a href={`${data.repo.htmlUrl}/security/dependabot`} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+              Open on GitHub
+              <ExternalLink size={14} />
+            </a>
+          </section>
 
-                    return <div key={run.id} className={`w-full rounded-t-sm ${bg}`} style={{ height }} />;
-                  })}
-                </div>
-                <div className="mt-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/35">
-                  <span>Snapshot history</span>
-                  <span>{data.workflowRuns[0]?.id ? `Latest run #${data.workflowRuns[0].id}` : "No workflow data"}</span>
-                </div>
-              </>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/8 px-4 py-10 text-sm text-muted-foreground">
-                No workflow executions are available for this repository in the current {modeLabel === "local auth" ? "session" : "snapshot"}.
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="space-y-6">
-          <div className="rounded-3xl surface-panel p-6">
-            <h2 className="font-headline text-xl font-bold">Repository Stats</h2>
+          <section className="rounded-[2rem] ops-surface p-6">
+            <p className="terminal-label">Repository</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">Repository</h2>
             <div className="mt-6 space-y-5">
               <DetailRow label="License" value={data.repo.license ?? "Unavailable"} highlighted={Boolean(data.repo.license)} />
               <DetailRow label="Main Branch" value={data.repo.defaultBranch} highlighted />
-              <DetailRow label="Repository Size" value={`${(data.repo.size / 1024).toFixed(1)} MB`} />
+              <DetailRow label="Size" value={`${(data.repo.size / 1024).toFixed(1)} MB`} />
             </div>
 
             <div className="mt-8">
-              <p className="terminal-label">Language Breakdown</p>
+              <p className="terminal-label">Language Mix</p>
               <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/5">
                 {languageEntries.map(([language, bytes]) => {
                   const width = totalLanguageBytes > 0 ? `${(bytes / totalLanguageBytes) * 100}%` : "0%";
@@ -135,89 +128,55 @@ export default function RepoDetail() {
                 ))}
               </div>
             </div>
+          </section>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.48fr_1fr] xl:items-start">
+        <section className="rounded-[2rem] ops-surface p-6">
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <p className="terminal-label">Recent Commits</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">Recent Commits</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {modeLabel === "local auth" ? "Latest commits from the authenticated session." : "Latest commits from the snapshot."}
+              </p>
+            </div>
+            <History size={16} className="text-foreground/30" />
           </div>
 
-          <div className="rounded-3xl surface-panel p-6">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <h2 className="font-headline text-xl font-bold">Recent Pushes</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {modeLabel === "local auth" ? "Latest commit activity resolved directly from the authenticated GitHub session." : "Latest commit activity captured by the snapshot."}
-                </p>
-              </div>
-              <History size={16} className="text-foreground/30" />
-            </div>
-
-            <div className="space-y-5">
-              {(data.commits.length ? data.commits.slice(0, 4) : []).map((commit) => (
-                <a key={commit.sha} href={commit.htmlUrl} className="flex items-start gap-4">
+          <div className="space-y-3">
+            {data.commits.length > 0 ? (
+              data.commits.slice(0, 5).map((commit) => (
+                <a key={commit.sha} href={commit.htmlUrl} className="flex items-start gap-4 rounded-[1.35rem] ops-surface-soft px-4 py-4">
                   <div className="mt-1 h-10 w-10 overflow-hidden rounded-full bg-white/6">
                     {commit.authorAvatar ? <img src={commit.authorAvatar} alt={commit.authorLogin} className="h-full w-full object-cover" /> : null}
                   </div>
                   <div className="min-w-0">
-                    <p className="line-clamp-2 font-semibold">{commit.message}</p>
+                    <p className="line-clamp-2 font-semibold text-foreground">{commit.message}</p>
                     <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/35">
                       {commit.authorLogin} | {commit.sha.slice(0, 7)}
                     </p>
                   </div>
                 </a>
-              ))}
-              {data.commits.length === 0 ? <p className="text-sm text-muted-foreground">No commit data is available for this repository yet.</p> : null}
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
-        <section className="rounded-3xl surface-panel p-6">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div>
-              <h2 className="font-headline text-xl font-bold">Dependabot Alerts</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {data.alerts.length > 0 ? `${data.alerts.length} vulnerabilities identified in manifest files.` : "No open alerts in the current snapshot."}
-              </p>
-            </div>
-            <a
-              href={`${data.repo.htmlUrl}/security/dependabot`}
-              className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary hover:underline"
-            >
-              GitHub Advisor
-            </a>
-          </div>
-
-          <div className="space-y-4">
-            {data.alerts.length > 0 ? data.alerts.map((alert) => (
-              <a key={alert.id} href={alert.htmlUrl} className="block rounded-2xl bg-black/18 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-semibold">{alert.summary}</p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Dependency: {alert.packageName} | {alert.ecosystem}
-                    </p>
-                  </div>
-                  <StatusPill tone={alert.severity === "critical" ? "critical" : alert.severity === "high" ? "warning" : "neutral"}>
-                    {alert.severity}
-                  </StatusPill>
-                </div>
-              </a>
-            )) : (
-              <div className="rounded-2xl bg-black/18 p-4 text-sm text-muted-foreground">Dependabot data is unavailable or there are no open issues.</div>
+              ))
+            ) : (
+              <div className="rounded-[1.35rem] ops-surface-soft px-4 py-4 text-sm text-muted-foreground">No commit data is available yet.</div>
             )}
           </div>
         </section>
 
-        <section className="rounded-3xl surface-panel p-6">
-          <div className="mb-6 flex items-center gap-3">
-            <Shield size={16} className="text-primary" />
-            <h2 className="font-headline text-xl font-bold">Security Surface</h2>
-          </div>
-          <div className="rounded-2xl bg-black/18 p-4">
+        <section className="rounded-[2rem] ops-surface p-6">
+          <p className="terminal-label">Security</p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">Security</h2>
+
+          <div className="mt-6 rounded-[1.35rem] ops-surface-soft p-4">
             <p className="text-sm font-semibold">
-              {data.availability.dependabotAlerts.available ? "Dependabot dataset available" : "Dependabot unavailable"}
+              {data.availability.dependabotAlerts.available ? "Dependabot available" : "Dependabot unavailable"}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               {data.availability.dependabotAlerts.available
-                ? `Security endpoint resolved in the current ${modeLabel === "local auth" ? "authenticated session" : "snapshot"}.`
+                ? `Security data loaded from the current ${modeLabel === "local auth" ? "session" : "snapshot"}.`
                 : data.availability.dependabotAlerts.reason}
             </p>
           </div>
@@ -228,7 +187,11 @@ export default function RepoDetail() {
             <DetailRow label="Last Push" value={new Date(data.repo.lastPushAt).toLocaleDateString()} />
             <DetailRow
               label="External"
-              value={<a href={data.repo.htmlUrl} className="inline-flex items-center gap-2 text-primary hover:underline">Open on GitHub <ExternalLink size={13} /></a>}
+              value={
+                <a href={data.repo.htmlUrl} className="inline-flex items-center gap-2 text-primary hover:underline">
+                  Open on GitHub <ExternalLink size={13} />
+                </a>
+              }
             />
           </div>
         </section>
@@ -243,13 +206,13 @@ function DetailRow({
   highlighted = false,
 }: {
   label: string;
-  value: React.ReactNode;
+  value: ReactNode;
   highlighted?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={highlighted ? "rounded-lg bg-primary/12 px-3 py-1 text-sm font-semibold text-primary" : "text-sm font-semibold"}>{value}</span>
+      <span className={highlighted ? "rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary" : "text-sm font-semibold text-foreground"}>{value}</span>
     </div>
   );
 }
