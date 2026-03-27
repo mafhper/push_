@@ -14,6 +14,7 @@ function normalizeUsername(value: string) {
 export default function PublicDashboard() {
   const { mode, username, setUsername, clearUsername } = usePublicRuntime();
   const [usernameInput, setUsernameInput] = useState(username ?? "");
+  const [renderTimestamp] = useState(() => Date.now());
   const snapshotQuery = usePublicDashboardSnapshot();
   const publicProfileQuery = usePublicProfileRepos();
 
@@ -50,7 +51,7 @@ export default function PublicDashboard() {
     const totalOpenIssues = repos.reduce((sum, repo) => sum + repo.openIssues, 0);
     const updatedThisMonth = repos.filter((repo) => {
       if (!repo.updatedAt) return false;
-      return Date.now() - new Date(repo.updatedAt).getTime() < 30 * 86400000;
+      return renderTimestamp - new Date(repo.updatedAt).getTime() < 30 * 86400000;
     }).length;
 
     return (
