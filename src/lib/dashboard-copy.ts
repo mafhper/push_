@@ -1,13 +1,38 @@
 import type { DictKey } from "@/i18n";
-import type { DiagnosticsRow } from "@/components/dashboard/RepositoryDiagnosticsList";
+import type { DiagnosticsRow, DiagnosticsSignal } from "@/components/dashboard/RepositoryDiagnosticsList";
 import type { ShowcaseItem } from "@/components/dashboard/RepositoryShowcase";
 import type { OverviewRepoSnapshot, RepositoryRef } from "@/types";
 
 type Translate = (key: DictKey, values?: Record<string, string | number>) => string;
 
+function getAttentionState(entry: OverviewRepoSnapshot, t: Translate) {
+  const openPullRequests = entry.stats.openPullRequestCount ?? 0;
+
+  if (entry.health.dependabotOpenCount > 0 || entry.health.status === "critical" || entry.stats.latestWorkflowConclusion === "failure") {
+    return {
+      tone: "critical" as const,
+      label: t("needsAction"),
+    };
+  }
+
+  if (openPullRequests > 0 || entry.health.status === "warning" || entry.health.stalenessDays > 30) {
+    return {
+      tone: "warning" as const,
+      label: openPullRequests > 0 ? t("inReview") : t("watchClosely"),
+    };
+  }
+
+  return {
+    tone: "success" as const,
+    label: t("stable"),
+  };
+}
+
 export function buildSnapshotShowcaseItems(entries: OverviewRepoSnapshot[], t: Translate, relativeTime: (value: string) => string): ShowcaseItem[] {
   return entries.map((entry) => {
-    const tone = entry.health.status === "critical" ? "critical" : entry.health.status === "warning" ? "warning" : "success";
+    const attentionState = getAttentionState(entry, t);
+    const tone = attentionState.tone;
+    const openPullRequests = entry.stats.openPullRequestCount ?? 0;
     const workflowLabel =
       entry.stats.latestWorkflowConclusion === "failure"
         ? t("workflowFailing")
@@ -16,6 +41,7 @@ export function buildSnapshotShowcaseItems(entries: OverviewRepoSnapshot[], t: T
           : t("noWorkflowSignal");
     const staleLabel = entry.health.stalenessDays > 0 ? t("staleDaysShort", { count: entry.health.stalenessDays }) : t("fresh");
     const alertLabel = entry.health.dependabotOpenCount > 0 ? t("alertsCountLabel", { count: entry.health.dependabotOpenCount }) : t("noAlertsLabel");
+    const prLabel = openPullRequests > 0 ? t("openPullRequestsLabel", { count: openPullRequests }) : t("noOpenPullRequestsLabel");
 
     return {
       id: entry.repo.fullName,
@@ -28,30 +54,50 @@ export function buildSnapshotShowcaseItems(entries: OverviewRepoSnapshot[], t: T
       language: entry.repo.language ?? "untyped",
       imageLanguage: entry.repo.language,
       lastActivityLabel: t("lastMovement", { value: relativeTime(entry.repo.lastPushAt) }),
-      statusLabel: tone === "critical" ? t("needsAction") : tone === "warning" ? t("watchClosely") : t("stable"),
+      statusLabel: attentionState.label,
       statusTone: tone,
       scoreLabel: t("health"),
       scoreValue: `${entry.health.score}%`,
-      summary: `${alertLabel} · ${workflowLabel.toLowerCase()} · ${staleLabel}.`,
+      summary: `${alertLabel} · ${prLabel} · ${workflowLabel.toLowerCase()} · ${staleLabel}.`,
       spotlightMetrics: [
         { label: t("openAlertsLabel"), value: `${entry.health.dependabotOpenCount}`, tone: entry.health.dependabotOpenCount > 0 ? "critical" : "success" },
+        { label: t("openPullRequests"), value: `${openPullRequests}`, tone: openPullRequests > 0 ? "warning" : "neutral" },
         { label: t("workflow"), value: entry.stats.latestWorkflowConclusion ?? t("unavailable"), tone: entry.stats.latestWorkflowConclusion === "failure" ? "critical" : entry.stats.latestWorkflowConclusion === "success" ? "success" : "neutral" },
         { label: t("staleDays"), value: `${entry.health.stalenessDays}`, tone: entry.health.stalenessDays > 30 ? "warning" : "success" },
-        { label: t("lastPushLabel"), value: relativeTime(entry.repo.lastPushAt), tone: entry.health.stalenessDays > 30 ? "warning" : "success" },
       ],
     };
   });
 }
 
 export function buildSnapshotDiagnosticsRows(entries: OverviewRepoSnapshot[], t: Translate, relativeTime: (value: string) => string): DiagnosticsRow[] {
+  const workflowCoverageUniform =
+    entries.length > 0 &&
+    entries.every((entry) => entry.availability.workflowRuns.available) &&
+    new Set(entries.map((entry) => entry.stats.totalCommitsTracked)).size === 1;
+
   return entries.map((entry, index) => {
-    const tone = entry.health.status === "critical" ? "critical" : entry.health.status === "warning" ? "warning" : "success";
+    const attentionState = getAttentionState(entry, t);
+    const tone = attentionState.tone;
+    const openPullRequests = entry.stats.openPullRequestCount ?? 0;
     const workflowValue =
       entry.stats.latestWorkflowConclusion === "failure"
         ? t("failing")
         : entry.stats.latestWorkflowConclusion === "success"
           ? t("passing")
           : t("noSignal");
+    const signals: DiagnosticsSignal[] = [
+      { label: t("health"), value: `${entry.health.score}%`, tone },
+      { label: t("openPullRequests"), value: `${openPullRequests}`, tone: openPullRequests > 0 ? "warning" : "neutral" },
+      { label: t("workflow"), value: workflowValue, tone: workflowValue === t("failing") ? "critical" : workflowValue === t("passing") ? "success" : "neutral" },
+    ];
+
+    if (!workflowCoverageUniform) {
+      signals.push({
+        label: t("coverage"),
+        value: entry.availability.workflowRuns.available ? t("commitsCountLabel", { count: entry.stats.totalCommitsTracked }) : t("workflowUnavailable"),
+        tone: entry.availability.workflowRuns.available ? "neutral" : "warning",
+      });
+    }
 
     return {
       id: entry.repo.fullName,
@@ -61,24 +107,26 @@ export function buildSnapshotDiagnosticsRows(entries: OverviewRepoSnapshot[], t:
       owner: entry.repo.owner,
       defaultBranch: entry.repo.defaultBranch,
       description: entry.repo.description,
-      statusLabel: tone === "critical" ? t("needsAction") : tone === "warning" ? t("watchClosely") : t("stable"),
+      statusLabel: attentionState.label,
       statusTone: tone,
       activityLabel: relativeTime(entry.repo.lastPushAt),
       summaryLabel:
         entry.health.dependabotOpenCount > 0
           ? t("alertsOpenLabel", { count: entry.health.dependabotOpenCount })
+          : openPullRequests > 0
+            ? t("pullRequestsOpenLabel", { count: openPullRequests })
+          : entry.stats.latestWorkflowConclusion === "failure"
+            ? t("workflowFailing")
           : entry.health.stalenessDays > 30
             ? t("staleDaysShort", { count: entry.health.stalenessDays })
             : t("noUrgentSignal"),
-      signals: [
-        { label: t("health"), value: `${entry.health.score}%`, tone },
-        { label: t("workflow"), value: workflowValue, tone: workflowValue === t("failing") ? "critical" : workflowValue === t("passing") ? "success" : "neutral" },
-        {
-          label: t("coverage"),
-          value: entry.availability.workflowRuns.available ? t("commitsCountLabel", { count: entry.stats.totalCommitsTracked }) : t("workflowUnavailable"),
-          tone: entry.availability.workflowRuns.available ? "neutral" : "warning",
-        },
-      ],
+      summaryTone:
+        entry.health.dependabotOpenCount > 0
+          ? "critical"
+          : openPullRequests > 0 || entry.stats.latestWorkflowConclusion === "failure" || tone === "warning"
+            ? "warning"
+            : "neutral",
+      signals,
     };
   });
 }

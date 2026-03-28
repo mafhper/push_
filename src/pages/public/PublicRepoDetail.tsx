@@ -53,11 +53,13 @@ export default function PublicRepoDetail() {
         score={data.health.score}
         workflowSuccessRate={data.health.workflowSuccessRate}
         openAlerts={data.health.dependabotOpenCount}
+        openPullRequests={data.pullRequests?.length ?? 0}
         criticalAlerts={data.health.dependabotCriticalCount}
         failedRuns7d={data.health.failedRuns7d}
         stalenessDays={data.health.stalenessDays}
         lastPushAt={data.repo.lastPushAt}
         runs={data.workflowRuns}
+        pullRequests={data.pullRequests}
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.48fr_1fr] xl:items-start">

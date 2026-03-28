@@ -29,9 +29,17 @@ export default function Dashboard() {
   const repos = data.repos;
   const prioritizedRepos = sortSnapshotRepos(repos);
   const totalAlerts = repos.reduce((sum, entry) => sum + entry.health.dependabotOpenCount, 0);
+  const totalOpenPullRequests = repos.reduce((sum, entry) => sum + (entry.stats.openPullRequestCount ?? 0), 0);
   const averageScore = repos.length > 0 ? Math.round(repos.reduce((sum, entry) => sum + entry.health.score, 0) / repos.length) : 0;
   const activeCount = repos.filter((entry) => !entry.repo.archived).length;
   const reposWithWorkflowData = repos.filter((entry) => entry.availability.workflowRuns.available).length;
+  const failingRepos = repos.filter((entry) => entry.stats.latestWorkflowConclusion === "failure").length;
+  const attentionRepos = repos.filter((entry) =>
+    entry.health.status !== "healthy" ||
+    entry.health.dependabotOpenCount > 0 ||
+    (entry.stats.openPullRequestCount ?? 0) > 0 ||
+    entry.stats.latestWorkflowConclusion === "failure",
+  ).length;
 
   return (
     <div className="space-y-10">
@@ -50,16 +58,37 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-3 xl:grid-cols-4">
-          <CompactMetric label={t("trackedRepos")} value={repos.length} hint={isLocalAuthenticated ? `${selectedRepos.length} ${t("selected")}` : t("publishedSnapshot")} />
-          <CompactMetric label={t("activeRepos")} value={activeCount} hint={t("nonArchived")} />
-          <CompactMetric label={t("openAlertsLabel")} value={totalAlerts} hint={t("dependabotTotal")} tone={totalAlerts > 0 ? "warning" : "success"} />
+          <CompactMetric label={t("reposNeedingAttention")} value={attentionRepos} hint={t("attentionQueueHint")} tone={attentionRepos > 0 ? "critical" : "success"} />
+          <CompactMetric label={t("openAlertsLabel")} value={totalAlerts} hint={t("dependabotTotal")} tone={totalAlerts > 0 ? "critical" : "success"} />
+          <CompactMetric label={t("openPullRequests")} value={totalOpenPullRequests} hint={isLocalAuthenticated ? t("reviewQueueHint") : t("localOnlySignalHint")} tone={totalOpenPullRequests > 0 ? "warning" : "neutral"} />
           <CompactMetric
-            label={t("averageHealth")}
-            value={`${averageScore}%`}
+            label={t("failingWorkflows")}
+            value={failingRepos}
             hint={`${reposWithWorkflowData} ${t("reposWithWorkflowData")}`}
-            tone={averageScore >= 70 ? "success" : "warning"}
+            tone={failingRepos > 0 ? "critical" : averageScore >= 70 ? "success" : "warning"}
           />
         </div>
+
+        {(attentionRepos > 0 || totalOpenPullRequests > 0 || totalAlerts > 0 || failingRepos > 0) ? (
+          <div className="rounded-[1.9rem] border border-destructive/18 bg-[linear-gradient(135deg,rgba(244,122,97,0.1),rgba(9,9,9,0.96)_38%,rgba(175,141,17,0.12))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+            <p className="terminal-label text-destructive/80">{t("attentionBannerLabel")}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <h3 className="text-2xl font-black tracking-tight text-foreground">{t("attentionBannerTitle")}</h3>
+              <StatusPill tone={attentionRepos > 0 ? "critical" : totalOpenPullRequests > 0 || totalAlerts > 0 ? "warning" : "success"}>
+                {attentionRepos > 0 ? t("needsAction") : t("watchClosely")}
+              </StatusPill>
+            </div>
+            <p className="mt-3 max-w-4xl text-sm leading-6 text-foreground/72">
+              {isLocalAuthenticated ? t("localAttentionBannerBody") : t("publishedAttentionBannerBody")}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <AttentionChip label={t("openAlertsLabel")} value={totalAlerts} tone={totalAlerts > 0 ? "critical" : "neutral"} />
+              <AttentionChip label={t("openPullRequests")} value={totalOpenPullRequests} tone={totalOpenPullRequests > 0 ? "warning" : "neutral"} />
+              <AttentionChip label={t("failingWorkflows")} value={failingRepos} tone={failingRepos > 0 ? "critical" : "neutral"} />
+              <AttentionChip label={t("reposNeedingAttention")} value={attentionRepos} tone={attentionRepos > 0 ? "critical" : "neutral"} />
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-6">
@@ -170,15 +199,43 @@ function CompactMetric({
   label: string;
   value: string | number;
   hint: string;
-  tone?: "neutral" | "success" | "warning";
+  tone?: "neutral" | "success" | "warning" | "critical";
 }) {
   return (
-    <div className={cn("rounded-[1.35rem] ops-surface-soft px-4 py-4", tone === "success" && "shadow-[inset_0_0_0_1px_rgba(0,255,65,0.12)]", tone === "warning" && "shadow-[inset_0_0_0_1px_rgba(175,141,17,0.16)]")}>
+    <div className={cn(
+      "rounded-[1.35rem] ops-surface-soft px-4 py-4",
+      tone === "success" && "shadow-[inset_0_0_0_1px_rgba(0,255,65,0.12)]",
+      tone === "warning" && "shadow-[inset_0_0_0_1px_rgba(175,141,17,0.16)]",
+      tone === "critical" && "shadow-[inset_0_0_0_1px_rgba(244,122,97,0.2)]",
+    )}>
       <div className="flex items-center justify-between gap-3">
         <p className="terminal-label">{label}</p>
-        <p className={cn("text-2xl font-black tracking-tight", tone === "success" && "text-primary", tone === "warning" && "text-secondary")}>{value}</p>
+        <p className={cn("text-2xl font-black tracking-tight", tone === "success" && "text-primary", tone === "warning" && "text-secondary", tone === "critical" && "text-destructive")}>{value}</p>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+function AttentionChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "neutral" | "warning" | "critical";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-full px-3 py-2 font-mono text-[11px] uppercase tracking-[0.2em]",
+        tone === "critical" && "bg-destructive/[0.14] text-destructive shadow-[inset_0_0_0_1px_rgba(244,122,97,0.2)]",
+        tone === "warning" && "bg-secondary/[0.14] text-secondary shadow-[inset_0_0_0_1px_rgba(175,141,17,0.2)]",
+        tone === "neutral" && "bg-white/[0.05] text-foreground/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]",
+      )}
+    >
+      {label}: {value}
     </div>
   );
 }

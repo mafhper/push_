@@ -24,6 +24,7 @@ export interface DiagnosticsRow {
   statusTone: DiagnosticsTone;
   activityLabel: string;
   summaryLabel: string;
+  summaryTone?: DiagnosticsTone;
   signals: DiagnosticsSignal[];
 }
 
@@ -89,7 +90,7 @@ export function RepositoryDiagnosticsList({
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4">
-                <SignalPill label={t("summary")} value={item.summaryLabel} tone={item.statusTone} />
+                <SignalPill label={t("summary")} value={item.summaryLabel} tone={item.summaryTone ?? item.statusTone} prominent />
                 {item.signals.map((signal) => (
                   <SignalPill key={`${item.id}-${signal.label}`} label={signal.label} value={signal.value} tone={signal.tone ?? "neutral"} />
                 ))}
@@ -143,15 +144,18 @@ function SignalPill({
   label,
   value,
   tone = "neutral",
+  prominent = false,
 }: {
   label: string;
   value: string;
   tone?: DiagnosticsTone;
+  prominent?: boolean;
 }) {
   return (
     <div
       className={cn(
         "rounded-[1.15rem] px-3 py-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]",
+        prominent && "min-h-[5rem] px-4 py-3",
         tone === "success" && "bg-primary/[0.08] text-primary",
         tone === "warning" && "bg-secondary/[0.08] text-secondary",
         tone === "critical" && "bg-destructive/[0.08] text-destructive",
@@ -159,7 +163,7 @@ function SignalPill({
       )}
     >
       <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-current/65">{label}</p>
-      <p className="mt-1 text-sm font-semibold leading-5 text-foreground">{value}</p>
+      <p className={cn("mt-1 leading-5 text-foreground", prominent ? "text-base font-bold" : "text-sm font-semibold")}>{value}</p>
     </div>
   );
 }

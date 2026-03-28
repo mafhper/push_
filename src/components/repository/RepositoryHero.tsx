@@ -1,9 +1,9 @@
-import { Activity, ArrowLeft, Clock3, Github, Shield, ShieldAlert, Star } from "lucide-react";
+import { Activity, ArrowLeft, Clock3, GitPullRequest, Github, Shield, ShieldAlert, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
 import { cn } from "@/lib/utils";
-import type { WorkflowRun } from "@/types";
+import type { PullRequestSummary, WorkflowRun } from "@/types";
 import { formatRelativeTime } from "@/utils/health";
 
 const TREND_RUNS = 8;
@@ -21,11 +21,13 @@ export function RepositoryHero({
   score,
   workflowSuccessRate,
   openAlerts,
+  openPullRequests,
   criticalAlerts,
   failedRuns7d,
   stalenessDays,
   lastPushAt,
   runs,
+  pullRequests,
 }: {
   backLabel: string;
   sourceLabel: string;
@@ -39,17 +41,20 @@ export function RepositoryHero({
   score: number;
   workflowSuccessRate: number | null;
   openAlerts: number;
+  openPullRequests: number;
   criticalAlerts: number;
   failedRuns7d: number;
   stalenessDays: number;
   lastPushAt: string;
   runs: WorkflowRun[];
+  pullRequests?: PullRequestSummary[];
 }) {
   const { t } = useApp();
   const trendRuns = runs.slice(0, TREND_RUNS).reverse();
   const maxDuration = Math.max(...trendRuns.map((run) => run.durationMs), 1);
   const attentionItems = buildAttentionItems({
     openAlerts,
+    openPullRequests,
     criticalAlerts,
     failedRuns7d,
     stalenessDays,
@@ -57,6 +62,7 @@ export function RepositoryHero({
     t,
   });
   const activeCount = attentionItems.filter((item) => item.tone !== "success").length;
+  const visiblePullRequests = (pullRequests ?? []).slice(0, 3);
 
   return (
     <section className="relative overflow-hidden rounded-[2rem] ops-surface px-6 py-6 md:px-8 md:py-8">
@@ -117,6 +123,32 @@ export function RepositoryHero({
                     </div>
                   ))}
                 </div>
+
+                {visiblePullRequests.length > 0 ? (
+                  <div className="mt-5 rounded-[1.4rem] bg-secondary/[0.08] p-4 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.18)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="terminal-label text-secondary/80">{t("openPullRequests")}</p>
+                      <StatusPill tone="warning">{t("review")}</StatusPill>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {visiblePullRequests.map((pullRequest) => (
+                        <a
+                          key={pullRequest.id}
+                          href={pullRequest.htmlUrl}
+                          className="flex items-start justify-between gap-4 rounded-[1rem] bg-black/18 px-4 py-3 transition-colors hover:bg-black/24"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">#{pullRequest.number} {pullRequest.title}</p>
+                            <p className="mt-1 text-xs text-foreground/55">@{pullRequest.authorLogin}</p>
+                          </div>
+                          <StatusPill tone={pullRequest.draft ? "neutral" : "warning"}>
+                            {pullRequest.draft ? t("draft") : t("open")}
+                          </StatusPill>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="rounded-[1.6rem] ops-surface-deep p-5">
@@ -192,7 +224,7 @@ export function RepositoryHero({
                 <HeroMetric label={t("health")} value={`${score}%`} hint={t("repoCurrentRepositoryScore")} />
                 <HeroMetric label={t("workflow")} value={workflowSuccessRate !== null ? `${workflowSuccessRate}%` : "N/A"} hint={t("repoRecentSuccessRate")} />
                 <HeroMetric label={t("alerts")} value={`${openAlerts}`} hint={openAlerts > 0 ? t("repoNeedReview") : t("repoNoActiveAlerts")} />
-                <HeroMetric label={t("lastPushLabel")} value={formatRelativeTime(lastPushAt, t)} hint={t("latestUpdate")} />
+                <HeroMetric label={t("openPullRequests")} value={`${openPullRequests}`} hint={openPullRequests > 0 ? t("repoPullRequestsNeedReview") : t("repoNoOpenPullRequests")} />
               </div>
             </div>
           </div>
@@ -216,6 +248,12 @@ export function RepositoryHero({
                 label={t("repoCriticalAlertsLabel")}
                 value={`${criticalAlerts}`}
                 tone={criticalAlerts > 0 ? "critical" : "success"}
+              />
+              <SignalRow
+                icon={GitPullRequest}
+                label={t("openPullRequests")}
+                value={`${openPullRequests}`}
+                tone={openPullRequests > 0 ? "warning" : "success"}
               />
               <SignalRow
                 icon={Activity}
@@ -244,6 +282,7 @@ export function RepositoryHero({
 
 function buildAttentionItems({
   openAlerts,
+  openPullRequests,
   criticalAlerts,
   failedRuns7d,
   stalenessDays,
@@ -251,6 +290,7 @@ function buildAttentionItems({
   t,
 }: {
   openAlerts: number;
+  openPullRequests: number;
   criticalAlerts: number;
   failedRuns7d: number;
   stalenessDays: number;
@@ -272,6 +312,14 @@ function buildAttentionItems({
       tone: "warning" as const,
       title: t("repoOpenAlertsItem", { count: openAlerts }),
       body: t("repoOpenAlertsBody"),
+    });
+  }
+
+  if (openPullRequests > 0) {
+    items.push({
+      tone: "warning" as const,
+      title: t("repoOpenPullRequestsItem", { count: openPullRequests }),
+      body: t("repoOpenPullRequestsBody"),
     });
   }
 

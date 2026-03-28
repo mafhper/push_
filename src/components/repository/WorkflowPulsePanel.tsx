@@ -122,9 +122,9 @@ export function WorkflowPulsePanel({
                             </p>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                            <span className="inline-flex items-center gap-1.5">
+                            <span className="inline-flex min-w-0 items-start gap-1.5 break-all">
                               <GitBranch size={12} />
-                              {run.branch}
+                              <span className="break-all">{run.branch}</span>
                             </span>
                             <span>{run.event}</span>
                             <span>{formatRelativeTime(run.startedAt, t)}</span>
@@ -223,7 +223,7 @@ function InsightCard({
   tone: "success" | "warning" | "critical" | "neutral";
 }) {
   return (
-    <div className="px-4 py-4">
+    <div className="min-w-0 px-4 py-4">
       <div className="flex items-center gap-2">
         <Icon
           size={14}
@@ -237,7 +237,7 @@ function InsightCard({
         <p className="terminal-label">{label}</p>
       </div>
       <p className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-foreground">{value}</p>
-      <p className="mt-2 text-sm text-muted-foreground">{note}</p>
+      <p className="mt-2 break-words text-sm text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -252,12 +252,12 @@ function SignalRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[1.2rem] ops-surface-soft px-4 py-3">
-      <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="flex items-start justify-between gap-3 rounded-[1.2rem] ops-surface-soft px-4 py-3">
+      <span className="inline-flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
         <Icon size={14} />
-        {label}
+        <span>{label}</span>
       </span>
-      <span className="text-sm font-semibold text-foreground">{value}</span>
+      <span className="min-w-0 break-all text-right text-sm font-semibold text-foreground">{value}</span>
     </div>
   );
 }

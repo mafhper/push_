@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Github, KeyRound, LoaderCircle, Search, ShieldCheck, ShieldOff, Star } from "lucide-react";
 import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
 import { LOCAL_SYNC_DOC, isLocalSecureRuntime } from "@/config/site";
@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [repoQuery, setRepoQuery] = useState("");
   const [repoFilter, setRepoFilter] = useState<"all" | "selected" | "unselected">("all");
+  const selectionBootstrapRef = useRef<string | null>(null);
 
   const accessibleRepoNames = useMemo(() => new Set(repos.map((repo) => repo.fullName)), [repos]);
   const selectedRepoCount = localSecureMode && session ? selectedRepos.length : (overview?.repos.length ?? 0);
@@ -68,19 +69,29 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!localSecureMode || !session || repos.length === 0) return;
 
-    const nextSelected = selectedRepos.filter((repo) => accessibleRepoNames.has(repo));
+    const sessionKey = `${session.username}:${session.authenticatedAt}`;
+    const isFreshSession = selectionBootstrapRef.current !== sessionKey;
+    let nextSelected = selectedRepos.filter((repo) => accessibleRepoNames.has(repo));
+
+    if (isFreshSession && nextSelected.length === 0) {
+      nextSelected = repos.map((repo) => repo.fullName);
+    }
+
     if (nextSelected.length !== selectedRepos.length) {
       setSelectedRepos(nextSelected);
     }
 
     if (primaryRepo && !accessibleRepoNames.has(primaryRepo)) {
       setPrimaryRepo(nextSelected[0] ?? repos[0]?.fullName ?? null);
+      selectionBootstrapRef.current = sessionKey;
       return;
     }
 
     if (!primaryRepo && nextSelected.length > 0) {
       setPrimaryRepo(nextSelected[0]);
     }
+
+    selectionBootstrapRef.current = sessionKey;
   }, [
     accessibleRepoNames,
     localSecureMode,
@@ -91,6 +102,12 @@ export default function SettingsPage() {
     setPrimaryRepo,
     setSelectedRepos,
   ]);
+
+  useEffect(() => {
+    if (!session) {
+      selectionBootstrapRef.current = null;
+    }
+  }, [session]);
 
   if (!manifest) {
     return <EmptyPanel title={t("loadingSettings")} body={t("loadingSettingsBody")} />;

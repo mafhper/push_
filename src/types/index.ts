@@ -77,6 +77,18 @@ export interface DependabotAlert {
   summary: string;
 }
 
+export interface PullRequestSummary {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  draft: boolean;
+  createdAt: string;
+  updatedAt: string;
+  htmlUrl: string;
+  authorLogin: string;
+}
+
 export interface ContributorSummary {
   login: string;
   avatarUrl: string;
@@ -131,6 +143,7 @@ export interface OverviewRepoSnapshot {
     languagesTracked: number;
     latestWorkflowConclusion: string | null;
     openAlertCount: number;
+    openPullRequestCount?: number;
   };
   availability: {
     repository: AvailabilityInfo;
@@ -139,6 +152,7 @@ export interface OverviewRepoSnapshot {
     languages: AvailabilityInfo;
     contributors: AvailabilityInfo;
     dependabotAlerts: AvailabilityInfo;
+    pullRequests?: AvailabilityInfo;
   };
 }
 
@@ -167,6 +181,7 @@ export interface RepoSnapshotDetail {
   commits: CommitSummary[];
   workflowRuns: WorkflowRun[];
   alerts: DependabotAlert[];
+  pullRequests?: PullRequestSummary[];
   languages: LanguageBreakdown;
   contributors: ContributorSummary[];
   availability: OverviewRepoSnapshot['availability'];

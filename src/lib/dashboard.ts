@@ -9,11 +9,12 @@ export function getActivityTimestamp(value?: string | null) {
 export function getSnapshotPriority(entry: OverviewRepoSnapshot) {
   const statusRank =
     entry.health.status === "critical" ? 0 : entry.health.status === "warning" ? 1 : 2;
-  const workflowPenalty = entry.stats.latestWorkflowConclusion === "failure" ? -2 : 0;
-  const alertPenalty = Math.min(entry.health.dependabotOpenCount, 5);
-  const stalenessPenalty = Math.min(Math.floor(entry.health.stalenessDays / 7), 6);
+  const workflowPenalty = entry.stats.latestWorkflowConclusion === "failure" ? -12 : 0;
+  const alertPenalty = Math.min(entry.health.dependabotOpenCount, 8) * -10;
+  const pullRequestPenalty = Math.min(entry.stats.openPullRequestCount ?? 0, 8) * -6;
+  const stalenessPenalty = Math.min(Math.floor(entry.health.stalenessDays / 7), 6) * -2;
 
-  return statusRank * 100 + workflowPenalty - alertPenalty - stalenessPenalty;
+  return statusRank * 100 + workflowPenalty + alertPenalty + pullRequestPenalty + stalenessPenalty;
 }
 
 export function sortSnapshotRepos(entries: OverviewRepoSnapshot[]) {

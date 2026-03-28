@@ -4,6 +4,7 @@ import type {
   ContributorSummary,
   DependabotAlert,
   LanguageBreakdown,
+  PullRequestSummary,
   RateLimitInfo,
   RepoSnapshotDetail,
   RepositoryRef,
@@ -111,6 +112,20 @@ type GitHubDependabotAlert = {
 
 type GitHubWorkflowRunsPayload = {
   workflow_runs?: GitHubWorkflowRun[];
+};
+
+type GitHubPullRequest = {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  draft?: boolean;
+  created_at: string;
+  updated_at: string;
+  html_url: string;
+  user?: {
+    login?: string;
+  } | null;
 };
 
 type GitHubRateLimitPayload = {
@@ -260,6 +275,20 @@ function mapDependabot(alert: GitHubDependabotAlert): DependabotAlert {
   };
 }
 
+function mapPullRequest(pullRequest: GitHubPullRequest): PullRequestSummary {
+  return {
+    id: pullRequest.id,
+    number: pullRequest.number,
+    title: pullRequest.title,
+    state: pullRequest.state,
+    draft: Boolean(pullRequest.draft),
+    createdAt: pullRequest.created_at,
+    updatedAt: pullRequest.updated_at,
+    htmlUrl: pullRequest.html_url,
+    authorLogin: pullRequest.user?.login || "unknown",
+  };
+}
+
 function calculateHealth(repo: RepositoryRef, runs: WorkflowRun[], alerts: DependabotAlert[]) {
   let score = 100;
   const now = Date.now();
@@ -316,13 +345,14 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
   const isEmptyRepository = mappedRepo.size === 0 || !mappedRepo.lastPushAt;
   const unavailableBecauseEmpty = { error: "Repository has no commits yet." };
 
-  const [commitsPayload, workflowsPayload, languagesPayload, contributorsPayload, dependabotPayload] = isEmptyRepository
+  const [commitsPayload, workflowsPayload, languagesPayload, contributorsPayload, dependabotPayload, pullRequestsPayload] = isEmptyRepository
     ? await Promise.all([
         Promise.resolve<GitHubCommit[] | GitHubFailure>(unavailableBecauseEmpty),
         Promise.resolve<GitHubWorkflowRunsPayload | GitHubFailure>(unavailableBecauseEmpty),
         Promise.resolve<LanguageBreakdown | GitHubFailure>(unavailableBecauseEmpty),
         Promise.resolve<GitHubContributor[] | GitHubFailure>(unavailableBecauseEmpty),
         Promise.resolve<GitHubDependabotAlert[] | GitHubFailure>(unavailableBecauseEmpty),
+        Promise.resolve<GitHubPullRequest[] | GitHubFailure>(unavailableBecauseEmpty),
       ])
     : await Promise.all([
         githubOptional<GitHubCommit[]>(`${repoPath}/commits?per_page=8`, token),
@@ -330,6 +360,7 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
         githubOptional<LanguageBreakdown>(`${repoPath}/languages`, token),
         githubOptional<GitHubContributor[]>(`${repoPath}/contributors?per_page=6`, token),
         githubOptional<GitHubDependabotAlert[]>(`${repoPath}/dependabot/alerts?state=open&per_page=20`, token),
+        githubOptional<GitHubPullRequest[]>(`${repoPath}/pulls?state=open&per_page=20`, token),
       ]);
 
   const commits = !isFailure(commitsPayload) ? commitsPayload.map(mapCommit) : [];
@@ -337,6 +368,7 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
   const languages = !isFailure(languagesPayload) ? languagesPayload : {};
   const contributors = !isFailure(contributorsPayload) ? contributorsPayload.map(mapContributor) : [];
   const alerts = !isFailure(dependabotPayload) ? dependabotPayload.map(mapDependabot) : [];
+  const pullRequests = !isFailure(pullRequestsPayload) ? pullRequestsPayload.map(mapPullRequest) : [];
   const health = calculateHealth(mappedRepo, workflowRuns, alerts);
 
   const availability = {
@@ -356,6 +388,9 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
     dependabotAlerts: isFailure(dependabotPayload)
       ? createAvailability(false, "authenticated-api", dependabotPayload.error)
       : createAvailability(true, "authenticated-api"),
+    pullRequests: isFailure(pullRequestsPayload)
+      ? createAvailability(false, "authenticated-api", pullRequestsPayload.error)
+      : createAvailability(true, "authenticated-api"),
   };
 
   return {
@@ -366,6 +401,7 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
     commits,
     workflowRuns,
     alerts,
+    pullRequests,
     languages,
     contributors,
     availability,
@@ -474,6 +510,7 @@ export async function fetchLiveDashboardSnapshot(token: string, selectedRepos: s
         languagesTracked: Object.keys(detail.languages).length,
         latestWorkflowConclusion: detail.workflowRuns[0]?.conclusion || null,
         openAlertCount: detail.alerts.length,
+        openPullRequestCount: detail.pullRequests?.length ?? 0,
       },
       availability: detail.availability,
     })),

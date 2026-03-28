@@ -72,6 +72,14 @@ describe("SettingsPage", () => {
       expect(screen.getByText("mafhper/public-ui")).toBeInTheDocument();
     });
 
+    await waitFor(() => {
+      expect(screen.getAllByText("Visible repos").length).toBeGreaterThan(0);
+      expect(screen.getByText("Current dashboard set")).toBeInTheDocument();
+      expect(screen.getAllByText("Featured repo").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Featured").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("mafhper/push_").length).toBeGreaterThan(0);
+    });
+
     expect(screen.queryByText("Private")).not.toBeInTheDocument();
   });
 });

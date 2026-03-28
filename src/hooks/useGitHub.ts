@@ -40,45 +40,70 @@ export function useRepos() {
 }
 
 export function useCommits(owner: string, repo: string) {
+  const { session } = useApp();
+  const localRuntime = isLocalSecureRuntime();
+  const token = localRuntime ? session?.token?.trim() : '';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+
   return useQuery({
-    queryKey: ['commits', owner, repo],
-    queryFn: () => fetchCommits(owner, repo),
+    queryKey: ['commits', owner, repo, tokenKey],
+    queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.commits) : fetchCommits(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 10 * 60 * 1000,
   });
 }
 
 export function useWorkflowRuns(owner: string, repo: string) {
+  const { session } = useApp();
+  const localRuntime = isLocalSecureRuntime();
+  const token = localRuntime ? session?.token?.trim() : '';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+
   return useQuery({
-    queryKey: ['workflows', owner, repo],
-    queryFn: () => fetchWorkflowRuns(owner, repo),
+    queryKey: ['workflows', owner, repo, tokenKey],
+    queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.workflowRuns) : fetchWorkflowRuns(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 10 * 60 * 1000,
   });
 }
 
 export function useDependabotAlerts(owner: string, repo: string) {
+  const { session } = useApp();
+  const localRuntime = isLocalSecureRuntime();
+  const token = localRuntime ? session?.token?.trim() : '';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+
   return useQuery({
-    queryKey: ['dependabot', owner, repo],
-    queryFn: () => fetchDependabotAlerts(owner, repo),
+    queryKey: ['dependabot', owner, repo, tokenKey],
+    queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.alerts) : fetchDependabotAlerts(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useLanguages(owner: string, repo: string) {
+  const { session } = useApp();
+  const localRuntime = isLocalSecureRuntime();
+  const token = localRuntime ? session?.token?.trim() : '';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+
   return useQuery({
-    queryKey: ['languages', owner, repo],
-    queryFn: () => fetchLanguages(owner, repo),
+    queryKey: ['languages', owner, repo, tokenKey],
+    queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.languages) : fetchLanguages(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 60 * 60 * 1000,
   });
 }
 
 export function useContributors(owner: string, repo: string) {
+  const { session } = useApp();
+  const localRuntime = isLocalSecureRuntime();
+  const token = localRuntime ? session?.token?.trim() : '';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+
   return useQuery({
-    queryKey: ['contributors', owner, repo],
-    queryFn: () => fetchContributors(owner, repo),
+    queryKey: ['contributors', owner, repo, tokenKey],
+    queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.contributors) : fetchContributors(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 30 * 60 * 1000,
   });
