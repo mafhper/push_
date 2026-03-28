@@ -13,6 +13,35 @@ vi.mock("@/contexts/usePublicRuntime", () => ({
 }));
 
 describe("PublicRepoDetail", () => {
+  it("renders pipeline pulse insights when workflow runs exist", async () => {
+    const { usePublicRepoSnapshot } = await import("@/hooks/useGitHubPublic");
+    const { usePublicRuntime } = await import("@/contexts/usePublicRuntime");
+    vi.mocked(usePublicRuntime).mockReturnValue({
+      mode: "snapshot",
+      username: null,
+      setUsername: vi.fn(),
+      clearUsername: vi.fn(),
+    } as never);
+    vi.mocked(usePublicRepoSnapshot).mockReturnValue({
+      data: createRepoDetail(),
+      isLoading: false,
+      error: null,
+    } as never);
+
+    render(
+      <MemoryRouter initialEntries={["/app/repo/mafhper/push_"]}>
+        <Routes>
+          <Route path="/app/repo/:owner/:repo" element={<PublicRepoDetail />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Pipeline")).toBeInTheDocument();
+    expect(screen.getByText("Success Rate")).toBeInTheDocument();
+    expect(screen.getByText("Avg Duration")).toBeInTheDocument();
+    expect(screen.getByText("Open latest run")).toBeInTheDocument();
+  });
+
   it("shows explicit absence for optional fields", async () => {
     const { usePublicRepoSnapshot } = await import("@/hooks/useGitHubPublic");
     const { usePublicRuntime } = await import("@/contexts/usePublicRuntime");
@@ -41,8 +70,8 @@ describe("PublicRepoDetail", () => {
     );
 
     expect(screen.getByText("License")).toBeInTheDocument();
-    expect(screen.getByText("Unavailable")).toBeInTheDocument();
-    expect(screen.getByText("Repository Size")).toBeInTheDocument();
-    expect(screen.getByText("No workflow executions are available for this repository in the current snapshot.")).toBeInTheDocument();
+    expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
+    expect(screen.getByText("Size")).toBeInTheDocument();
+    expect(screen.getByText("No workflow runs are available for this repository in the current snapshot.")).toBeInTheDocument();
   });
 });
