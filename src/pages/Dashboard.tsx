@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
+import { RepositoryShowcase, RepositoryShowcaseSkeleton, type ShowcaseItem } from "@/components/dashboard/RepositoryShowcase";
 import { useDashboardSnapshot } from "@/hooks/useGitHub";
 import { EmptyPanel, MetricTile, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
+import { sortSnapshotRepos } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/utils/health";
 import { ArrowRight, CircleOff, Zap } from "lucide-react";
+import type { OverviewRepoSnapshot } from "@/types";
 
 export default function Dashboard() {
   const { session, selectedRepos } = useApp();
@@ -22,6 +25,7 @@ export default function Dashboard() {
   }
 
   const repos = data.repos;
+  const prioritizedRepos = sortSnapshotRepos(repos);
   const totalAlerts = repos.reduce((sum, entry) => sum + entry.health.dependabotOpenCount, 0);
   const averageScore = repos.length > 0 ? Math.round(repos.reduce((sum, entry) => sum + entry.health.score, 0) / repos.length) : 0;
   const activeCount = repos.filter((entry) => !entry.repo.archived).length;
@@ -78,118 +82,145 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <div
-          className={cn(
-            "grid gap-5",
-            repos.length <= 1 ? "xl:grid-cols-1" : repos.length === 2 ? "xl:grid-cols-2" : "xl:grid-cols-3",
-          )}
-        >
-          {repos.map((entry) => {
-            const tone = entry.health.status === "critical" ? "critical" : entry.health.status === "warning" ? "warning" : "success";
-            return (
-              <Link key={entry.repo.id} to={`/app/repo/${entry.repo.owner}/${entry.repo.name}`} className="rounded-3xl surface-panel p-6 transition-colors hover:bg-[rgba(36,36,36,1)]">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-white/5 p-2 text-primary">
-                        <Zap size={14} />
-                      </div>
-                      <StatusPill tone={tone === "critical" ? "critical" : tone === "warning" ? "warning" : "success"}>
-                        {tone === "critical" ? "Failing" : tone === "warning" ? "Action Required" : "Stable"}
-                      </StatusPill>
-                    </div>
-                    <h4 className="font-headline text-2xl font-bold tracking-tight">{entry.repo.name}</h4>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/60">
-                      {entry.repo.defaultBranch} / {entry.repo.language ?? "untyped"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="terminal-label">Integrity</p>
-                    <p className="mt-2 text-2xl font-black text-primary">{entry.health.score}%</p>
-                  </div>
-                </div>
-
-                <div className="mt-8 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-black/18 p-3">
-                    <p className="terminal-label">Action Status</p>
-                    <p className="mt-3 text-sm font-semibold">{entry.stats.latestWorkflowConclusion ?? "Awaiting first run"}</p>
-                  </div>
-                  <div className="rounded-2xl bg-black/18 p-3">
-                    <p className="terminal-label">Dependabot</p>
-                    <p className="mt-3 text-sm font-semibold">{entry.health.dependabotOpenCount} open alerts</p>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Updated {formatRelativeTime(entry.repo.lastPushAt, (value) => value)}</span>
-                  <span className="inline-flex items-center gap-2 text-primary">
-                    Open detail
-                    <ArrowRight size={13} />
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        <RepositoryShowcase
+          items={buildSnapshotShowcaseItems(prioritizedRepos)}
+          storageKey="gl_dashboard_active_repo"
+          emptyState={
+            <div className="rounded-3xl surface-panel p-10 text-center">
+              <CircleOff className="mx-auto text-foreground/25" size={28} />
+              <p className="mt-4 text-sm text-muted-foreground">
+                {isLocalAuthenticated
+                  ? "No selected public repositories are available for this local overview. Review the selection in Settings."
+                  : "Regenerate the snapshot dataset to repopulate the published overview."}
+              </p>
+            </div>
+          }
+        />
       </section>
 
-      <section className="space-y-6">
-        <SectionHeading title="Granular Diagnostics" body="Real metrics only." />
+      {repos.length > 0 ? (
+        <section className="space-y-6">
+          <SectionHeading title="Granular Diagnostics" body="Real metrics only." />
 
-        <div className="overflow-hidden rounded-3xl surface-panel-deep">
-          <table className="w-full text-left">
-            <thead className="bg-white/[0.02] font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/55">
-              <tr>
-                <th className="px-6 py-4 font-medium">Repository Node</th>
-                <th className="px-6 py-4 font-medium">Status &amp; Integrity</th>
-                <th className="px-6 py-4 font-medium">Last Build</th>
-                <th className="px-6 py-4 font-medium">Workflow Data</th>
-                <th className="px-6 py-4 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {repos.map((entry) => (
-                <tr key={entry.repo.id} className="border-t border-white/[0.03]">
-                  <td className="px-6 py-5">
-                    <p className="font-semibold">{entry.repo.name}</p>
-                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/55">
+          <div className="grid gap-3 md:hidden">
+            {prioritizedRepos.map((entry) => (
+              <article key={entry.repo.id} className="rounded-3xl surface-panel-deep p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-foreground">{entry.repo.name}</p>
+                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/48">
                       {entry.repo.defaultBranch} / {entry.repo.owner}
                     </p>
-                  </td>
-                  <td className="px-6 py-5">
-                    <p className={entry.health.status === "healthy" ? "text-primary" : entry.health.status === "warning" ? "text-secondary" : "text-destructive"}>
-                      {entry.health.status === "healthy" ? "STABLE" : entry.health.status === "warning" ? "DEGRADED" : "CRITICAL"} / {entry.health.score}%
-                    </p>
-                  </td>
-                  <td className="px-6 py-5 text-sm text-muted-foreground">{entry.stats.latestWorkflowConclusion ?? "No workflows yet"}</td>
-                  <td className="px-6 py-5 text-sm text-muted-foreground">
-                    {entry.availability.workflowRuns.available ? `${entry.stats.totalCommitsTracked} commits tracked` : "Unavailable"}
-                  </td>
-                  <td className="px-6 py-5">
-                    <Link to={`/app/repo/${entry.repo.owner}/${entry.repo.name}`} className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/45 hover:text-primary">
-                      Inspect
-                      <ArrowRight size={12} />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <p className={cn("text-sm font-semibold", entry.health.status === "healthy" ? "text-primary" : entry.health.status === "warning" ? "text-secondary" : "text-destructive")}>
+                    {entry.health.status === "healthy" ? "STABLE" : entry.health.status === "warning" ? "DEGRADED" : "CRITICAL"} / {entry.health.score}%
+                  </p>
+                </div>
 
-        {repos.length === 0 ? (
-          <div className="rounded-3xl surface-panel p-10 text-center">
-            <CircleOff className="mx-auto text-foreground/25" size={28} />
-            <p className="mt-4 text-sm text-muted-foreground">
-              {isLocalAuthenticated
-                ? "No selected public repositories are available for this local overview. Review the selection in Settings."
-                : "Regenerate the snapshot dataset to repopulate the published overview."}
-            </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[1.35rem] border border-white/6 bg-white/[0.02] px-4 py-3">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/38">Last build</p>
+                    <p className="mt-2 text-sm text-foreground/72">{entry.stats.latestWorkflowConclusion ?? "No workflows yet"}</p>
+                  </div>
+                  <div className="rounded-[1.35rem] border border-white/6 bg-white/[0.02] px-4 py-3">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/38">Workflow data</p>
+                    <p className="mt-2 text-sm text-foreground/72">
+                      {entry.availability.workflowRuns.available ? `${entry.stats.totalCommitsTracked} commits tracked` : "Unavailable"}
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  to={`/app/repo/${entry.repo.owner}/${entry.repo.name}`}
+                  className="mt-5 inline-flex items-center gap-2 rounded-full border border-primary/18 bg-primary/[0.08] px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/[0.12]"
+                >
+                  Inspect project
+                  <ArrowRight size={14} />
+                </Link>
+              </article>
+            ))}
           </div>
-        ) : null}
-      </section>
+
+          <div className="hidden overflow-x-auto rounded-3xl surface-panel-deep md:block">
+            <table className="w-full min-w-[58rem] text-left">
+              <thead className="bg-white/[0.02] font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/55">
+                <tr>
+                  <th className="px-6 py-4 font-medium">Repository Node</th>
+                  <th className="px-6 py-4 font-medium">Status &amp; Integrity</th>
+                  <th className="px-6 py-4 font-medium">Last Build</th>
+                  <th className="px-6 py-4 font-medium">Workflow Data</th>
+                  <th className="px-6 py-4 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prioritizedRepos.map((entry) => (
+                  <tr key={entry.repo.id} className="border-t border-white/[0.03]">
+                    <td className="px-6 py-5">
+                      <p className="font-semibold">{entry.repo.name}</p>
+                      <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/55">
+                        {entry.repo.defaultBranch} / {entry.repo.owner}
+                      </p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className={entry.health.status === "healthy" ? "text-primary" : entry.health.status === "warning" ? "text-secondary" : "text-destructive"}>
+                        {entry.health.status === "healthy" ? "STABLE" : entry.health.status === "warning" ? "DEGRADED" : "CRITICAL"} / {entry.health.score}%
+                      </p>
+                    </td>
+                    <td className="px-6 py-5 text-sm text-muted-foreground">{entry.stats.latestWorkflowConclusion ?? "No workflows yet"}</td>
+                    <td className="px-6 py-5 text-sm text-muted-foreground">
+                      {entry.availability.workflowRuns.available ? `${entry.stats.totalCommitsTracked} commits tracked` : "Unavailable"}
+                    </td>
+                    <td className="px-6 py-5">
+                      <Link to={`/app/repo/${entry.repo.owner}/${entry.repo.name}`} className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/45 hover:text-primary">
+                        Inspect
+                        <ArrowRight size={12} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
+}
+
+function buildSnapshotShowcaseItems(entries: OverviewRepoSnapshot[]): ShowcaseItem[] {
+  return entries.map((entry) => {
+    const tone = entry.health.status === "critical" ? "critical" : entry.health.status === "warning" ? "warning" : "success";
+    const workflowLabel =
+      entry.stats.latestWorkflowConclusion === "failure"
+        ? "Last workflow failed"
+        : entry.stats.latestWorkflowConclusion === "success"
+          ? "Last workflow passed"
+          : "Waiting for workflow signal";
+
+    return {
+      id: entry.repo.fullName,
+      route: `/app/repo/${entry.repo.owner}/${entry.repo.name}`,
+      owner: entry.repo.owner,
+      name: entry.repo.name,
+      fullName: entry.repo.fullName,
+      description: entry.repo.description || "No repository description in the current snapshot.",
+      defaultBranch: entry.repo.defaultBranch,
+      language: entry.repo.language ?? "untyped",
+      imageLanguage: entry.repo.language,
+      lastActivityLabel: `Last movement ${formatRelativeTime(entry.repo.lastPushAt, (value) => value)}`,
+      statusLabel: tone === "critical" ? "Needs action" : tone === "warning" ? "Watch closely" : "Stable",
+      statusTone: tone,
+      scoreLabel: "Integrity",
+      scoreValue: `${entry.health.score}%`,
+      summary: `${workflowLabel}. ${entry.health.dependabotOpenCount} open alerts and ${entry.health.stalenessDays} stale day(s) inform the current rank.`,
+      spotlightMetrics: [
+        { label: "Last updated", value: formatRelativeTime(entry.repo.lastPushAt, (value) => value), tone: entry.health.stalenessDays > 30 ? "warning" : "success" },
+        { label: "Workflow success", value: entry.health.workflowSuccessRate !== null ? `${entry.health.workflowSuccessRate}%` : "N/A", tone: entry.health.workflowSuccessRate !== null && entry.health.workflowSuccessRate < 80 ? "warning" : "success" },
+        { label: "Open alerts", value: `${entry.health.dependabotOpenCount}`, tone: entry.health.dependabotOpenCount > 0 ? "critical" : "success" },
+        { label: "Primary branch", value: entry.repo.defaultBranch, tone: "neutral" },
+      ],
+    };
+  });
 }
 
 function DashboardSkeleton() {
@@ -225,39 +256,7 @@ function DashboardSkeleton() {
           <div className="h-4 w-24 rounded-full bg-white/8" />
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="rounded-3xl surface-panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-3">
-                  <div className="h-8 w-32 rounded-full bg-white/8" />
-                  <div className="h-8 w-28 rounded-2xl bg-white/8" />
-                  <div className="h-3 w-32 rounded-full bg-white/8" />
-                </div>
-                <div className="space-y-3 text-right">
-                  <div className="ml-auto h-3 w-16 rounded-full bg-white/8" />
-                  <div className="ml-auto h-8 w-16 rounded-2xl bg-white/8" />
-                </div>
-              </div>
-
-              <div className="mt-8 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-black/18 p-3">
-                  <div className="h-3 w-20 rounded-full bg-white/8" />
-                  <div className="mt-3 h-4 w-28 rounded-full bg-white/8" />
-                </div>
-                <div className="rounded-2xl bg-black/18 p-3">
-                  <div className="h-3 w-20 rounded-full bg-white/8" />
-                  <div className="mt-3 h-4 w-24 rounded-full bg-white/8" />
-                </div>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between">
-                <div className="h-3 w-24 rounded-full bg-white/8" />
-                <div className="h-3 w-16 rounded-full bg-white/8" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <RepositoryShowcaseSkeleton />
       </section>
 
       <section className="space-y-6">
