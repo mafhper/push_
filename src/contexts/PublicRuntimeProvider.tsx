@@ -10,7 +10,7 @@ function sanitizeUsername(value: string) {
 export function PublicRuntimeProvider({ children }: PropsWithChildren) {
   const [username, setUsernameState] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    const stored = window.sessionStorage.getItem(STORAGE_KEY);
+    const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;
 
     const normalized = sanitizeUsername(stored);
@@ -24,9 +24,9 @@ export function PublicRuntimeProvider({ children }: PropsWithChildren) {
 
       if (typeof window !== "undefined") {
         if (normalized) {
-          window.sessionStorage.setItem(STORAGE_KEY, normalized);
+          window.localStorage.setItem(STORAGE_KEY, normalized);
         } else {
-          window.sessionStorage.removeItem(STORAGE_KEY);
+          window.localStorage.removeItem(STORAGE_KEY);
         }
       }
     };
@@ -34,7 +34,7 @@ export function PublicRuntimeProvider({ children }: PropsWithChildren) {
     const clearUsername = () => {
       setUsernameState(null);
       if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(STORAGE_KEY);
       }
     };
 

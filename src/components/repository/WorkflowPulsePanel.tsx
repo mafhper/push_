@@ -1,5 +1,7 @@
 import { Activity, AlertTriangle, Clock3, ExternalLink, GitBranch, TimerReset } from "lucide-react";
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { useApp } from "@/contexts/useApp";
+import type { DictKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/utils/health";
 import type { WorkflowRun } from "@/types";
@@ -19,6 +21,7 @@ export function WorkflowPulsePanel({
   historyLabel: string;
   emptyMessage: string;
 }) {
+  const { t } = useApp();
   const recentRuns = runs.slice(0, VISIBLE_RUNS);
   const latestRun = recentRuns[0];
   const successCount = recentRuns.filter((run) => run.conclusion === "success").length;
@@ -31,19 +34,23 @@ export function WorkflowPulsePanel({
   const latestFailure = recentRuns.find((run) => run.conclusion === "failure");
   const storyline =
     recentRuns.length === 0
-      ? "No workflow signal."
+      ? t("workflowNoWorkflowSignal")
       : latestFailure
-        ? `${successCount} of ${recentRuns.length} recent runs passed. Last failure ${formatRelativeTime(latestFailure.startedAt, (value) => value)}.`
-        : `${successRate}% of recent runs passed.`;
+        ? t("workflowRecentRunsFailureStory", {
+            passed: successCount,
+            total: recentRuns.length,
+            when: formatRelativeTime(latestFailure.startedAt, t),
+          })
+        : t("workflowRecentRunsPassStory", { rate: successRate });
 
   return (
     <section className="rounded-[2rem] ops-surface p-6 md:p-7">
       <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <SectionHeading title={title} body={body} />
         <div className="flex flex-wrap gap-2">
-          <StatusPill tone="success">{successCount} success</StatusPill>
-          <StatusPill tone="critical">{failureCount} failed</StatusPill>
-          <StatusPill tone="warning">{otherCount} other</StatusPill>
+          <StatusPill tone="success">{t("workflowCountSuccess", { count: successCount })}</StatusPill>
+          <StatusPill tone="critical">{t("workflowCountFailed", { count: failureCount })}</StatusPill>
+          <StatusPill tone="warning">{t("workflowCountOther", { count: otherCount })}</StatusPill>
         </div>
       </div>
 
@@ -54,23 +61,23 @@ export function WorkflowPulsePanel({
               <div className="grid divide-y divide-white/6 md:grid-cols-3 md:divide-x md:divide-y-0">
                 <InsightCard
                   icon={Activity}
-                  label="Success Rate"
+                  label={t("workflowSuccessRate")}
                   value={`${successRate}%`}
                   note={`${successCount}/${recentRuns.length} runs`}
                   tone={successRate >= 80 ? "success" : successRate >= 50 ? "warning" : "critical"}
                 />
                 <InsightCard
                   icon={TimerReset}
-                  label="Avg Duration"
+                  label={t("workflowAvgDuration")}
                   value={formatDuration(averageDurationMs)}
-                  note={latestRun ? `Latest ${formatDuration(latestRun.durationMs)}` : "No latest run"}
+                  note={latestRun ? t("workflowLatestDuration", { value: formatDuration(latestRun.durationMs) }) : t("workflowNoLatestRun")}
                   tone={latestRun && latestRun.durationMs > averageDurationMs * 1.4 ? "warning" : "neutral"}
                 />
                 <InsightCard
                   icon={Clock3}
-                  label="Last Run"
-                  value={latestRun ? formatRelativeTime(latestRun.startedAt, (value) => value) : "N/A"}
-                  note={latestRun ? `${latestRun.event} on ${latestRun.branch}` : "No workflow signal"}
+                  label={t("workflowLastRun")}
+                  value={latestRun ? formatRelativeTime(latestRun.startedAt, t) : t("unavailable")}
+                  note={latestRun ? `${latestRun.event} / ${latestRun.branch}` : t("workflowNoWorkflowSignal")}
                   tone={failureCount > 0 ? "warning" : "success"}
                 />
               </div>
@@ -83,13 +90,13 @@ export function WorkflowPulsePanel({
                   <p className="mt-2 text-sm text-muted-foreground">{storyline}</p>
                 </div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/38">
-                  Latest {getRunStatus(latestRun?.conclusion ?? null).label.toLowerCase()}
+                  {t("workflowLatestStatus", { status: getRunStatus(latestRun?.conclusion ?? null, t).label.toLowerCase() })}
                 </p>
               </div>
 
               <div className="space-y-3">
                 {recentRuns.map((run) => {
-                  const status = getRunStatus(run.conclusion);
+                  const status = getRunStatus(run.conclusion, t);
                   const fillWidth = `${Math.max(10, Math.round((run.durationMs / longestDurationMs) * 100))}%`;
 
                   return (
@@ -120,7 +127,7 @@ export function WorkflowPulsePanel({
                               {run.branch}
                             </span>
                             <span>{run.event}</span>
-                            <span>{formatRelativeTime(run.startedAt, (value) => value)}</span>
+                            <span>{formatRelativeTime(run.startedAt, t)}</span>
                           </div>
                           <div className="mt-4 flex items-center gap-3">
                             <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/26 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
@@ -141,11 +148,11 @@ export function WorkflowPulsePanel({
 
           <aside className="space-y-4">
             <div className="rounded-[1.6rem] ops-surface-deep p-5">
-              <p className="terminal-label">Latest Run</p>
+              <p className="terminal-label">{t("workflowLatestRunTitle")}</p>
               {latestRun ? (
                 <>
                   <div className="mt-4 flex items-center gap-3">
-                    <StatusPill tone={getRunStatus(latestRun.conclusion).tone}>{getRunStatus(latestRun.conclusion).label}</StatusPill>
+                    <StatusPill tone={getRunStatus(latestRun.conclusion, t).tone}>{getRunStatus(latestRun.conclusion, t).label}</StatusPill>
                     <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/42">Run #{latestRun.id}</p>
                   </div>
 
@@ -153,17 +160,17 @@ export function WorkflowPulsePanel({
                   <p className="mt-3 text-sm leading-7 text-muted-foreground">{storyline}</p>
 
                   <div className="mt-6 space-y-3">
-                    <SignalRow icon={TimerReset} label="Duration" value={formatDuration(latestRun.durationMs)} />
-                    <SignalRow icon={GitBranch} label="Branch" value={latestRun.branch} />
-                    <SignalRow icon={AlertTriangle} label="Trigger" value={latestRun.event} />
-                    <SignalRow icon={Clock3} label="Started" value={formatRelativeTime(latestRun.startedAt, (value) => value)} />
+                    <SignalRow icon={TimerReset} label={t("workflowDuration")} value={formatDuration(latestRun.durationMs)} />
+                    <SignalRow icon={GitBranch} label={t("workflowBranch")} value={latestRun.branch} />
+                    <SignalRow icon={AlertTriangle} label={t("workflowTrigger")} value={latestRun.event} />
+                    <SignalRow icon={Clock3} label={t("workflowStarted")} value={formatRelativeTime(latestRun.startedAt, t)} />
                   </div>
 
                   <a
                     href={latestRun.htmlUrl}
                     className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/[0.08] px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/[0.12]"
                   >
-                    Open latest run
+                    {t("workflowOpenLatestRun")}
                     <ExternalLink size={14} />
                   </a>
                 </>
@@ -173,18 +180,21 @@ export function WorkflowPulsePanel({
             </div>
 
             <div className="rounded-[1.6rem] ops-surface-soft p-5">
-              <p className="terminal-label">Watch</p>
+              <p className="terminal-label">{t("workflowWhatChanged")}</p>
               {latestFailure ? (
                 <>
-                  <h3 className="mt-4 text-lg font-semibold tracking-[-0.03em] text-foreground">Last failure</h3>
+                  <h3 className="mt-4 text-lg font-semibold tracking-[-0.03em] text-foreground">{t("workflowLatestFailureTitle")}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {latestFailure.workflowName} failed {formatRelativeTime(latestFailure.startedAt, (value) => value)}.
+                    {t("workflowLatestFailureBody", {
+                      name: latestFailure.workflowName,
+                      when: formatRelativeTime(latestFailure.startedAt, t),
+                    })}
                   </p>
                 </>
               ) : (
                 <>
-                  <h3 className="mt-4 text-lg font-semibold tracking-[-0.03em] text-foreground">No recent failure</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">The current run slice is clean.</p>
+                  <h3 className="mt-4 text-lg font-semibold tracking-[-0.03em] text-foreground">{t("workflowNoRecentFailuresTitle")}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{t("workflowNoRecentFailuresBody")}</p>
                 </>
               )}
             </div>
@@ -252,10 +262,10 @@ function SignalRow({
   );
 }
 
-function getRunStatus(conclusion: string | null) {
+function getRunStatus(conclusion: string | null, t: (key: DictKey, values?: Record<string, string | number>) => string) {
   if (conclusion === "success") {
     return {
-      label: "Success",
+      label: t("success"),
       tone: "success" as const,
       fillClass: "bg-primary",
     };
@@ -263,14 +273,14 @@ function getRunStatus(conclusion: string | null) {
 
   if (conclusion === "failure") {
     return {
-      label: "Failed",
+      label: t("failing"),
       tone: "critical" as const,
       fillClass: "bg-destructive/80",
     };
   }
 
   return {
-    label: "Other",
+    label: t("otherLabel"),
     tone: "warning" as const,
     fillClass: "bg-secondary",
   };
@@ -292,10 +302,11 @@ function formatDuration(durationMs: number) {
 }
 
 function WorkflowEmptyState({ message, compact = false }: { message: string; compact?: boolean }) {
+  const { t } = useApp();
   return (
     <div className={cn("rounded-[1.5rem] ops-surface-soft", compact ? "p-4" : "p-5")}>
-      <p className="terminal-label">Pipeline unavailable</p>
-      <h3 className="mt-3 text-lg font-semibold tracking-[-0.03em] text-foreground">No workflow runs</h3>
+      <p className="terminal-label">{t("workflowUnavailableTitle")}</p>
+      <h3 className="mt-3 text-lg font-semibold tracking-[-0.03em] text-foreground">{t("workflowNoRunsTitle")}</h3>
       <p className="mt-3 text-sm leading-7 text-muted-foreground">{message}</p>
     </div>
   );

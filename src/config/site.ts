@@ -5,23 +5,23 @@ export const SITE_BASE_URL = import.meta.env.BASE_URL;
 export const LOCAL_RUNTIME_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
 export const PROMO_ROUTES = [
-  { href: "/", label: "Home" },
-  { href: "/technology", label: "Tech" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/about", label: "About" },
+  { href: "/", labelKey: "home" },
+  { href: "/technology", labelKey: "technology" },
+  { href: "/faq", labelKey: "faq" },
+  { href: "/about", labelKey: "about" },
 ] as const;
 
 export const APP_ROUTES = [
-  { href: "/app", label: "Painel" },
-  { href: "/app/alerts", label: "Alertas" },
-  { href: "/app/settings", label: "Configuracoes" },
+  { href: "/app", labelKey: "dashboard", metaKey: "overview" },
+  { href: "/app/alerts", labelKey: "alerts", metaKey: "attention" },
+  { href: "/app/settings", labelKey: "settings", metaKey: "control" },
 ] as const;
 
 export const LOCAL_SYNC_DOC = [
-  "1. No localhost, conecte seu token GitHub na tela de configuracoes para descobrir seus repositorios publicos.",
-  "2. Escolha quais repositorios publicos quer exibir e qual deles sera o destaque local.",
-  "3. Quando quiser atualizar o Pages publico, rode `npm run data:sync` com `.env.local` configurado.",
-  "4. O site publicado continua consumindo apenas snapshots estaticos, sem token no browser.",
+  "runbookStep1",
+  "runbookStep2",
+  "runbookStep3",
+  "runbookStep4",
 ] as const;
 
 export function isLocalSecureRuntime() {

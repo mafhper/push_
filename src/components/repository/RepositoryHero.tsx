@@ -1,6 +1,7 @@
 import { Activity, ArrowLeft, Clock3, Github, Shield, ShieldAlert, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
+import { useApp } from "@/contexts/useApp";
 import { cn } from "@/lib/utils";
 import type { WorkflowRun } from "@/types";
 import { formatRelativeTime } from "@/utils/health";
@@ -44,6 +45,7 @@ export function RepositoryHero({
   lastPushAt: string;
   runs: WorkflowRun[];
 }) {
+  const { t } = useApp();
   const trendRuns = runs.slice(0, TREND_RUNS).reverse();
   const maxDuration = Math.max(...trendRuns.map((run) => run.durationMs), 1);
   const attentionItems = buildAttentionItems({
@@ -52,6 +54,7 @@ export function RepositoryHero({
     failedRuns7d,
     stalenessDays,
     workflowSuccessRate,
+    t,
   });
   const activeCount = attentionItems.filter((item) => item.tone !== "success").length;
 
@@ -74,7 +77,7 @@ export function RepositoryHero({
 
           <div className="inline-flex items-center gap-2 rounded-full ops-surface-soft px-4 py-2">
             <Star size={14} className="text-secondary" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/42">Stars</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/42">{t("stars")}</span>
             <span className="text-sm font-semibold text-foreground">{stars}</span>
           </div>
         </div>
@@ -88,12 +91,12 @@ export function RepositoryHero({
 
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
               <div className="rounded-[1.6rem] ops-surface-soft p-5">
-                <p className="terminal-label">Attention</p>
+                <p className="terminal-label">{t("attention")}</p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">
-                  {activeCount > 0 ? "Needs review now" : "No active blockers"}
+                  {activeCount > 0 ? t("repoNeedsAttention") : t("repoNothingUrgent")}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Critical alerts, failed runs, stale activity, and weak workflow signal stay at the top.
+                  {t("repoAttentionBody")}
                 </p>
 
                 <div className="mt-5 space-y-3">
@@ -119,15 +122,15 @@ export function RepositoryHero({
               <div className="rounded-[1.6rem] ops-surface-deep p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="terminal-label">Run Trend</p>
+                    <p className="terminal-label">{t("repoRecentRunsTitle")}</p>
                     <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">
-                      {runs.length > 0 ? "Recent workflow signal" : "No workflow signal"}
+                      {runs.length > 0 ? t("repoRecentRunHistory") : t("repoNoRecentRuns")}
                     </h2>
                   </div>
                   <div className="text-right">
-                    <p className="terminal-label">Latest</p>
+                    <p className="terminal-label">{t("repoLastRun")}</p>
                     <p className="mt-2 text-sm font-semibold text-foreground">
-                      {runs[0] ? formatRelativeTime(runs[0].startedAt, (value) => value) : "Unavailable"}
+                      {runs[0] ? formatRelativeTime(runs[0].startedAt, t) : t("unavailable")}
                     </p>
                   </div>
                 </div>
@@ -154,7 +157,7 @@ export function RepositoryHero({
                             </div>
                             <p className="mt-2 truncate text-xs font-medium text-foreground/84">{trimRunName(run.workflowName)}</p>
                             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/35">
-                              {formatRelativeTime(run.startedAt, (value) => value)}
+                              {formatRelativeTime(run.startedAt, t)}
                             </p>
                           </a>
                         );
@@ -164,21 +167,21 @@ export function RepositoryHero({
                     <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-primary" />
-                        Success
+                        {t("success")}
                       </span>
                       <span className="inline-flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-destructive" />
-                        Failed
+                        {t("failing")}
                       </span>
                       <span className="inline-flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-secondary" />
-                        Other
+                        {t("otherLabel")}
                       </span>
                     </div>
                   </>
                 ) : (
                   <p className="mt-6 text-sm leading-7 text-muted-foreground">
-                    No recent workflow executions were found for this repository.
+                    {t("repoRecentWorkflowExecutionsMissing")}
                   </p>
                 )}
               </div>
@@ -186,43 +189,43 @@ export function RepositoryHero({
 
             <div className="overflow-hidden rounded-[1.5rem] ops-surface-soft">
               <div className="grid divide-y divide-white/6 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
-                <HeroMetric label="Health Score" value={`${score}%`} hint="Current repository score" />
-                <HeroMetric label="Workflow" value={workflowSuccessRate !== null ? `${workflowSuccessRate}%` : "N/A"} hint="Recent success rate" />
-                <HeroMetric label="Open Alerts" value={`${openAlerts}`} hint={openAlerts > 0 ? "Need review" : "No active alerts"} />
-                <HeroMetric label="Last Push" value={formatRelativeTime(lastPushAt, (value) => value)} hint="Latest repository update" />
+                <HeroMetric label={t("health")} value={`${score}%`} hint={t("repoCurrentRepositoryScore")} />
+                <HeroMetric label={t("workflow")} value={workflowSuccessRate !== null ? `${workflowSuccessRate}%` : "N/A"} hint={t("repoRecentSuccessRate")} />
+                <HeroMetric label={t("alerts")} value={`${openAlerts}`} hint={openAlerts > 0 ? t("repoNeedReview") : t("repoNoActiveAlerts")} />
+                <HeroMetric label={t("lastPushLabel")} value={formatRelativeTime(lastPushAt, t)} hint={t("latestUpdate")} />
               </div>
             </div>
           </div>
 
           <aside className="rounded-[1.7rem] ops-surface-deep p-5 md:p-6">
-            <p className="terminal-label">Attention Summary</p>
+            <p className="terminal-label">{t("repoQuickRead")}</p>
             <div className="mt-4">
               <p className="text-5xl font-black tracking-tighter text-foreground">{activeCount}</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">
-                {activeCount > 0 ? "Attention flags open" : "Repository is calm"}
+                {activeCount > 0 ? t("repoOpenItems") : t("repoNothingUrgent")}
               </h2>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Start with alerts and failed runs. Then check stale activity and workflow drift.
+                {t("repoQuickReadBody")}
               </p>
             </div>
 
             <div className="mt-6 space-y-4">
-              <SignalRow icon={Shield} label="Score" value={`${score}%`} />
+              <SignalRow icon={Shield} label={t("repoScoreLabel")} value={`${score}%`} />
               <SignalRow
                 icon={ShieldAlert}
-                label="Critical Alerts"
+                label={t("repoCriticalAlertsLabel")}
                 value={`${criticalAlerts}`}
                 tone={criticalAlerts > 0 ? "critical" : "success"}
               />
               <SignalRow
                 icon={Activity}
-                label="Failed Runs 7d"
+                label={t("repoFailedRuns7dLabel")}
                 value={`${failedRuns7d}`}
                 tone={failedRuns7d > 0 ? "warning" : "success"}
               />
               <SignalRow
                 icon={Clock3}
-                label="Stale Days"
+                label={t("staleDays")}
                 value={`${stalenessDays}`}
                 tone={stalenessDays > 14 ? "warning" : "success"}
               />
@@ -230,7 +233,7 @@ export function RepositoryHero({
 
             <a href={repoUrl} className="button-primary-terminal mt-6 w-full justify-center text-sm">
               <Github size={15} />
-              Open Repo
+              {t("repoOpenRepo")}
             </a>
           </aside>
         </div>
@@ -245,52 +248,54 @@ function buildAttentionItems({
   failedRuns7d,
   stalenessDays,
   workflowSuccessRate,
+  t,
 }: {
   openAlerts: number;
   criticalAlerts: number;
   failedRuns7d: number;
   stalenessDays: number;
   workflowSuccessRate: number | null;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   const items = [];
 
   if (criticalAlerts > 0) {
     items.push({
       tone: "critical" as const,
-      title: `${criticalAlerts} critical alert${criticalAlerts > 1 ? "s" : ""}`,
-      body: "Security issues at the highest severity need action first.",
+      title: t("repoCriticalAlertsItem", { count: criticalAlerts }),
+      body: t("repoCriticalAlertsBody"),
     });
   }
 
   if (openAlerts > 0) {
     items.push({
       tone: "warning" as const,
-      title: `${openAlerts} open alert${openAlerts > 1 ? "s" : ""}`,
-      body: "Dependabot findings are still open in the current dataset.",
+      title: t("repoOpenAlertsItem", { count: openAlerts }),
+      body: t("repoOpenAlertsBody"),
     });
   }
 
   if (failedRuns7d > 0) {
     items.push({
       tone: "warning" as const,
-      title: `${failedRuns7d} failed run${failedRuns7d > 1 ? "s" : ""} in 7 days`,
-      body: "Recent CI failures can hide broken deploy or release paths.",
+      title: t("repoFailedRunsItem", { count: failedRuns7d }),
+      body: t("repoFailedRunsBody"),
     });
   }
 
   if (stalenessDays > 14) {
     items.push({
       tone: "warning" as const,
-      title: `${stalenessDays} stale day${stalenessDays > 1 ? "s" : ""}`,
-      body: "This repository has been quiet long enough to deserve a check.",
+      title: t("repoStaleDaysItem", { count: stalenessDays }),
+      body: t("repoStaleDaysBody"),
     });
   }
 
   if (workflowSuccessRate !== null && workflowSuccessRate < 85) {
     items.push({
       tone: workflowSuccessRate < 60 ? ("critical" as const) : ("warning" as const),
-      title: `${workflowSuccessRate}% workflow success`,
-      body: "The recent pipeline slice is running below a stable threshold.",
+      title: t("repoWorkflowReliabilityItem", { count: workflowSuccessRate }),
+      body: t("repoWorkflowReliabilityBody"),
     });
   }
 
@@ -298,8 +303,8 @@ function buildAttentionItems({
     return [
       {
         tone: "success" as const,
-        title: "No active blockers",
-        body: "Alerts are clear, recent runs are stable, and the repository is moving.",
+        title: t("repoNothingUrgent"),
+        body: t("repoClearBody"),
       },
     ];
   }

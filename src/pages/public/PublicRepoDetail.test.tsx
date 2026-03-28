@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import PublicRepoDetail from "./PublicRepoDetail";
+import { renderWithAppProviders } from "@/test/render-app";
 import { createRepoDetail } from "@/test/factories";
 
 vi.mock("@/hooks/useGitHubPublic", () => ({
@@ -28,7 +29,7 @@ describe("PublicRepoDetail", () => {
       error: null,
     } as never);
 
-    render(
+    renderWithAppProviders(
       <MemoryRouter initialEntries={["/app/repo/mafhper/push_"]}>
         <Routes>
           <Route path="/app/repo/:owner/:repo" element={<PublicRepoDetail />} />
@@ -37,8 +38,8 @@ describe("PublicRepoDetail", () => {
     );
 
     expect(screen.getByText("Pipeline")).toBeInTheDocument();
-    expect(screen.getByText("Success Rate")).toBeInTheDocument();
-    expect(screen.getByText("Avg Duration")).toBeInTheDocument();
+    expect(screen.getByText("Success rate")).toBeInTheDocument();
+    expect(screen.getByText("Avg duration")).toBeInTheDocument();
     expect(screen.getByText("Open latest run")).toBeInTheDocument();
   });
 
@@ -61,7 +62,7 @@ describe("PublicRepoDetail", () => {
       error: null,
     } as never);
 
-    render(
+    renderWithAppProviders(
       <MemoryRouter initialEntries={["/app/repo/mafhper/push_"]}>
         <Routes>
           <Route path="/app/repo/:owner/:repo" element={<PublicRepoDetail />} />

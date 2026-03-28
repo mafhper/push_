@@ -25,7 +25,6 @@ const LANGUAGE_ICONS: Record<string, React.ElementType> = {
 export function ProjectImage({ owner, repo, defaultBranch, language, className }: ProjectImageProps) {
   const isApp = repo.toLowerCase() === 'push_underline' || repo.toLowerCase() === 'project-genesis';
 
-  // Memoize candidates to avoid effect re-runs and include common variations
   const logoCandidates = useMemo(() => {
     if (isApp) return ['/favicon.svg'];
     
@@ -47,36 +46,37 @@ export function ProjectImage({ owner, repo, defaultBranch, language, className }
     ];
   }, [owner, repo, defaultBranch, isApp]);
 
-  const sourceKey = `${owner}/${repo}/${defaultBranch}`;
-
   return (
-    <ProjectImageContent
-      key={sourceKey}
+    <ProjectImageAsset
+      key={`${owner}/${repo}/${defaultBranch}`}
+      repo={repo}
+      language={language}
       className={className}
       isApp={isApp}
-      language={language}
       logoCandidates={logoCandidates}
-      repo={repo}
     />
   );
 }
 
-interface ProjectImageContentProps {
+function ProjectImageAsset({
+  repo,
+  language,
+  className,
+  isApp,
+  logoCandidates,
+}: {
   repo: string;
-  isApp: boolean;
   language?: string | null;
   className?: string;
+  isApp: boolean;
   logoCandidates: string[];
-}
-
-function ProjectImageContent({ repo, isApp, language, className, logoCandidates }: ProjectImageContentProps) {
+}) {
   const [errorCount, setErrorCount] = useState(0);
   const imgSrc = logoCandidates[errorCount] ?? null;
 
   const handleError = () => {
     if (errorCount < logoCandidates.length - 1) {
-      const nextIndex = errorCount + 1;
-      setErrorCount(nextIndex);
+      setErrorCount((current) => current + 1);
     } else {
       setErrorCount(logoCandidates.length);
     }

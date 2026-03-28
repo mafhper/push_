@@ -1,5 +1,6 @@
 import { createContext } from "react";
-import type { DictKey } from "@/i18n/dictionaries";
+import type { DictKey } from "@/i18n";
+import { detectBrowserLanguage } from "@/i18n";
 import type { Language, RateLimitInfo, Theme, UserSession, UserSettings } from "@/types";
 
 export interface AppContextValue {
@@ -13,19 +14,25 @@ export interface AppContextValue {
   setSelectedRepos: (repos: string[]) => void;
   rateLimitInfo: RateLimitInfo | null;
   setRateLimitInfo: (info: RateLimitInfo | null) => void;
-  t: (key: DictKey) => string;
+  t: (key: DictKey, values?: Record<string, string | number>) => string;
   clearAll: () => void;
 }
 
 export function detectLanguage(): Language {
-  const nav = navigator.language?.toLowerCase() || "en";
-  if (nav.startsWith("pt")) return "pt";
-  if (nav.startsWith("es")) return "es";
-  return "en";
+  return detectBrowserLanguage();
 }
 
 export function detectTheme(): Theme {
-  return "terminal";
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return "dark";
+  }
+
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+export function normalizeTheme(value?: string | null): Theme {
+  const normalized = value?.trim().toLowerCase() ?? "";
+  return normalized === "light" ? "light" : "dark";
 }
 
 export const defaultSettings: UserSettings = {

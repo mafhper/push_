@@ -527,7 +527,7 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean;
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  const width = showIcon ? "72%" : "84%";
+  const width = "68%";
 
   return (
     <div

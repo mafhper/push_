@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import PublicDashboard from "./PublicDashboard";
+import { renderWithAppProviders } from "@/test/render-app";
 import { createOverview } from "@/test/factories";
 
 vi.mock("@/hooks/useGitHubPublic", () => ({
@@ -30,13 +31,13 @@ describe("PublicDashboard", () => {
     } as never);
     vi.mocked(usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
 
-    render(
+    renderWithAppProviders(
       <MemoryRouter>
         <PublicDashboard />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Tracked Repos")).toBeInTheDocument();
+    expect(screen.getByText("Tracked repos")).toBeInTheDocument();
     expect(screen.queryByText("Global Uptime")).not.toBeInTheDocument();
     expect(screen.queryByText("Traffic (24h)")).not.toBeInTheDocument();
   });
@@ -57,12 +58,12 @@ describe("PublicDashboard", () => {
     } as never);
     vi.mocked(usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
 
-    render(
+    renderWithAppProviders(
       <MemoryRouter>
         <PublicDashboard />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("The published snapshot currently has no tracked repositories.")).toBeInTheDocument();
+    expect(screen.getByText("Regenerate the snapshot dataset to repopulate the published overview.")).toBeInTheDocument();
   });
 });

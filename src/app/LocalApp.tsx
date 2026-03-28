@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/contexts/AppContext";
+import { useApp } from "@/contexts/useApp";
 import { PromoLayout } from "@/components/Layout";
 import { LocalDashboardLayout } from "@/components/layout/LocalDashboardLayout";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -37,7 +38,7 @@ export default function LocalApp() {
           <Sonner />
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <ScrollToTop />
-            <Suspense fallback={<div className="editorial-frame px-6 py-20 text-sm text-muted-foreground">Loading semantic terminal...</div>}>
+            <Suspense fallback={<AppLoadingFallback />}>
               <Routes>
                 <Route element={<PromoLayout />}>
                   <Route path="/" element={<HomePage />} />
@@ -62,4 +63,9 @@ export default function LocalApp() {
       </AppProvider>
     </QueryClientProvider>
   );
+}
+
+function AppLoadingFallback() {
+  const { t } = useApp();
+  return <div className="editorial-frame px-6 py-20 text-sm text-muted-foreground">{t("loadingAppShell")}</div>;
 }
