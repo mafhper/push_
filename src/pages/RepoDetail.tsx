@@ -110,7 +110,7 @@ export default function RepoDetail() {
               <DetailRow label={t("size")} value={`${(data.repo.size / 1024).toFixed(1)} MB`} />
               <DetailRow label={t("visibility")} value={data.repo.isPrivate ? t("privateLabel") : t("publicLabel")} highlighted={!data.repo.isPrivate} />
               <DetailRow label={t("created")} value={formatDate(data.repo.createdAt, settings.lang)} />
-              <DetailRow label={t("lastPush")} value={formatDate(data.repo.lastPushAt, settings.lang)} />
+              <DetailRow label={t("lastPush")} value={data.repo.lastPushAt ? formatDate(data.repo.lastPushAt, settings.lang) : t("unavailable")} />
               <DetailRow
                 label={t("security")}
                 value={data.availability.dependabotAlerts.available ? t("available") : t("unavailable")}
