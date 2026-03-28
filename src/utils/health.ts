@@ -1,5 +1,5 @@
 import type { RepositoryRef, WorkflowRun, DependabotAlert, RepoHealth } from '@/types';
-import type { DictKey } from '@/i18n/dictionaries';
+import type { DictKey } from '@/i18n';
 
 export function calculateHealth(
   repo: RepositoryRef,

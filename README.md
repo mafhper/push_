@@ -1,53 +1,114 @@
+[English](README.md) | [Português (Brasil)](README.pt-BR.md) | [Español](README.es.md)
+
 # Push_
 
-**Command your GitHub code frontier.**
+Push_ is a GitHub repository attention dashboard built for one job: surface what needs action first.
 
-Push_ is a personal dashboard for GitHub with two distinct runtimes:
-- `GitHub Pages`: public, static, snapshot-only
-- `localhost`: local secure mode with memory-only GitHub token access for repository discovery and selection
+It ships in two runtime modes:
+- `localhost`: local secure mode, with memory-only GitHub token access for repository discovery and richer diagnostics
+- `GitHub Pages`: public snapshot mode, with static data only and no browser token flow
 
-## Key Features
+## Why it exists
 
-- **Personal Dashboard**: A unified view of all your monitored repositories.
-- **Active Development Focus**: Highlight your primary project with deep insights.
-- **Health Scoring**: Heuristic scoring based on CI status, security alerts, and activity.
-- **CI/CD Failure Reports**: Visual history of GitHub Actions and job failure grouping.
-- **Security First**: Native Dependabot integration to highlight vulnerabilities by severity.
-- **Compiled Metrics**: Estimated Lines of Code, language breakdown, and contributor activity.
-- **Pages-safe**: the published site consumes only generated snapshot JSON and never asks for a token.
-- **Local secure mode**: on `localhost`, the token lives only in tab memory and is cleared on reload/disconnect.
+Most personal dashboards waste space on vanity metrics. Push_ is built around operational signals:
+- open alerts
+- degraded repository health
+- failed workflow runs
+- stale activity
+- recent movement across watched repositories
 
-## Technical Stack
+## Key capabilities
 
-- **Vite + React + TypeScript**
-- **Tailwind CSS**: Modern UI with fluid typography.
-- **TanStack Query**: Efficient caching and background polling.
-- **Octokit**: Official GitHub REST & GraphQL client.
-- **Recharts**: Visual data representation for CI history.
-- **Framer Motion**: Smooth, high-fidelity interactions.
+- Attention-first dashboard ordered by problem pressure and latest movement
+- Repository detail pages with health, workflow, security, and recent commit context
+- Public profile inspection without a token for public repositories
+- Snapshot publishing for a Pages-safe public runtime
+- Locale support for `en`, `pt-BR`, and `es`
+- Automatic browser-language detection with manual override in settings
 
-## Getting Started
+## Runtime modes
 
-1. **Clone the repository**
-2. **Install dependencies**: `bun install` or `npm install`
-3. **Run locally**: `npm run dev`
-4. **Optional local auth**: open `/app/settings`, paste a GitHub token, inspect only your public repositories, and choose which ones should be observed locally
-5. **Deploy**: GitHub Actions generates snapshots and publishes the static bundle to GitHub Pages
+### Local secure mode
 
-## Permissions
+- Accepts a GitHub token only on `localhost`
+- Keeps the token in memory for the active tab only
+- Lets you discover accessible public repositories and choose what enters the dashboard
 
-For local secure mode or authenticated snapshot generation, your fine-grained Personal Access Token needs the following **read** permissions:
-- `Metadata` (Repositories)
-- `Actions`
-- `Dependabot alerts`
-- `Contents`
+### Public snapshot mode
+
+- Serves static JSON generated ahead of time
+- Never accepts a browser token
+- Preserves deep links and public repository inspection safely
+
+## Installation
+
+```bash
+npm ci
+```
+
+Optional but recommended:
+
+```bash
+npm run hooks:install
+```
+
+That installs the tracked `.githooks/pre-push` hook so pushes run the local validation gate first.
+
+## Local usage
+
+Start the app:
+
+```bash
+npm run dev
+```
+
+Start with a fresh snapshot sync:
+
+```bash
+npm run dev:snapshot
+```
+
+Generate snapshot data manually:
+
+```bash
+npm run data:sync
+```
+
+## Snapshot and public mode
+
+- The published site reads snapshot data from `data/`
+- Snapshot generation is handled locally or in GitHub Actions
+- Public profile mode can inspect public GitHub data directly without authentication
 
 ## Security model
 
-- No token, cookie, or authenticated session is used in the published GitHub Pages runtime.
-- Local authentication exists only on `localhost` and the token stays in memory for the current tab.
-- Only public repositories are eligible for discovery and observation.
-- Deep links on Pages use a redirect helper, but it stores only the target route in `sessionStorage`, never credentials.
+- No token is accepted in the published GitHub Pages runtime
+- No token is persisted to `localStorage`, `sessionStorage`, cookies, or the static bundle
+- Local secure mode keeps credentials in memory only
+- Sensitive validation checks block common regressions before `push`
 
----
-*Built as a personal command center for the modern developer.*
+## Validation and quality gates
+
+Core commands:
+
+```bash
+npm run lint
+npm run type-check
+npm run test:ci
+npm run validate
+```
+
+Validation coverage:
+- lint and static typing
+- tests
+- locale key integrity and reserved jargon checks
+- docs consistency
+- secure coding pattern checks
+- repo pattern checks
+- public build audit
+
+The GitHub Pages workflow uses the same audit entrypoint:
+
+```bash
+npm run audit
+```

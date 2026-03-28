@@ -1,4 +1,4 @@
-import { type PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { type PropsWithChildren, useMemo, useState } from "react";
 import { PublicRuntimeContext, type PublicRuntimeMode } from "@/contexts/public-runtime-context";
 
 const STORAGE_KEY = "push_public_username";
@@ -8,18 +8,14 @@ function sanitizeUsername(value: string) {
 }
 
 export function PublicRuntimeProvider({ children }: PropsWithChildren) {
-  const [username, setUsernameState] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.sessionStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
+  const [username, setUsernameState] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
 
     const normalized = sanitizeUsername(stored);
-    if (normalized) {
-      setUsernameState(normalized);
-    }
-  }, []);
+    return normalized || null;
+  });
 
   const value = useMemo(() => {
     const setUsername = (value: string) => {
@@ -28,9 +24,9 @@ export function PublicRuntimeProvider({ children }: PropsWithChildren) {
 
       if (typeof window !== "undefined") {
         if (normalized) {
-          window.sessionStorage.setItem(STORAGE_KEY, normalized);
+          window.localStorage.setItem(STORAGE_KEY, normalized);
         } else {
-          window.sessionStorage.removeItem(STORAGE_KEY);
+          window.localStorage.removeItem(STORAGE_KEY);
         }
       }
     };
@@ -38,7 +34,7 @@ export function PublicRuntimeProvider({ children }: PropsWithChildren) {
     const clearUsername = () => {
       setUsernameState(null);
       if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(STORAGE_KEY);
       }
     };
 

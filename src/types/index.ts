@@ -1,5 +1,5 @@
-export type Theme = 'terminal' | 'contrast';
-export type Language = 'en' | 'pt' | 'es';
+export type Theme = 'dark' | 'light';
+export type Language = 'en' | 'pt-BR' | 'es';
 
 export interface UserSettings {
   theme: Theme;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Image as ImageIcon, Code2, Terminal, Globe, Cpu, FileJson, Laptop } from 'lucide-react';
 import { LANGUAGE_COLORS } from '@/types';
 
@@ -23,12 +23,8 @@ const LANGUAGE_ICONS: Record<string, React.ElementType> = {
 };
 
 export function ProjectImage({ owner, repo, defaultBranch, language, className }: ProjectImageProps) {
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
-  const [errorCount, setErrorCount] = useState(0);
-
   const isApp = repo.toLowerCase() === 'push_underline' || repo.toLowerCase() === 'project-genesis';
 
-  // Memoize candidates to avoid effect re-runs and include common variations
   const logoCandidates = useMemo(() => {
     if (isApp) return ['/favicon.svg'];
     
@@ -50,18 +46,39 @@ export function ProjectImage({ owner, repo, defaultBranch, language, className }
     ];
   }, [owner, repo, defaultBranch, isApp]);
 
-  useEffect(() => {
-    setImgSrc(logoCandidates[0]);
-    setErrorCount(0);
-  }, [logoCandidates]);
+  return (
+    <ProjectImageAsset
+      key={`${owner}/${repo}/${defaultBranch}`}
+      repo={repo}
+      language={language}
+      className={className}
+      isApp={isApp}
+      logoCandidates={logoCandidates}
+    />
+  );
+}
+
+function ProjectImageAsset({
+  repo,
+  language,
+  className,
+  isApp,
+  logoCandidates,
+}: {
+  repo: string;
+  language?: string | null;
+  className?: string;
+  isApp: boolean;
+  logoCandidates: string[];
+}) {
+  const [errorCount, setErrorCount] = useState(0);
+  const imgSrc = logoCandidates[errorCount] ?? null;
 
   const handleError = () => {
     if (errorCount < logoCandidates.length - 1) {
-      const nextIndex = errorCount + 1;
-      setErrorCount(nextIndex);
-      setImgSrc(logoCandidates[nextIndex]);
+      setErrorCount((current) => current + 1);
     } else {
-      setImgSrc(null);
+      setErrorCount(logoCandidates.length);
     }
   };
 

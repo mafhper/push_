@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { dict, type DictKey } from '@/i18n/dictionaries';
+import { type DictKey, interpolate, resolveLanguage, translate } from '@/i18n';
 import type { RateLimitInfo, UserSession, UserSettings } from '@/types';
-import { AppContext, defaultSettings, type AppContextValue } from '@/contexts/app-context';
+import { AppContext, defaultSettings, normalizeTheme, type AppContextValue } from '@/contexts/app-context';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings, clearSettings] = useLocalStorage<UserSettings>('gl_settings', defaultSettings);
@@ -10,14 +10,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [primaryRepo, setPrimaryRepo, clearPrimary] = useLocalStorage<string | null>('gl_primary_repo', null);
   const [selectedRepos, setSelectedRepos, clearSelected] = useLocalStorage<string[]>('gl_selected_repos', []);
   const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitInfo | null>(null);
+  const normalizedSettings = useMemo<UserSettings>(() => ({
+    ...settings,
+    theme: normalizeTheme(settings.theme),
+    lang: resolveLanguage(settings.lang),
+  }), [settings]);
 
   const updateSettings = useCallback((partial: Partial<UserSettings>) => {
-    setSettings(prev => ({ ...prev, ...partial }));
+    setSettings(prev => ({
+      ...prev,
+      ...partial,
+      theme: partial.theme ? normalizeTheme(partial.theme) : normalizeTheme(prev.theme),
+      lang: partial.lang ? resolveLanguage(partial.lang) : resolveLanguage(prev.lang),
+    }));
   }, [setSettings]);
 
-  const t = useCallback((key: DictKey): string => {
-    return dict[settings.lang]?.[key] || dict.en[key] || key;
-  }, [settings.lang]);
+  const t = useCallback((key: DictKey, values?: Record<string, string | number>): string => {
+    const message = translate(normalizedSettings.lang, key);
+    return interpolate(message, values);
+  }, [normalizedSettings.lang]);
 
   const setSession = useCallback((session: UserSession | null) => {
     setSessionState(session);
@@ -36,10 +47,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [clearPrimary, clearSelected, clearSettings, setSession]);
 
   useEffect(() => {
+    if (normalizedSettings.theme !== settings.theme || normalizedSettings.lang !== settings.lang) {
+      setSettings(normalizedSettings);
+    }
+  }, [normalizedSettings, setSettings, settings.lang, settings.theme]);
+
+  useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('terminal', 'contrast');
-    root.classList.add(settings.theme);
-  }, [settings.theme]);
+    root.classList.remove('theme-dark', 'theme-light');
+    root.classList.add(`theme-${normalizedSettings.theme}`);
+    root.style.colorScheme = normalizedSettings.theme;
+  }, [normalizedSettings.theme]);
 
   useEffect(() => {
     // Clear legacy persisted sessions from older iterations of the app.
@@ -51,7 +69,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(() => ({
-    settings,
+    settings: normalizedSettings,
     updateSettings,
     session: sessionState,
     setSession,
@@ -64,7 +82,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     t,
     clearAll,
   }), [
-    settings, sessionState, primaryRepo, selectedRepos, rateLimitInfo,
+    normalizedSettings, sessionState, primaryRepo, selectedRepos, rateLimitInfo,
     setSession, setPrimaryRepo, setSelectedRepos, t, clearAll, updateSettings
   ]);
 

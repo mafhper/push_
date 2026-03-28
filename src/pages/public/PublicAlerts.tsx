@@ -1,8 +1,11 @@
+import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { useApp } from "@/contexts/useApp";
 import { usePublicRuntime } from "@/contexts/usePublicRuntime";
 import { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRepoSnapshot } from "@/hooks/useGitHubPublic";
-import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { resolveDependabotReason } from "@/lib/github-copy";
 
 export default function PublicAlertsPage() {
+  const { t } = useApp();
   const { mode, username } = usePublicRuntime();
   const snapshotQuery = usePublicDashboardSnapshot();
   const publicProfileQuery = usePublicProfileRepos();
@@ -11,32 +14,30 @@ export default function PublicAlertsPage() {
     const { data: repos = [], isLoading, error } = publicProfileQuery;
 
     if (isLoading) {
-      return <EmptyPanel title="Loading public repositories" body="Resolving repositories from the GitHub public API." />;
+      return <EmptyPanel title={t("loadingPublicRepositories")} body={t("publicAlertsProfileLoadingBody")} />;
     }
 
     if (error) {
-      return <EmptyPanel title="Public profile unavailable" body={`The public GitHub API could not resolve @${username}.`} />;
+      return <EmptyPanel title={t("publicProfileUnavailable")} body={t("publicProfileUnavailableBody", { username: username ?? "" })} />;
     }
 
     return (
       <div className="space-y-8">
         <SectionHeading
-          kicker="Security Surface"
-          title="Authenticated data required"
-          body={`Dependabot alerts are not available from the public GitHub API for @${username}. Use the published snapshot or localhost with a token for security data.`}
+          kicker={t("securitySurface")}
+          title={t("publicAlertsProfileTitle")}
+          body={t("publicAlertsProfileBody", { username: username ?? "" })}
         />
 
         <div className="space-y-5">
           {repos.map((repo) => (
-            <div key={repo.id} className="rounded-3xl surface-panel p-6">
+            <div key={repo.id} className="rounded-[1.8rem] ops-surface p-6">
               <div className="flex items-start justify-between gap-6">
                 <div>
                   <p className="font-headline text-2xl font-bold tracking-tight">{repo.fullName}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Public mode can load repository metadata, commits, languages and workflow history. Security alerts stay unavailable without authentication.
-                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">{t("publicAlertsProfileRepoBody")}</p>
                 </div>
-                <StatusPill tone="neutral">Unavailable</StatusPill>
+                <StatusPill tone="neutral">{t("unavailable")}</StatusPill>
               </div>
             </div>
           ))}
@@ -48,23 +49,23 @@ export default function PublicAlertsPage() {
   const { data, isLoading, error } = snapshotQuery;
 
   if (isLoading) {
-    return <EmptyPanel title="Loading alerts" body="Scanning the published snapshot for security findings." />;
+    return <EmptyPanel title={t("alertsLoadingTitle")} body={t("alertsLoadingBody")} />;
   }
 
   if (!data || error) {
-    return <EmptyPanel title="Alert dataset unavailable" body="The published snapshot failed to load." />;
+    return <EmptyPanel title={t("alertsDatasetUnavailableTitle")} body={t("alertsDatasetUnavailableBody")} />;
   }
 
   if (data.repos.length === 0) {
-    return <EmptyPanel title="No tracked repositories" body="The published snapshot currently has no repositories for the alerts view." />;
+    return <EmptyPanel title={t("alertsNoRepositoriesTitle")} body={t("alertsNoRepositoriesPublicBody")} />;
   }
 
   return (
     <div className="space-y-8">
       <SectionHeading
-        kicker="Security Surface"
-        title="Published alerts"
-        body="Dependabot and warning state across the current published snapshot."
+        kicker={t("securitySurface")}
+        title={t("publicAlertsPublishedTitle")}
+        body={t("publicAlertsPublishedBody")}
       />
 
       <div className="space-y-5">
@@ -77,35 +78,40 @@ export default function PublicAlertsPage() {
 }
 
 function AlertCard({ owner, repo }: { owner: string; repo: string }) {
+  const { t } = useApp();
   const { data } = usePublicRepoSnapshot(owner, repo);
 
   if (!data) return null;
 
   return (
-    <div className="rounded-3xl surface-panel p-6">
+    <div className="rounded-[1.8rem] ops-surface p-6">
       <div className="flex items-start justify-between gap-6">
         <div>
           <p className="font-headline text-2xl font-bold tracking-tight">{owner}/{repo}</p>
           <p className="mt-2 text-sm text-muted-foreground">
             {data.alerts.length > 0
-              ? `${data.alerts.length} open alerts in the current snapshot.`
-              : "No open alerts in the current snapshot."}
+              ? t("publicAlertsOpenCount", { count: data.alerts.length })
+              : t("publicAlertsNoOpen")}
           </p>
         </div>
-        <StatusPill tone={data.alerts.length > 0 ? "warning" : "success"}>{data.alerts.length > 0 ? "Review" : "Clean"}</StatusPill>
+        <StatusPill tone={data.alerts.length > 0 ? "warning" : "success"}>
+          {data.alerts.length > 0 ? t("review") : t("clean")}
+        </StatusPill>
       </div>
 
       <div className="mt-6 space-y-3">
         {data.alerts.length > 0 ? data.alerts.map((alert) => (
-          <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-2xl bg-black/18 p-4">
+          <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.2rem] bg-white/[0.03] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
             <div>
               <p className="font-semibold">{alert.summary}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{alert.packageName} | {alert.ecosystem}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{alert.packageName} / {alert.ecosystem}</p>
             </div>
             <StatusPill tone={alert.severity === "critical" ? "critical" : "warning"}>{alert.severity}</StatusPill>
           </a>
         )) : (
-          <div className="rounded-2xl bg-black/18 p-4 text-sm text-muted-foreground">{data.availability.dependabotAlerts.reason ?? "No active issues."}</div>
+          <div className="rounded-[1.2rem] bg-white/[0.03] p-4 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+            {resolveDependabotReason(data.availability.dependabotAlerts.reason, t, "dependabotReturnedNoIssues")}
+          </div>
         )}
       </div>
     </div>

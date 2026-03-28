@@ -4,6 +4,8 @@ import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/Termin
 import { LOCAL_SYNC_DOC, isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
+import { formatDate, formatDateTime, languageLabels } from "@/i18n";
+import { cn } from "@/lib/utils";
 import { validateToken } from "@/services/github";
 
 export default function SettingsPage() {
@@ -16,6 +18,7 @@ export default function SettingsPage() {
     setPrimaryRepo,
     selectedRepos,
     setSelectedRepos,
+    t,
   } = useApp();
   const localSecureMode = isLocalSecureRuntime();
   const { data: manifest } = useSnapshotManifest();
@@ -31,6 +34,7 @@ export default function SettingsPage() {
   const accessibleRepoNames = useMemo(() => new Set(repos.map((repo) => repo.fullName)), [repos]);
   const selectedRepoCount = localSecureMode && session ? selectedRepos.length : (overview?.repos.length ?? 0);
   const featuredRepoLabel = localSecureMode ? (primaryRepo ?? "none") : (manifest?.featuredRepo ?? "none");
+  const selectedCount = selectedRepos.length;
   const filteredRepos = useMemo(() => {
     const normalizedQuery = repoQuery.trim().toLowerCase();
     return repos
@@ -89,14 +93,14 @@ export default function SettingsPage() {
   ]);
 
   if (!manifest) {
-    return <EmptyPanel title="Loading settings" body="Resolving runtime metadata and repository controls." />;
+    return <EmptyPanel title={t("loadingSettings")} body={t("loadingSettingsBody")} />;
   }
 
   async function handleConnect(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedToken = tokenInput.trim();
     if (!trimmedToken) {
-      setConnectError("Informe um token GitHub valido para continuar.");
+      setConnectError(t("connectionError"));
       return;
     }
 
@@ -107,7 +111,7 @@ export default function SettingsPage() {
     setIsConnecting(false);
 
     if (!viewer) {
-      setConnectError("Nao foi possivel validar esse token. Verifique o escopo e tente novamente.");
+      setConnectError(t("invalidToken"));
       return;
     }
 
@@ -172,34 +176,47 @@ export default function SettingsPage() {
   return (
     <div className="space-y-10">
       <SectionHeading
-        kicker={localSecureMode ? "Local Secure Mode" : "Public Pages Runtime"}
-        title="Settings and repository control"
+        kicker={localSecureMode ? t("localSecureMode") : t("publicPagesRuntime")}
+        title={t("repositoryControl")}
         body={
           localSecureMode
-            ? "Conecte seu token GitHub apenas no localhost para descobrir os repositorios publicos acessiveis e definir quais entram no dashboard. O Pages publicado continua sem credenciais no browser."
-            : "Esta versao publicada consome somente snapshots estaticos. O fluxo autenticado para descoberta e selecao de repositorios existe apenas no localhost."
+            ? t("connectLocalTokenBody")
+            : t("snapshotOnlyBody")
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl surface-panel p-6">
+      <div className="grid gap-3 xl:grid-cols-4">
+        <ControlMetric label={t("visibleRepos")} value={selectedRepoCount} hint={t("currentDashboardSet")} tone={selectedRepoCount > 0 ? "success" : "neutral"} />
+        <ControlMetric label={t("featuredRepo")} value={featuredRepoLabel === "none" ? t("none") : t("featured")} hint={featuredRepoLabel} tone={featuredRepoLabel !== "none" ? "success" : "neutral"} />
+        <ControlMetric
+          label={t("mode")}
+          value={localSecureMode ? (session ? t("live") : t("local")) : t("snapshotLabel")}
+          hint={localSecureMode ? (session ? t("authenticatedSession") : t("awaitingToken")) : t("publishedSnapshot")}
+          tone={session ? "success" : "neutral"}
+        />
+        <ControlMetric label={t("rateLimit")} value={rateLimit ? `${rateLimit.remaining}` : "--"} hint={rateLimit ? `of ${rateLimit.limit}` : t("unavailable")} tone={session ? "success" : "neutral"} />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <section className="rounded-[1.9rem] ops-surface p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-headline text-2xl font-bold">GitHub access</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
+              <p className="terminal-label">{t("sessionControl")}</p>
+              <h2 className="mt-3 font-headline text-2xl font-bold tracking-tight">{t("githubAccess")}</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                 {localSecureMode
-                  ? "O token habilita apenas a sessao local. Nenhuma credencial vai para o bundle, para o Pages ou para o armazenamento remoto. A chave fica apenas em memoria e e descartada ao recarregar a aba ou desconectar."
-                  : "No Pages o token nao e aceito no browser. Use localhost para autenticar e decidir quais repositorios deseja exibir."}
+                  ? t("tokenSessionOnlyBody")
+                  : t("publishedRuntimeNoBrowserTokenBody")}
               </p>
             </div>
             <StatusPill tone={localSecureMode ? (session ? "success" : "warning") : "neutral"}>
-              {localSecureMode ? (session ? "Local Auth" : "Awaiting Token") : "Snapshot Only"}
+              {localSecureMode ? (session ? t("localAuth") : t("awaitingTokenLabel")) : t("snapshotOnly")}
             </StatusPill>
           </div>
 
           {localSecureMode ? (
             <div className="mt-6 space-y-6">
-              <div className="rounded-2xl bg-black/18 p-4">
+              <div className="rounded-[1.4rem] ops-surface-deep p-4">
                 <div className="flex items-center gap-3">
                   {session?.avatarUrl ? (
                     <img src={session.avatarUrl} alt={session.username} className="h-12 w-12 rounded-full object-cover ring-1 ring-white/10" />
@@ -209,16 +226,16 @@ export default function SettingsPage() {
                     </div>
                   )}
                   <div>
-                    <p className="text-sm text-muted-foreground">Current identity</p>
-                    <p className="text-lg font-semibold">{session ? `@${session.username}` : "Nenhuma sessao ativa"}</p>
+                    <p className="text-sm text-muted-foreground">{t("currentIdentity")}</p>
+                    <p className="text-lg font-semibold">{session ? `@${session.username}` : t("noActiveSession")}</p>
                   </div>
                 </div>
               </div>
 
               <form className="space-y-4" onSubmit={handleConnect}>
                 <label className="block">
-                  <span className="terminal-label">GitHub token</span>
-                  <div className="mt-3 flex gap-3">
+                  <span className="terminal-label">{t("githubToken")}</span>
+                  <div className="mt-3 flex flex-col gap-3 md:flex-row">
                     <div className="relative flex-1">
                       <KeyRound className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/35" size={15} />
                       <input
@@ -226,24 +243,24 @@ export default function SettingsPage() {
                         autoComplete="off"
                         value={tokenInput}
                         onChange={(event) => setTokenInput(event.target.value)}
-                        placeholder={session ? "Cole um novo token para trocar a sessao atual" : "Cole um GitHub Personal Access Token"}
+                        placeholder={session ? t("pasteNewToken") : t("pastePersonalToken")}
                         className="h-12 w-full rounded-2xl border border-white/6 bg-black/18 pl-11 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-primary/35"
                       />
                     </div>
                     <button type="submit" disabled={isConnecting} className="button-primary-terminal px-5 py-3 text-sm disabled:opacity-60">
                       {isConnecting ? <LoaderCircle size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
-                      {session ? "Atualizar token" : "Conectar"}
+                      {session ? t("updateToken") : t("connect")}
                     </button>
                   </div>
                 </label>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-black/18 p-4">
-                  <p className="text-sm text-foreground/75">Token is memory-only in this tab. Reloading the page clears the session.</p>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.4rem] ops-surface-deep p-4">
+                  <p className="text-sm text-foreground/75">{t("tokenMemoryOnlyBody")}</p>
 
                   {session ? (
                     <button type="button" onClick={handleDisconnect} className="button-secondary-terminal px-4 py-2 text-xs uppercase tracking-[0.22em]">
                       <ShieldOff size={14} />
-                      Disconnect
+                      {t("disconnect")}
                     </button>
                   ) : null}
                 </div>
@@ -252,81 +269,91 @@ export default function SettingsPage() {
               </form>
             </div>
           ) : (
-            <div className="mt-6 rounded-2xl bg-black/18 p-5 text-sm leading-7 text-muted-foreground">
-              O modo publicado permanece deliberadamente sem entrada de token. Se quiser descobrir seus repositorios e controlar a selecao em tempo real, rode a aplicacao no localhost.
+            <div className="mt-6 rounded-[1.4rem] ops-surface-deep p-5 text-sm leading-6 text-muted-foreground">
+              {t("publishedRuntimeNoBrowserTokenBody")}
             </div>
           )}
         </section>
 
-        <section className="rounded-3xl surface-panel p-6">
-          <h2 className="font-headline text-2xl font-bold">Runtime status</h2>
-          <div className="mt-6 space-y-4">
-            <StatusLine label="Snapshot generated" value={new Date(manifest.status.generatedAt).toLocaleString()} />
-            <StatusLine label="Snapshot source" value={manifest.status.generatedBy} />
+        <section className="rounded-[1.9rem] ops-surface p-6">
+          <p className="terminal-label">{t("runtimeStatusTitle")}</p>
+          <h2 className="mt-3 font-headline text-2xl font-bold tracking-tight">{t("currentMode")}</h2>
+          <div className="mt-6 grid gap-3">
+            <StatusLine label={t("publishedSnapshotLabel")} value={formatDateTime(manifest.status.generatedAt, settings.lang)} />
+            <StatusLine label={t("snapshotSource")} value={manifest.status.generatedBy} />
             <StatusLine
-              label="Current mode"
+              label={t("currentMode")}
               value={localSecureMode ? (session ? "local-authenticated" : "localhost-public") : "github-pages"}
               highlighted={Boolean(session)}
             />
-            <StatusLine label="Visible repos" value={String(selectedRepoCount)} highlighted={selectedRepoCount > 0} />
-            {rateLimit ? <StatusLine label="Rate limit" value={`${rateLimit.remaining}/${rateLimit.limit}`} highlighted={Boolean(session)} /> : null}
-            <StatusLine label="Featured repo" value={featuredRepoLabel} highlighted={Boolean(primaryRepo)} />
+            <StatusLine label={t("visibleRepos")} value={String(selectedRepoCount)} highlighted={selectedRepoCount > 0} />
+            {rateLimit ? <StatusLine label={t("rateLimit")} value={`${rateLimit.remaining}/${rateLimit.limit}`} highlighted={Boolean(session)} /> : null}
+            <StatusLine label={t("featuredRepo")} value={featuredRepoLabel} highlighted={Boolean(primaryRepo)} />
           </div>
         </section>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.75fr_1.25fr]">
-        <section className="rounded-3xl surface-panel p-6">
-          <h2 className="font-headline text-2xl font-bold">Interface preferences</h2>
+        <section className="rounded-[1.9rem] ops-surface p-6">
+          <p className="terminal-label">{t("preferences")}</p>
+          <h2 className="mt-3 font-headline text-2xl font-bold tracking-tight">{t("interfaceSettings")}</h2>
           <div className="mt-6 space-y-5">
             <PreferenceToggle
-              label="Theme"
+              label={t("theme")}
               options={[
-                { value: "terminal", label: "Terminal" },
-                { value: "contrast", label: "Contrast" },
+                { value: "dark", label: t("darkMode") },
+                { value: "light", label: t("lightMode") },
               ]}
               current={settings.theme}
               onSelect={(value) => updateSettings({ theme: value as typeof settings.theme })}
             />
 
             <PreferenceToggle
-              label="Density"
+              label={t("density")}
               options={[
-                { value: "balanced", label: "Balanced" },
-                { value: "dense", label: "Dense" },
+                { value: "balanced", label: t("balanced") },
+                { value: "dense", label: t("dense") },
               ]}
               current={settings.dashboardDensity}
               onSelect={(value) => updateSettings({ dashboardDensity: value as typeof settings.dashboardDensity })}
             />
+
+            <PreferenceToggle
+              label={t("language")}
+              options={Object.entries(languageLabels).map(([value, label]) => ({ value, label }))}
+              current={settings.lang}
+              onSelect={(value) => updateSettings({ lang: value as typeof settings.lang })}
+            />
           </div>
 
           <div className="mt-8 space-y-4">
-            <h3 className="font-headline text-xl font-bold">Runbook</h3>
+            <h3 className="font-headline text-xl font-bold tracking-tight">{t("runbook")}</h3>
             {LOCAL_SYNC_DOC.map((step) => (
-              <div key={step} className="rounded-2xl bg-black/18 p-4 text-sm leading-7 text-foreground/80">
-                {step}
+              <div key={step} className="rounded-[1.25rem] ops-surface-deep p-4 text-sm leading-6 text-foreground/80">
+                {t(step)}
               </div>
             ))}
           </div>
         </section>
 
-        <section className="rounded-3xl surface-panel p-6">
+        <section className="rounded-[1.9rem] ops-surface p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-headline text-2xl font-bold">
-                {localSecureMode ? "Available repositories" : "Tracked repositories"}
+              <p className="terminal-label">{t("repositoryQueuePanelTitle")}</p>
+              <h2 className="mt-3 font-headline text-2xl font-bold tracking-tight">
+                {localSecureMode ? t("availableRepositories") : t("trackedRepositories")}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                 {localSecureMode
-                  ? "Descubra apenas os repositorios publicos que o token enxerga e marque os que devem entrar no dashboard. O destaque principal tambem e definido aqui."
-                  : "No Pages exibimos apenas o conjunto que entrou no snapshot publicado."}
+                  ? t("chooseDashboardReposBody")
+                  : t("publishedRuntimeShowsSnapshotBody")}
               </p>
             </div>
 
             {localSecureMode ? (
-              session ? <StatusPill tone="success">{repos.length} repos found</StatusPill> : <StatusPill tone="warning">Awaiting token</StatusPill>
+              session ? <StatusPill tone="success">{`${repos.length} ${t("reposFound")}`}</StatusPill> : <StatusPill tone="warning">{t("awaitingToken")}</StatusPill>
             ) : (
-              <StatusPill tone="neutral">{overview?.repos.length ?? 0} tracked</StatusPill>
+              <StatusPill tone="neutral">{`${overview?.repos.length ?? 0} ${t("tracked")}`}</StatusPill>
             )}
           </div>
 
@@ -334,51 +361,59 @@ export default function SettingsPage() {
             <div className="mt-6 space-y-5">
               {session ? (
                 <>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
                     <div className="relative min-w-[18rem] flex-1">
                       <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30" size={15} />
                       <input
                         type="search"
                         value={repoQuery}
                         onChange={(event) => setRepoQuery(event.target.value)}
-                        placeholder="Search by name, description or stack"
+                        placeholder={t("searchByNameDescriptionStack")}
                         className="h-11 w-full rounded-2xl border border-white/6 bg-black/18 pl-11 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-primary/35"
                       />
                     </div>
+                    <div className="flex flex-wrap gap-2">
+                      <FilterChip label={t("all")} active={repoFilter === "all"} onClick={() => setRepoFilter("all")} />
+                      <FilterChip label={t("selected")} active={repoFilter === "selected"} onClick={() => setRepoFilter("selected")} />
+                      <FilterChip label={t("available")} active={repoFilter === "unselected"} onClick={() => setRepoFilter("unselected")} />
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={() => selectRepos("all")} className="button-secondary-terminal px-4 py-2 text-xs uppercase tracking-[0.22em]">
-                      Select all
+                      {t("selectAll")}
                     </button>
                     <button type="button" onClick={() => selectRepos("none")} className="button-secondary-terminal px-4 py-2 text-xs uppercase tracking-[0.22em]">
-                      Clear
+                      {t("clear")}
                     </button>
                     <button type="button" onClick={() => selectFilteredRepos("all")} className="button-secondary-terminal px-4 py-2 text-xs uppercase tracking-[0.22em]">
-                      Select filtered
+                      {t("selectFiltered")}
                     </button>
                     <button type="button" onClick={() => selectFilteredRepos("none")} className="button-secondary-terminal px-4 py-2 text-xs uppercase tracking-[0.22em]">
-                      Clear filtered
+                      {t("clearFiltered")}
                     </button>
-                    <FilterChip label="All" active={repoFilter === "all"} onClick={() => setRepoFilter("all")} />
-                    <FilterChip label="Selected" active={repoFilter === "selected"} onClick={() => setRepoFilter("selected")} />
-                    <FilterChip label="Available" active={repoFilter === "unselected"} onClick={() => setRepoFilter("unselected")} />
                   </div>
 
                   {reposLoading ? (
-                    <div className="rounded-2xl bg-black/18 p-4 text-sm text-muted-foreground">Resolving accessible repositories...</div>
+                    <div className="rounded-[1.3rem] ops-surface-deep p-4 text-sm text-muted-foreground">{t("resolvingAccessibleRepositories")}</div>
                   ) : reposError ? (
-                    <div className="rounded-2xl bg-black/18 p-4 text-sm text-destructive">Falha ao carregar os repositorios acessiveis para a sessao atual.</div>
+                    <div className="rounded-[1.3rem] ops-surface-deep p-4 text-sm text-destructive">{t("failedAccessibleRepositories")}</div>
                   ) : repos.length === 0 ? (
-                    <div className="rounded-2xl bg-black/18 p-4 text-sm text-muted-foreground">Esse token foi validado, mas nao retornou nenhum repositorio publico acessivel.</div>
+                    <div className="rounded-[1.3rem] ops-surface-deep p-4 text-sm text-muted-foreground">{t("noAccessiblePublicRepositories")}</div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-4 rounded-2xl bg-black/18 px-4 py-3 text-sm text-muted-foreground">
-                        <span>{filteredRepos.length} results</span>
-                        <span>{selectedRepos.length} selected</span>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <RepoCounter label={t("filtered")} value={filteredRepos.length} />
+                        <RepoCounter label={t("selected")} value={selectedCount} tone={selectedCount > 0 ? "success" : "neutral"} />
+                        <RepoCounter label={t("featured")} value={primaryRepo ? 1 : 0} tone={primaryRepo ? "success" : "neutral"} />
                       </div>
 
-                      <div className="max-h-[34rem] space-y-3 overflow-auto pr-1">
+                      <div className="flex items-center justify-between gap-4 rounded-[1.3rem] ops-surface-deep px-4 py-3 text-sm text-muted-foreground">
+                        <span>{`${filteredRepos.length} ${t("results")}`}</span>
+                        <span>{`${selectedRepos.length} ${t("selected")}`}</span>
+                      </div>
+
+                      <div className="max-h-[36rem] space-y-2.5 overflow-auto pr-1">
                         {filteredRepos.map((repo) => {
                         const isSelected = selectedRepos.includes(repo.fullName);
                         const isFeatured = primaryRepo === repo.fullName;
@@ -386,62 +421,65 @@ export default function SettingsPage() {
                         return (
                           <div
                             key={repo.id}
-                            className={
+                            className={cn(
+                              "rounded-[1.35rem] p-4",
                               isSelected
-                                ? "rounded-2xl border border-primary/25 bg-primary/[0.07] p-4 shadow-[0_0_0_1px_rgba(0,255,65,0.12)]"
-                                : "rounded-2xl border border-white/6 bg-black/18 p-4"
-                            }
+                                ? "bg-primary/[0.07] shadow-[inset_0_0_0_1px_rgba(0,255,65,0.14)]"
+                                : "ops-surface-deep",
+                            )}
                           >
                             <div className="flex items-start justify-between gap-4">
                               <button type="button" onClick={() => toggleRepo(repo.fullName)} className="min-w-0 flex-1 text-left">
                                 <div className="flex items-center gap-3">
                                   <span
-                                    className={
+                                    className={cn(
+                                      "flex h-8 w-8 items-center justify-center rounded-full",
                                       isSelected
-                                        ? "flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary"
-                                        : "flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-foreground/35"
-                                    }
+                                        ? "bg-primary/15 text-primary"
+                                        : "bg-white/5 text-foreground/35",
+                                    )}
                                   >
                                     {isSelected ? <ShieldCheck size={13} /> : <Github size={13} />}
                                   </span>
                                   <div className="min-w-0">
                                     <p className="truncate font-semibold">{repo.fullName}</p>
                                     <p className="mt-1 truncate text-sm text-muted-foreground">
-                                      {repo.description || "No description provided on GitHub."}
+                                      {repo.description || t("noDescription")}
                                     </p>
                                   </div>
                                 </div>
                               </button>
 
                               <div className="flex shrink-0 items-center gap-2">
-                                <StatusPill tone="neutral">Public</StatusPill>
+                                <StatusPill tone="neutral">{t("publicLabel")}</StatusPill>
                                 <button
                                   type="button"
                                   disabled={!isSelected}
                                   onClick={() => setPrimaryRepo(repo.fullName)}
-                                  className={
+                                  className={cn(
+                                    "inline-flex items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] disabled:opacity-40",
                                     isFeatured
-                                      ? "inline-flex items-center gap-2 rounded-full bg-secondary/12 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-secondary"
-                                      : "inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/45 disabled:opacity-40"
-                                  }
+                                      ? "bg-secondary/12 text-secondary"
+                                      : "bg-white/5 text-foreground/45",
+                                  )}
                                 >
                                   <Star size={11} />
-                                  {isFeatured ? "Featured" : "Set featured"}
+                                  {isFeatured ? t("featured") : t("setFeatured")}
                                 </button>
                               </div>
                             </div>
 
                             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-                              <span>{repo.language ?? "Unspecified stack"}</span>
-                              <span>{repo.archived ? "Archived" : "Active"} | Updated {new Date(repo.updatedAt).toLocaleDateString()}</span>
+                              <span>{repo.language ?? t("unspecifiedStack")}</span>
+                              <span>{`${repo.archived ? t("archived") : t("active")} | ${t("updated")} ${formatDate(repo.updatedAt, settings.lang)}`}</span>
                             </div>
                           </div>
                         );
                         })}
 
                         {filteredRepos.length === 0 ? (
-                          <div className="rounded-2xl bg-black/18 p-5 text-sm leading-7 text-muted-foreground">
-                            Nenhum repositorio publico corresponde ao filtro atual.
+                          <div className="rounded-[1.3rem] ops-surface-deep p-5 text-sm leading-6 text-muted-foreground">
+                            {t("noPublicRepoMatchesFilter")}
                           </div>
                         ) : null}
                       </div>
@@ -449,21 +487,21 @@ export default function SettingsPage() {
                   )}
                 </>
               ) : (
-                <div className="rounded-2xl bg-black/18 p-5 text-sm leading-7 text-muted-foreground">
-                  Conecte um token GitHub acima para listar os repositorios acessiveis e escolher quais entram na visualizacao.
+                <div className="rounded-[1.3rem] ops-surface-deep p-5 text-sm leading-6 text-muted-foreground">
+                  {t("connectTokenToListRepos")}
                 </div>
               )}
             </div>
           ) : (
             <div className="mt-6 space-y-3">
               {overview?.repos.map((entry) => (
-                <div key={entry.repo.id} className="flex items-center justify-between gap-4 rounded-2xl bg-black/18 p-4">
+                <div key={entry.repo.id} className="flex items-center justify-between gap-4 rounded-[1.3rem] ops-surface-deep p-4">
                   <div>
                     <p className="font-semibold">{entry.repo.fullName}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{entry.repo.description || "No repository description in the current snapshot."}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{entry.repo.description || t("noRepositoryDescriptionSnapshot")}</p>
                   </div>
                   <StatusPill tone={entry.repo.fullName === manifest.featuredRepo ? "success" : "neutral"}>
-                    {entry.repo.fullName === manifest.featuredRepo ? "Featured" : "Tracked"}
+                    {entry.repo.fullName === manifest.featuredRepo ? t("featured") : t("tracked")}
                   </StatusPill>
                 </div>
               ))}
@@ -471,6 +509,43 @@ export default function SettingsPage() {
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+function ControlMetric({
+  label,
+  value,
+  hint,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string | number;
+  hint: string;
+  tone?: "neutral" | "success";
+}) {
+  return (
+    <div className={cn("rounded-[1.5rem] ops-surface-soft px-4 py-4", tone === "success" && "shadow-[inset_0_0_0_1px_rgba(0,255,65,0.12)]")}>
+      <p className="terminal-label">{label}</p>
+      <p className={cn("mt-3 text-3xl font-black tracking-tight text-foreground", tone === "success" && "text-primary")}>{value}</p>
+      <p className="mt-2 truncate text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+function RepoCounter({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string | number;
+  tone?: "neutral" | "success";
+}) {
+  return (
+    <div className={cn("rounded-[1.2rem] ops-surface-deep px-4 py-3", tone === "success" && "shadow-[inset_0_0_0_1px_rgba(0,255,65,0.12)]")}>
+      <p className="terminal-label">{label}</p>
+      <p className={cn("mt-2 text-lg font-semibold text-foreground", tone === "success" && "text-primary")}>{value}</p>
     </div>
   );
 }
@@ -531,7 +606,7 @@ function PreferenceToggle({
           <button
             key={option.value}
             onClick={() => onSelect(option.value)}
-            className={current === option.value ? "rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" : "rounded-xl bg-black/18 px-4 py-2 text-sm font-semibold text-foreground/70"}
+            className={current === option.value ? "rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" : "rounded-xl border border-[var(--button-secondary-border)] bg-[var(--button-secondary-contrast-bg)] px-4 py-2 text-sm font-semibold text-foreground/70"}
           >
             {option.label}
           </button>

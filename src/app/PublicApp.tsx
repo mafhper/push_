@@ -4,6 +4,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppProvider } from "@/contexts/AppContext";
+import { useApp } from "@/contexts/useApp";
 import { PromoLayout } from "@/components/Layout";
 import { PublicDashboardLayout } from "@/components/layout/PublicDashboardLayout";
 import { PublicRuntimeProvider } from "@/contexts/PublicRuntimeProvider";
@@ -31,35 +33,42 @@ const queryClient = new QueryClient({
 export default function PublicApp() {
   return (
     <QueryClientProvider client={queryClient}>
-      <PublicRuntimeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter basename={import.meta.env.BASE_URL}>
-            <ScrollToTop />
-            <Suspense fallback={<div className="editorial-frame px-6 py-20 text-sm text-muted-foreground">Loading Push_ Terminal...</div>}>
-              <Routes>
-                <Route element={<PromoLayout />}>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/technology" element={<TechnologyPage />} />
-                  <Route path="/faq" element={<FAQPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                </Route>
+      <AppProvider>
+        <PublicRuntimeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
+              <ScrollToTop />
+              <Suspense fallback={<PublicLoadingFallback />}>
+                <Routes>
+                  <Route element={<PromoLayout />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/technology" element={<TechnologyPage />} />
+                    <Route path="/faq" element={<FAQPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                  </Route>
 
-                <Route path="/app" element={<PublicDashboardLayout />}>
-                  <Route index element={<DashboardPage />} />
-                  <Route path="repo/:owner/:repo" element={<RepoDetailPage />} />
-                  <Route path="alerts" element={<AlertsPage />} />
-                  <Route path="settings" element={<SettingsPage />} />
-                </Route>
+                  <Route path="/app" element={<PublicDashboardLayout />}>
+                    <Route index element={<DashboardPage />} />
+                    <Route path="repo/:owner/:repo" element={<RepoDetailPage />} />
+                    <Route path="alerts" element={<AlertsPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
+                  </Route>
 
-                <Route path="/auth" element={<Navigate to="/app/settings" replace />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
-      </PublicRuntimeProvider>
+                  <Route path="/auth" element={<Navigate to="/app/settings" replace />} />
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </PublicRuntimeProvider>
+      </AppProvider>
     </QueryClientProvider>
   );
+}
+
+function PublicLoadingFallback() {
+  const { t } = useApp();
+  return <div className="editorial-frame px-6 py-20 text-sm text-muted-foreground">{t("loadingPublicShell")}</div>;
 }

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import PublicSettingsPage from "./PublicSettings";
+import { renderWithAppProviders } from "@/test/render-app";
 import { createManifest, createOverview } from "@/test/factories";
 
 vi.mock("@/hooks/useGitHubPublic", () => ({
@@ -30,7 +31,7 @@ describe("PublicSettingsPage", () => {
     vi.mocked(hooks.usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
     vi.mocked(hooks.usePublicRateLimit).mockReturnValue({ data: { remaining: 60, limit: 60, resetAt: "2026-03-19T12:00:00.000Z" } } as never);
 
-    render(
+    renderWithAppProviders(
       <MemoryRouter>
         <PublicSettingsPage />
       </MemoryRouter>,

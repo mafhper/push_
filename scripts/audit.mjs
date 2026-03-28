@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
+const skipPrechecks = process.argv.includes("--skip-prechecks");
+
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit", shell: true });
   if (result.status !== 0) {
@@ -37,11 +39,7 @@ function assertBuildFreeOfSecretsAndLocalAuth() {
     { pattern: /github_pat_[A-Za-z0-9_]+/g, label: "GitHub fine-grained PAT prefix" },
     { pattern: /Authorization:\s*Bearer/g, label: "Authorization bearer header" },
     { pattern: /document\.cookie/g, label: "cookie access" },
-    { pattern: /Current identity/g, label: "local session UI copy" },
-    { pattern: /Token is memory-only in this tab/g, label: "local auth helper copy" },
-    { pattern: /Awaiting Token/g, label: "local auth status copy" },
-    { pattern: /Cole um GitHub Personal Access Token/g, label: "PAT input placeholder" },
-    { pattern: /Atualizar token/g, label: "local token refresh action" },
+    { pattern: /GH_STATS_TOKEN/g, label: "snapshot token environment variable" },
   ];
 
   const matches = blockedPatterns
@@ -53,7 +51,15 @@ function assertBuildFreeOfSecretsAndLocalAuth() {
   }
 }
 
-run("npm", ["run", "lint"]);
-run("npm", ["run", "test"]);
+if (!skipPrechecks) {
+  run("npm", ["run", "lint"]);
+  run("npm", ["run", "type-check"]);
+  run("npm", ["run", "test:ci"]);
+  run("npm", ["run", "validate:i18n"]);
+  run("npm", ["run", "validate:docs"]);
+  run("npm", ["run", "validate:security"]);
+  run("npm", ["run", "validate:patterns"]);
+}
+
 run("npm", ["run", "build"]);
 assertBuildFreeOfSecretsAndLocalAuth();

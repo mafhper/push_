@@ -62,10 +62,10 @@ describe("SettingsPage", () => {
     );
 
     expect(screen.getByText("GitHub token")).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText("Cole um GitHub Personal Access Token"), {
+    fireEvent.change(screen.getByPlaceholderText("Paste a GitHub personal access token"), {
       target: { value: "ghp_test" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /conectar/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^connect$/i }));
 
     await waitFor(() => {
       expect(screen.getByText("mafhper/push_")).toBeInTheDocument();

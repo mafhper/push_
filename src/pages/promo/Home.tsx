@@ -1,98 +1,101 @@
 import { Link } from "react-router-dom";
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
-import { ArrowRight, Github, ShieldCheck, Waves } from "lucide-react";
-
-const featureCards = [
-  {
-    title: "Public Repos",
-    body: "Track only the public repositories you choose to show.",
-    tone: "success",
-  },
-  {
-    title: "Safe on Pages",
-    body: "The published site runs without browser tokens.",
-    tone: "warning",
-  },
-  {
-    title: "Fast Scan",
-    body: "Health, activity and alerts stay easy to read at a glance.",
-    tone: "neutral",
-  },
-  {
-    title: "Responsive",
-    body: "Promo site and dashboard work across desktop and mobile.",
-    tone: "success",
-  },
-];
+import { useApp } from "@/contexts/useApp";
+import { ArrowRight, Github } from "lucide-react";
 
 export default function HomePage() {
+  const { t } = useApp();
+  const featureCards = [
+    { title: t("promoHomeFeatureReposTitle"), body: t("promoHomeFeatureReposBody"), tone: "success" as const, tag: t("promoStateReady") },
+    { title: t("promoHomeFeatureSnapshotTitle"), body: t("promoHomeFeatureSnapshotBody"), tone: "warning" as const, tag: t("warning") },
+    { title: t("promoHomeFeatureAttentionTitle"), body: t("promoHomeFeatureAttentionBody"), tone: "neutral" as const, tag: t("promoStateBase") },
+    { title: t("promoHomeFeatureShellTitle"), body: t("promoHomeFeatureShellBody"), tone: "success" as const, tag: t("promoStateReady") },
+  ];
+
   return (
     <div className="space-y-24">
       <section className="hero-glow relative grid gap-12 pt-10 xl:grid-cols-[0.96fr_1.04fr] xl:items-center">
         <div className="space-y-10 xl:pb-10">
           <SectionHeading
+            kicker={t("promoHomeKicker")}
             title={
               <>
-                <span className="text-foreground">Public GitHub stats.</span>
+                <span className="text-foreground">{t("promoHomeTitleLead")}</span>
                 <br />
-                One <span className="text-primary">dashboard.</span>
+                {t("promoHomeTitleMiddle")} <span className="text-primary">{t("promoHomeTitleAccent")}</span>
               </>
             }
-            body="Monitor selected public repositories with a GitHub Pages-safe dashboard."
+            body={t("promoHomeBody")}
           />
 
           <div className="flex flex-wrap gap-4">
             <Link to="/app" className="button-primary-terminal">
-              Open dashboard
+              {t("promoOpenDashboard")}
               <ArrowRight size={16} />
             </Link>
             <a href="https://github.com/mafhper/push_" className="button-secondary-terminal">
-              View repository
+              {t("promoViewRepository")}
             </a>
           </div>
         </div>
 
-        <div className="rounded-[2.4rem] surface-panel p-5 shadow-[0_0_32px_rgba(0,0,0,0.22)]">
-          <div className="rounded-[1.8rem] bg-black/20 p-4 md:p-5">
+        <div className="rounded-[2.4rem] ops-surface p-5 shadow-[0_0_32px_rgba(0,0,0,0.22)]">
+          <div className="rounded-[1.8rem] ops-surface-deep p-4 md:p-5">
             <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-destructive/80" />
-                <span className="h-2.5 w-2.5 rounded-full bg-secondary/80" />
-                <span className="h-2.5 w-2.5 rounded-full bg-primary/80" />
-              </div>
-              <StatusPill tone="success">snapshot live</StatusPill>
+              <p className="terminal-label">{t("promoPreviewQueue")}</p>
+              <StatusPill tone="success">{t("promoSnapshotLive")}</StatusPill>
             </div>
-            <div className="terminal-grid rounded-[1.25rem] bg-[#101010] p-6">
-              <div className="grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
-                <div className="rounded-3xl surface-panel p-5 md:p-6">
-                  <p className="terminal-label">Fleet health</p>
-                  <p className="mt-4 text-5xl font-black text-primary md:text-6xl">99.8%</p>
-                  <p className="mt-3 text-sm text-muted-foreground">Snapshot-backed public view.</p>
-                </div>
-                <div className="rounded-3xl surface-panel-deep p-5 md:p-6">
-                  <p className="terminal-label">Security</p>
-                  <div className="mt-5 h-28">
-                    <div className="flex h-full items-end gap-2">
-                      {[52, 74, 58, 88, 66, 82, 94].map((value) => (
-                        <div key={value} className="w-full rounded-t-md bg-primary/80" style={{ height: `${value}%` }} />
-                      ))}
-                    </div>
+
+            <div className="grid gap-4 md:grid-cols-[1.08fr_0.92fr]">
+              <div className="rounded-[1.6rem] ops-surface-soft p-5 md:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="terminal-label">{t("promoFeaturedRepo")}</p>
+                    <p className="mt-3 text-3xl font-black tracking-tight text-foreground">push_</p>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("promoFeaturedRepoBody")}</p>
                   </div>
+                  <div className="rounded-[1.2rem] bg-primary/[0.08] px-4 py-3">
+                    <p className="terminal-label text-primary">{t("health")}</p>
+                    <p className="mt-2 text-2xl font-black text-primary">97%</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {[
+                    [t("openAlertsLabel"), "0"],
+                    [t("workflow"), t("passing")],
+                    [t("staleDays"), "2"],
+                    [t("lastPushLabel"), "4h"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-[1.15rem] bg-white/[0.03] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+                      <p className="terminal-label">{label}</p>
+                      <p className="mt-2 text-lg font-semibold text-foreground">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                <div className="rounded-3xl surface-panel-deep p-4">
-                  <p className="terminal-label">tracked</p>
-                  <p className="mt-3 text-2xl font-black">04 repos</p>
+              <div className="rounded-[1.6rem] ops-surface-soft p-5 md:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="terminal-label">{t("promoWatchlist")}</p>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-primary">{t("promoWatchlistHint")}</span>
                 </div>
-                <div className="rounded-3xl surface-panel-deep p-4">
-                  <p className="terminal-label">local auth</p>
-                  <p className="mt-3 text-2xl font-black">local-only</p>
-                </div>
-                <div className="rounded-3xl surface-panel-deep p-4">
-                  <p className="terminal-label">pages</p>
-                  <p className="mt-3 text-2xl font-black">safe</p>
+
+                <div className="mt-4 space-y-2.5">
+                  {[
+                    ["#01", "push_", t("stable")],
+                    ["#02", "imaginizim", t("watchClosely")],
+                    ["#03", "spread", t("snapshotLabel")],
+                    ["#04", "mafhper.github.io", t("noUrgentSignal")],
+                  ].map(([rank, name, state]) => (
+                    <div key={name} className="flex items-center justify-between gap-3 rounded-[1.15rem] bg-white/[0.03] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+                      <div>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/34">{rank}</p>
+                        <p className="mt-1 text-sm font-semibold text-foreground">{name}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{state}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -102,15 +105,15 @@ export default function HomePage() {
 
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {featureCards.map((card) => (
-          <article key={card.title} className="rounded-[1.9rem] surface-panel p-6">
+          <article key={card.title} className="rounded-[1.9rem] ops-surface p-6">
             <div className="mb-5 flex items-center justify-between">
               <StatusPill tone={card.tone === "warning" ? "warning" : card.tone === "success" ? "success" : "neutral"}>
-                {card.tone === "warning" ? "gold" : card.tone === "success" ? "green" : "neutral"}
+                {card.tag}
               </StatusPill>
-              {card.title === "WCAG AAA" ? <ShieldCheck size={16} className="text-secondary" /> : card.title === "Dual Atmosphere" ? <Waves size={16} className="text-primary" /> : <Github size={16} className="text-foreground/30" />}
+              <Github size={16} className="text-foreground/30" />
             </div>
             <h3 className="text-xl font-bold">{card.title}</h3>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">{card.body}</p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">{card.body}</p>
           </article>
         ))}
       </section>
@@ -118,31 +121,31 @@ export default function HomePage() {
       <section className="space-y-10 rounded-[2.7rem] surface-panel-deep px-6 py-20 md:px-10">
         <SectionHeading
           align="center"
-          title="What you can see."
-          body="Repository health, workflow status, languages and security posture in one place."
+          title={t("promoHomeSurfaceTitle")}
+          body={t("promoHomeSurfaceBody")}
         />
 
         <div className="mx-auto max-w-5xl rounded-[2rem] surface-panel p-5 shadow-[0_0_32px_rgba(0,0,0,0.22)]">
           <div className="rounded-[1.5rem] bg-black/18 p-5">
             <div className="mb-5 flex items-center justify-between">
-              <p className="terminal-label">repository diagnostics</p>
-              <StatusPill tone="success">public dataset</StatusPill>
+              <p className="terminal-label">{t("promoDiagnosticsLabel")}</p>
+              <StatusPill tone="success">{t("promoPublicDataset")}</StatusPill>
             </div>
             <div className="overflow-hidden rounded-[1.25rem] surface-panel-deep">
               <table className="w-full text-left">
                 <thead className="bg-white/[0.02] font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/55">
                   <tr>
-                    <th className="px-4 py-4 font-medium">Repo</th>
-                    <th className="px-4 py-4 font-medium">Status</th>
-                    <th className="px-4 py-4 font-medium">Mode</th>
-                    <th className="px-4 py-4 font-medium">Alert Surface</th>
+                    <th className="px-4 py-4 font-medium">{t("repos")}</th>
+                    <th className="px-4 py-4 font-medium">{t("status")}</th>
+                    <th className="px-4 py-4 font-medium">{t("mode")}</th>
+                    <th className="px-4 py-4 font-medium">{t("securitySurface")}</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {[
-                    ["push_", "healthy", "public pages", "clear"],
-                    ["imaginizim", "tracked", "local sync", "rich"],
-                    ["spread", "snapshot", "public pages", "safe"],
+                    ["push_", t("healthy"), t("publicPagesRuntime"), t("clean")],
+                    ["imaginizim", t("tracked"), t("promoLocalSync"), t("promoRichData")],
+                    ["spread", t("snapshotLabel"), t("publicPagesRuntime"), t("promoSafeRead")],
                   ].map((row) => (
                     <tr key={row[0]} className="border-t border-white/[0.03]">
                       {row.map((cell) => <td key={cell} className="px-4 py-4 text-foreground/70">{cell}</td>)}
@@ -158,12 +161,12 @@ export default function HomePage() {
       <section className="space-y-8 py-14 text-center">
         <SectionHeading
           align="center"
-          title="Open the dashboard."
-          body="See the public view or inspect the source."
+          title={t("promoOpenDashboardTitle")}
+          body={t("promoOpenDashboardBody")}
         />
         <div className="flex flex-wrap justify-center gap-4">
-          <Link to="/app" className="button-primary-terminal">Open App</Link>
-          <a href="https://github.com/mafhper/push_" className="button-secondary-terminal">Open GitHub</a>
+          <Link to="/app" className="button-primary-terminal">{t("openApp")}</Link>
+          <a href="https://github.com/mafhper/push_" className="button-secondary-terminal">{t("viewOnGitHub")}</a>
         </div>
       </section>
     </div>

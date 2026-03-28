@@ -1,36 +1,66 @@
 import { PROMO_ROUTES, SITE_NAME, SITE_REPOSITORY_URL } from "@/config/site";
+import { useApp } from "@/contexts/useApp";
 import { cn } from "@/lib/utils";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 
 function PromoFooter() {
+  const { t } = useApp();
+
   return (
-    <footer className="terminal-footer full-bleed mt-auto min-h-[24rem]">
-      <div className="wordmark-ghost absolute -bottom-16 left-6 text-[8rem] md:-bottom-24 md:left-10 md:text-[18rem]">Push_</div>
-      <div className="editorial-frame relative flex min-h-[24rem] flex-col justify-between gap-10 px-6 py-10 md:px-10 md:py-16">
-        <div className="flex flex-col justify-between gap-10 md:flex-row md:items-end">
-          <div className="max-w-sm space-y-6">
-            <div>
-              <p className="text-4xl font-black tracking-tighter text-foreground">Push_ Terminal</p>
-              <p className="mt-4 text-base leading-7 text-foreground/60">
-                Public GitHub dashboard. Fast to scan. Safe to publish.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-5 text-sm text-foreground/60">
-              <a href={SITE_REPOSITORY_URL} className="hover:text-primary">GitHub Repository</a>
-              <Link to="/technology" className="hover:text-primary">Technology</Link>
-              <Link to="/app" className="hover:text-primary">Dashboard</Link>
-              <Link to="/faq" className="hover:text-primary">FAQ</Link>
-            </div>
+    <footer className="terminal-footer mt-auto overflow-hidden border-t border-white/5">
+      <div className="wordmark-ghost absolute inset-x-0 bottom-0 text-center text-[34vw] leading-none opacity-50 md:text-[20vw]">Push_</div>
+      <div className="editorial-frame relative grid gap-6 px-6 py-10 md:px-10 md:py-16 lg:grid-cols-[minmax(0,1.15fr)_24rem] lg:items-end">
+        <div className="space-y-5">
+          <div className="max-w-xl space-y-3">
+            <p className="terminal-label text-primary">{t("publicRuntime")}</p>
+            <p className="text-4xl font-black tracking-tighter text-foreground">{t("snapshotSafeDashboard")}</p>
+            <p className="max-w-lg text-base leading-6 text-foreground/60">
+              {t("publicRuntimeBody")}
+            </p>
           </div>
-          <div className="space-y-3 text-left md:text-right">
-            <p className="terminal-label">System Ready</p>
-            <p className="text-sm text-foreground/55">Selected public repositories. One view.</p>
-            <p className="text-sm font-semibold text-primary">2026 Push_ Terminal.</p>
+
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={SITE_REPOSITORY_URL}
+              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 text-sm text-foreground/60 transition-colors hover:border-white/14 hover:text-primary"
+            >
+              {t("githubRepository")}
+            </a>
+            <Link
+              to="/technology"
+              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 text-sm text-foreground/60 transition-colors hover:border-white/14 hover:text-primary"
+            >
+              {t("technology")}
+            </Link>
+            <Link
+              to="/app"
+              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 text-sm text-foreground/60 transition-colors hover:border-white/14 hover:text-primary"
+            >
+              {t("dashboard")}
+            </Link>
+            <Link
+              to="/faq"
+              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 text-sm text-foreground/60 transition-colors hover:border-white/14 hover:text-primary"
+            >
+              {t("faq")}
+            </Link>
           </div>
         </div>
-        <div className="flex items-center justify-between border-t border-white/5 pt-5 text-xs tracking-[0.18em] text-foreground/55">
-          <span>Semantic Terminal</span>
-          <span className="inline-flex items-center gap-2 text-primary"><span className="h-2 w-2 rounded-full bg-primary" />Network Online</span>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="rounded-[1.6rem] ops-surface-deep px-5 py-4">
+            <p className="terminal-label">{t("systemReady")}</p>
+            <p className="mt-3 text-sm leading-6 text-foreground/58">{t("systemReadyBody")}</p>
+          </div>
+          <div className="rounded-[1.6rem] ops-surface-deep px-5 py-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary">{t("networkOnline")}</p>
+            <p className="mt-3 text-sm leading-6 text-foreground/58">{t("networkOnlineBody")}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-white/5 pt-5 text-xs tracking-[0.18em] text-foreground/55 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
+          <span>{t("semanticTerminal")}</span>
+          <span className="inline-flex items-center gap-2 text-primary"><span className="h-2 w-2 rounded-full bg-primary" />{t("networkOnline")}</span>
         </div>
       </div>
     </footer>
@@ -39,31 +69,57 @@ function PromoFooter() {
 
 export function PromoLayout() {
   const location = useLocation();
+  const { t } = useApp();
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/85 backdrop-blur-xl">
-        <div className="editorial-frame flex items-center justify-between px-6 py-5 md:px-10">
-          <Link to="/" className="text-lg font-black tracking-tighter">{SITE_NAME}<span className="text-primary">_</span></Link>
-          <nav className="hidden items-center gap-6 md:flex">
+        <div className="editorial-frame flex items-center justify-between gap-4 px-6 py-5 md:px-10">
+          <div className="space-y-1">
+            <Link to="/" className="text-lg font-black tracking-tighter">{SITE_NAME}<span className="text-primary">_</span></Link>
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/34">{t("publicGitHubMonitoring")}</p>
+          </div>
+          <nav className="hidden items-center gap-2 md:flex">
             {PROMO_ROUTES.map((route) => (
               <NavLink
                 key={route.href}
                 to={route.href}
                 className={({ isActive }) =>
-                  cn("text-sm font-semibold text-foreground/60 hover:text-foreground", (isActive || location.pathname === route.href) && "text-primary")
+                  cn(
+                    "rounded-full px-4 py-2 text-sm font-semibold text-foreground/60 transition-colors hover:bg-white/[0.04] hover:text-foreground",
+                    (isActive || location.pathname === route.href) && "bg-primary/[0.08] text-primary",
+                  )
                 }
               >
-                {route.label}
+                {t(route.labelKey)}
               </NavLink>
             ))}
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/app" className="button-secondary-terminal hidden md:inline-flex">Open App</Link>
+            <Link to="/app" className="button-secondary-terminal hidden md:inline-flex">{t("openApp")}</Link>
             <a href={SITE_REPOSITORY_URL} className="button-primary-terminal px-4 py-2.5 text-sm">
-              View on GitHub
+              {t("viewOnGitHub")}
             </a>
           </div>
+        </div>
+
+        <div className="editorial-frame px-6 pb-3 md:hidden md:px-10">
+          <nav className="flex gap-2 overflow-x-auto">
+            {PROMO_ROUTES.map((route) => (
+              <NavLink
+                key={route.href}
+                to={route.href}
+                className={({ isActive }) =>
+                  cn(
+                    "shrink-0 rounded-full px-4 py-2 text-sm font-semibold text-foreground/60 transition-colors",
+                    (isActive || location.pathname === route.href) ? "bg-primary/[0.08] text-primary" : "bg-white/[0.03] hover:text-foreground",
+                  )
+                }
+              >
+                {t(route.labelKey)}
+              </NavLink>
+            ))}
+          </nav>
         </div>
       </header>
 
