@@ -570,9 +570,9 @@ export async function validateToken(token: string): Promise<{ login: string; ava
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const isUnauthorized = message.includes("401") || message.includes("403");
-    const isRateLimited = message.includes("429");
-    
+    const isUnauthorized = message.includes("401");
+    const isRateLimited = message.includes("403") || message.includes("429");
+
     return {
       login: "",
       avatarUrl: "",
