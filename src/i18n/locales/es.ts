@@ -20,6 +20,8 @@ export const es: MessageDictionary = {
   connectionSuccess: "Conectado correctamente",
   connectionError: "Falló la conexión. Revisa tu token.",
   invalidToken: "Token inválido o expirado",
+  tokenFormatError: "Formato de token inválido. Use un PAT de GitHub (ghp_...) o token fine-grained.",
+  rateLimitError: "Límite de tasa de la API de GitHub alcanzado. Inténtalo más tarde.",
   primaryRepo: "Repositorio principal",
   selectPrimary: "Selecciona el repositorio principal",
   additionalRepos: "Repositorios adicionales",
