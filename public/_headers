@@ -1,0 +1,10 @@
+# Security headers for GitHub Pages
+# https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages#custom-headers
+
+# Apply to all paths
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.github.com; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

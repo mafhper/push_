@@ -10,7 +10,7 @@ import "./index.css";
 document.documentElement.classList.add("terminal");
 
 const redirectedPath = sessionStorage.getItem("push_redirect");
-if (redirectedPath) {
+if (redirectedPath && redirectedPath.startsWith("/")) {
   sessionStorage.removeItem("push_redirect");
   window.history.replaceState(null, "", redirectedPath);
 }
