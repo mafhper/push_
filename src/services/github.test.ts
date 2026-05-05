@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchAccessibleRepos } from "./github";
+import { fetchAccessibleRepos, validateToken } from "./github";
 
 describe("fetchAccessibleRepos", () => {
   afterEach(() => {
@@ -64,5 +64,37 @@ describe("fetchAccessibleRepos", () => {
     expect(repos).toHaveLength(1);
     expect(repos[0]?.fullName).toBe("mafhper/push_");
     expect(repos[0]?.license).toBe("MIT");
+  });
+});
+
+describe("validateToken", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("classifies a 403 response as rate limited", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 403,
+    } as Response);
+
+    await expect(validateToken(`ghp_${"a".repeat(36)}`)).resolves.toEqual({
+      login: "",
+      avatarUrl: "",
+      error: "rate_limited",
+    });
+  });
+
+  it("classifies a 401 response as an invalid token", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 401,
+    } as Response);
+
+    await expect(validateToken(`ghp_${"a".repeat(36)}`)).resolves.toEqual({
+      login: "",
+      avatarUrl: "",
+      error: "invalid_token",
+    });
   });
 });

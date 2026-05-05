@@ -13,6 +13,8 @@ export const ptBR: MessageDictionary = {
   login: "Conectar",
   logout: "Desconectar",
   tokenPlaceholder: "Cole seu GitHub Personal Access Token",
+  tokenFormatError: "Formato do token inválido. Use um PAT do GitHub (ghp_...) ou token fine-grained.",
+  rateLimitError: "Limite de taxa da API do GitHub atingido. Tente novamente mais tarde.",
   tokenHelp: "Seu token fica só em memória enquanto esta aba local estiver aberta. Ele nunca entra no site publicado.",
   connectButton: "Salvar e conectar",
   disconnectButton: "Desconectar e limpar",

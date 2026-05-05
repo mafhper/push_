@@ -554,9 +554,13 @@ export function extractRateLimit(_headers: Record<string, string | undefined>): 
   return null;
 }
 
-export async function validateToken(token: string): Promise<{ login: string; avatarUrl: string } | null> {
+export async function validateToken(token: string): Promise<{ login: string; avatarUrl: string; error?: string } | null> {
   const trimmed = token.trim();
   if (!trimmed) return null;
+
+  if (!/^ghp_[a-zA-Z0-9_]{36,}$/.test(trimmed) && !/^github_pat_[a-zA-Z0-9_]{82,}$/.test(trimmed)) {
+    return { login: "", avatarUrl: "", error: "invalid_format" };
+  }
 
   try {
     const viewer = await githubRequest<{ login: string; avatar_url?: string }>("/user", trimmed);
@@ -564,7 +568,15 @@ export async function validateToken(token: string): Promise<{ login: string; ava
       login: viewer.login,
       avatarUrl: viewer.avatar_url || "",
     };
-  } catch {
-    return null;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isUnauthorized = message.includes("401");
+    const isRateLimited = message.includes("403") || message.includes("429");
+
+    return {
+      login: "",
+      avatarUrl: "",
+      error: isUnauthorized ? "invalid_token" : isRateLimited ? "rate_limited" : "validation_failed",
+    };
   }
 }

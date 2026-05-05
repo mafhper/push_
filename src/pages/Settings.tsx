@@ -127,8 +127,12 @@ export default function SettingsPage() {
     const viewer = await validateToken(trimmedToken);
     setIsConnecting(false);
 
-    if (!viewer) {
-      setConnectError(t("invalidToken"));
+    if (!viewer || !viewer.login) {
+      const errorKey = viewer?.error === "invalid_format" ? "tokenFormatError"
+        : viewer?.error === "rate_limited" ? "rateLimitError"
+        : viewer?.error === "invalid_token" ? "invalidToken"
+        : "connectionError";
+      setConnectError(t(errorKey));
       return;
     }
 
