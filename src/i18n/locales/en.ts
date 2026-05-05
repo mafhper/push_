@@ -17,6 +17,8 @@ export const en = {
   connectionSuccess: "Connected successfully",
   connectionError: "Connection failed. Check your token.",
   invalidToken: "Invalid or expired token",
+  tokenFormatError: "Token format is invalid. Use a GitHub PAT (ghp_...) or fine-grained token.",
+  rateLimitError: "GitHub API rate limit reached. Try again later.",
   primaryRepo: "Primary Repository",
   selectPrimary: "Select your main repository",
   additionalRepos: "Additional Repositories",
