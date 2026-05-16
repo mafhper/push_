@@ -92,14 +92,10 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        xl: "calc(var(--radius) + 4px)",
-        "2xl": "calc(var(--radius) + 8px)",
-        "3xl": "1.5rem",
+        lg: "12px",
+        md: "8px",
+        sm: "6px",
       },
-      keyframes: {
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -123,6 +119,11 @@ export default {
         "pulse-critical": "pulse-critical 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "fade-in": "fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
       },
+    },
+  },
+  plugins: [tailwindAnimate],
+} satisfies Config;
+
     },
   },
   plugins: [tailwindAnimate],

@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/contexts/AppContext";
 import { useApp } from "@/contexts/useApp";
 import { PromoLayout } from "@/components/Layout";
-import { LocalDashboardLayout } from "@/components/layout/LocalDashboardLayout";
+import { AppShell } from "@/components/layout/AppShell";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const HomePage = lazy(() => import("../pages/promo/Home"));
@@ -47,7 +47,7 @@ export default function LocalApp() {
                   <Route path="/about" element={<AboutPage />} />
                 </Route>
 
-                <Route path="/app" element={<LocalDashboardLayout />}>
+                <Route path="/app" element={<AppShell />}>
                   <Route index element={<DashboardPage />} />
                   <Route path="repo/:owner/:repo" element={<RepoDetailPage />} />
                   <Route path="alerts" element={<AlertsPage />} />
