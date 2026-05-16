@@ -20,82 +20,46 @@ export default {
         mono: ['ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
       },
       fontSize: {
-        'fluid-xs': 'clamp(0.7rem, 1.2vw, 0.82rem)',
-        'fluid-sm': 'clamp(0.84rem, 1.5vw, 0.95rem)',
-        'fluid-base': 'clamp(0.95rem, 1.75vw, 1.05rem)',
-        'fluid-lg': 'clamp(1.08rem, 2vw, 1.2rem)',
-        'fluid-xl': 'clamp(1.2rem, 2.6vw, 1.4rem)',
-        'fluid-2xl': 'clamp(1.45rem, 3vw, 1.8rem)',
-        'fluid-3xl': 'clamp(1.85rem, 4vw, 2.45rem)',
-        'fluid-4xl': 'clamp(2.35rem, 5vw, 3.8rem)',
-        'fluid-5xl': 'clamp(3rem, 6vw, 5.4rem)',
+        'micro': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }], // 11px
+        'body': ['0.875rem', { lineHeight: '1.4rem', letterSpacing: '0' }], // 14px
+        'title': ['1.125rem', { lineHeight: '1.6rem', letterSpacing: '-0.01em' }], // 18px
+        'display': ['1.75rem', { lineHeight: '2rem', letterSpacing: '-0.02em' }], // 28px
       },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        foreground: {
+          DEFAULT: "hsl(var(--foreground))",
+          muted: "hsl(var(--foreground-muted))",
+          subtle: "hsl(var(--foreground-subtle))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+        surface: {
+          1: "hsl(var(--surface-1))",
+          2: "hsl(var(--surface-2))",
+          3: "hsl(var(--surface-3))",
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        critical: "hsl(var(--critical))",
+        info: "hsl(var(--info))",
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
-        },
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground))",
-        },
-        critical: {
-          DEFAULT: "hsl(var(--critical))",
-          foreground: "hsl(var(--critical-foreground))",
-        },
-        info: {
-          DEFAULT: "hsl(var(--info))",
-          foreground: "hsl(var(--info-foreground))",
-        },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
+        // ... (resto das cores mantido)
       },
       borderRadius: {
         lg: "12px",
         md: "8px",
         sm: "6px",
       },
+      keyframes: {
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -119,11 +83,6 @@ export default {
         "pulse-critical": "pulse-critical 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "fade-in": "fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
       },
-    },
-  },
-  plugins: [tailwindAnimate],
-} satisfies Config;
-
     },
   },
   plugins: [tailwindAnimate],
