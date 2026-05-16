@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useDashboardSnapshot } from '@/hooks/useGitHub';
 import { TriageQueue } from '@/components/console/TriageQueue';
 import { Inspector } from '@/components/console/Inspector';
+import { GlobalDashboard } from '@/components/console/GlobalDashboard';
 import { sortReposByAttention } from '@/lib/attention';
 import { EmptyPanel } from '@/components/site/TerminalPrimitives';
 import { useApp } from '@/contexts/useApp';
@@ -30,8 +31,19 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <TriageQueue repos={sortedRepos} selectedRepoId={repoId || undefined} />
-      <Inspector repo={selectedRepo} />
+      {/* Área principal: Painel de Detalhes ou Dashboard Global */}
+      <div className="flex-1 overflow-y-auto no-scrollbar bg-surface-1 border-r border-border">
+        {selectedRepo ? (
+          <Inspector repo={selectedRepo} />
+        ) : (
+          <GlobalDashboard repos={sortedRepos} />
+        )}
+      </div>
+
+      {/* Barra lateral de seleção (à direita) */}
+      <div className="w-[320px] shrink-0 border-l border-border bg-background">
+        <TriageQueue repos={sortedRepos} selectedRepoId={repoId || undefined} />
+      </div>
     </div>
   );
 }
