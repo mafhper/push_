@@ -1,4 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "@fontsource/manrope/400.css";
+@import "@fontsource/manrope/500.css";
+@import "@fontsource/manrope/600.css";
+@import "@fontsource/manrope/700.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/space-grotesk/700.css";
 
 @tailwind base;
 @tailwind components;
@@ -7,38 +13,31 @@
 @layer base {
   :root,
   :root.theme-dark {
-    /* Surfaces — neutros frios, quase carbono */
-    --background: 222 14% 7%;          /* canvas */
-    --surface-1:  222 12% 10%;         /* cards, queue rows hover */
-    --surface-2:  222 11% 13%;         /* inspector pane, popovers */
-    --surface-3:  222 10% 17%;         /* inputs, selected row */
+    --background: 222 14% 7%;
+    --surface-1:  222 12% 10%;
+    --surface-2:  222 11% 13%;
+    --surface-3:  222 10% 17%;
 
-    /* Texto — escala de cinza com leve viés azul, AA garantido */
-    --foreground:        220 14% 96%;  /* títulos e números */
-    --foreground-muted:  220  8% 72%;  /* body */
-    --foreground-subtle: 220  6% 52%;  /* metadata, micro */
+    --foreground:        220 14% 96%;
+    --foreground-muted:  220  8% 78%; /* Aumentado contraste */
+    --foreground-subtle: 220  6% 65%; /* Aumentado contraste */
 
-    /* Linhas */
-    --border:        222 10% 20%;
-    --border-strong: 222 10% 28%;
+    --border:        222 10% 25%;
+    --border-strong: 222 10% 35%;
 
-    /* Brand — frio, profissional, sem neon */
-    --primary:             212 92% 60%;   /* azul de ação, link, foco */
+    --primary:             212 92% 60%;
     --primary-foreground:  220 14% 98%;
 
-    /* Semantic — usar com parcimônia */
     --success:    150 55% 45%;
     --warning:     38 92% 55%;
     --critical:     0 75% 58%;
     --info:       200 80% 55%;
 
-    /* Foco e seleção */
     --ring:          212 92% 60%;
     --selection-bg:  212 92% 60% / 0.28;
 
-    --radius: 0.625rem;  /* 10 px base */
+    --radius: 0.625rem;
 
-    /* Mapeamento Shadcn para compatibilidade */
     --card: var(--surface-1);
     --card-foreground: var(--foreground);
     --popover: var(--surface-2);
@@ -52,31 +51,6 @@
     --input: var(--surface-3);
   }
 
-  :root.theme-light {
-    --background: 220 20% 98%;
-    --surface-1:  220 18% 96%;
-    --surface-2:  0 0% 100%;
-    --surface-3:  220 16% 92%;
-
-    --foreground:        222 24% 12%;
-    --foreground-muted:  222 14% 36%;
-    --foreground-subtle: 222 10% 50%;
-
-    --border:        220 16% 86%;
-    --border-strong: 220 14% 74%;
-
-    --primary:             212 92% 44%;
-    --primary-foreground:  0 0% 100%;
-
-    --success: 150 55% 35%;
-    --warning:  32 90% 42%;
-    --critical:  0 70% 45%;
-    --info:    200 80% 38%;
-
-    --ring:         212 92% 44%;
-    --selection-bg: 212 92% 44% / 0.18;
-  }
-
   * {
     @apply border-border;
   }
@@ -84,20 +58,11 @@
   body {
     @apply bg-background text-foreground-muted antialiased;
     font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 16px; /* Base mais legível */
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply text-foreground;
     font-family: 'Space Grotesk', system-ui, sans-serif;
-  }
-}
-
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
   }
 }

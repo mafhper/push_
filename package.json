@@ -25,8 +25,8 @@
     "audit": "node scripts/audit.mjs"
   },
   "dependencies": {
-    "@fontsource/manrope": "^5.2.6",
-    "@fontsource/space-grotesk": "^5.2.6",
+    "@fontsource/manrope": "^5.2.8",
+    "@fontsource/space-grotesk": "^5.2.10",
     "@hookform/resolvers": "^3.10.0",
     "@octokit/rest": "^22.0.1",
     "@radix-ui/react-accordion": "^1.2.11",
