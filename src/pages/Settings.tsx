@@ -195,9 +195,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-10">
-      <SectionHeading
-        kicker={localSecureMode ? t("localSecureMode") : t("publicPagesRuntime")}
+    <div className="h-full overflow-y-auto px-6 py-8 md:px-8">
+      <div className="mx-auto max-w-7xl space-y-10">
+        <SectionHeading
+          kicker={localSecureMode ? t("localSecureMode") : t("publicPagesRuntime")}
         title={t("repositoryControl")}
         body={
           localSecureMode
