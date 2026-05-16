@@ -62,8 +62,7 @@ export function calculateAttention(repo: OverviewRepoSnapshot): { score: number;
   // 4. PRs Abertos (se disponível no snapshot)
   // O tipo RepoHealth atual não tem explicitamente openPullRequestCount, 
   // mas o relatório menciona PRs. Vou verificar se o tipo suporta ou adicionar zero por enquanto.
-  // @ts-ignore - Depende da evolução do schema do snapshot
-  const prCount = health.openPullRequestCount || 0;
+  const prCount = (health as any).openPullRequestCount || 0;
   if (prCount > 0) {
     score += 15 * prCount;
     signals.push({
