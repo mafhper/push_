@@ -30,7 +30,7 @@ export default function Dashboard() {
   const selectedRepo = repoId ? sortedRepos.find(r => r.repo.id.toString() === repoId) || null : null;
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-full w-full overflow-hidden">
       {/* Área principal: Painel de Detalhes ou Dashboard Global */}
       <div className="flex-1 overflow-y-auto no-scrollbar bg-surface-1 border-r border-border">
         {selectedRepo ? (
@@ -41,7 +41,7 @@ export default function Dashboard() {
       </div>
 
       {/* Barra lateral de seleção (à direita) */}
-      <div className="w-[320px] shrink-0 border-l border-border bg-background">
+      <div className="w-[320px] flex-shrink-0 border-l border-border bg-background h-full overflow-hidden">
         <TriageQueue repos={sortedRepos} selectedRepoId={repoId || undefined} />
       </div>
     </div>
