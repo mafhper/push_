@@ -24,7 +24,7 @@ export function TriageQueue({ repos, selectedRepoId }: TriageQueueProps) {
   });
 
   return (
-    <div className="flex flex-col h-full border-r border-border bg-background w-[64%]">
+    <div className="flex flex-col h-full border-l border-border bg-background w-full min-w-[320px] max-w-[420px]">
       <div className="flex shrink-0 items-center gap-2 p-3 border-b border-border">
          <FilterButton label="All" value="all" active={filter === 'all'} onClick={() => setSearchParams({ filter: 'all' })} />
          <FilterButton label="Critical" value="critical" active={filter === 'critical'} onClick={() => setSearchParams({ filter: 'critical' })} />
