@@ -4,6 +4,7 @@ import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
 import { formatDateTime } from "@/i18n";
+import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
 import { diagnoseToken, validateToken } from "@/services/github";
 import type { DataDetailMode, Theme } from "@/types";
@@ -370,13 +371,19 @@ export default function SettingsPage() {
 }
 
 function MetricCard({ label, value, hint, highlight }: { label: string; value: string | number; hint: string; highlight?: boolean }) {
+  const isZero = isZeroMetricValue(value);
   return (
     <div className={cn(
       "rounded-xl border bg-surface-1 shadow-sm px-4 py-3",
-      highlight ? "border-primary/30" : "border-border/60"
+      highlight ? "border-primary/30" : "border-border/60",
+      isZero && "border-border/35 bg-surface-1/45 shadow-none"
     )}>
       <p className="text-micro font-semibold text-foreground-subtle uppercase tracking-wider">{label}</p>
-      <p className={cn("text-title font-headline font-bold mt-0.5 tracking-tight", highlight && "text-primary")}>{value}</p>
+      <p className={cn(
+        "text-title font-headline font-bold mt-0.5 tracking-tight",
+        highlight && "text-primary",
+        isZero && "text-foreground-subtle/45"
+      )}>{value}</p>
       <p className="text-[10px] text-foreground-subtle/70 mt-0.5 truncate">{hint}</p>
     </div>
   );

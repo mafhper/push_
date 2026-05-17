@@ -3,6 +3,7 @@ import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/Termin
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { resolveDependabotReason } from "@/lib/github-copy";
+import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
 
 export default function AlertsPage() {
@@ -223,11 +224,13 @@ function AlertMetric({
   value: number;
   tone?: "neutral" | "success" | "warning" | "critical";
 }) {
+  const isZero = isZeroMetricValue(value);
   return (
     <div className={cn(
       "rounded-[1.5rem] ops-surface-soft px-5 py-4",
       tone === "critical" && "shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)]",
       tone === "warning" && "shadow-[inset_0_0_0_1px_rgba(175,141,17,0.16)]",
+      isZero && "opacity-60 saturate-50 shadow-none"
     )}>
       <p className="terminal-label">{label}</p>
       <p
@@ -236,6 +239,7 @@ function AlertMetric({
           tone === "success" && "text-primary",
           tone === "warning" && "text-secondary",
           tone === "critical" && "text-destructive",
+          isZero && "text-muted-foreground"
         )}
       >
         {value}
@@ -253,14 +257,19 @@ function AlertMini({
   value: string;
   tone?: "neutral" | "success" | "warning";
 }) {
+  const isZero = isZeroMetricValue(value);
   return (
-    <div className="rounded-[1.2rem] bg-white/[0.03] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+    <div className={cn(
+      "rounded-[1.2rem] bg-white/[0.03] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]",
+      isZero && "opacity-60 saturate-50 shadow-none"
+    )}>
       <p className="terminal-label">{label}</p>
       <p
         className={cn(
           "mt-2 text-lg font-semibold text-foreground",
           tone === "success" && "text-primary",
           tone === "warning" && "text-secondary",
+          isZero && "text-muted-foreground"
         )}
       >
         {value}

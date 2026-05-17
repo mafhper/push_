@@ -2,6 +2,7 @@ import { Activity, ArrowLeft, Clock3, GitPullRequest, Github, Shield, ShieldAler
 import { Link } from "react-router-dom";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
+import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
 import type { PullRequestSummary, WorkflowRun } from "@/types";
 import { formatRelativeTime } from "@/utils/health";
@@ -412,10 +413,11 @@ function HeroMetric({
   value: string;
   hint: string;
 }) {
+  const isZero = isZeroMetricValue(value);
   return (
-    <div className="px-4 py-4">
+    <div className={cn("px-4 py-4", isZero && "opacity-60 saturate-50")}>
       <p className="terminal-label">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{value}</p>
+      <p className={cn("mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground", isZero && "text-muted-foreground")}>{value}</p>
       <p className="mt-2 text-sm text-muted-foreground">{hint}</p>
     </div>
   );

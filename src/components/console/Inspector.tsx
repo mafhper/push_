@@ -3,6 +3,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { useSearchParams } from 'react-router-dom';
 import { ExternalLink, ShieldAlert, GitPullRequest, Activity, Clock, AlertTriangle, User, ChevronRight, ChevronDown, RefreshCw, Package, GitBranch, GitCommit, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isZeroMetricValue } from '@/lib/metric-state';
 import { AttentionSignal, ScoredRepo } from '@/lib/attention';
 import { SeverityDot } from './SeverityDot';
 import { useRepoSnapshot } from '@/hooks/useGitHub';
@@ -765,9 +766,13 @@ function MiniStat({
   tooltip?: string;
 }) {
   const [showTip, setShowTip] = useState(false);
+  const isZero = isZeroMetricValue(value);
   return (
     <div
-      className="relative flex min-h-[6.75rem] flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-3.5 py-3 shadow-sm transition-shadow hover:shadow-md"
+      className={cn(
+        "relative flex min-h-[6.75rem] flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-3.5 py-3 shadow-sm transition-shadow hover:shadow-md",
+        isZero && "border-border/35 bg-surface-1/45 shadow-none hover:shadow-sm"
+      )}
       onMouseEnter={() => setShowTip(true)}
       onMouseLeave={() => setShowTip(false)}
     >
@@ -780,7 +785,8 @@ function MiniStat({
           <span className={cn(
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-foreground-subtle",
             severity === 'critical' && "bg-critical/10 text-critical",
-            severity === 'warning' && "bg-warning/10 text-warning"
+            severity === 'warning' && "bg-warning/10 text-warning",
+            isZero && "bg-surface-2/60 text-foreground-subtle/45"
           )}>
             {icon}
           </span>
@@ -790,7 +796,8 @@ function MiniStat({
         "mt-3 block text-title font-bold font-headline tracking-tight tabular-nums",
         severity === 'critical' && "text-critical",
         severity === 'warning' && "text-warning",
-        !severity && "text-foreground"
+        !severity && "text-foreground",
+        isZero && "text-foreground-subtle/45"
       )}>
         {value}
       </span>
@@ -846,10 +853,14 @@ function DependencyRiskSummary({ detail }: { detail?: RepoSnapshotDetail }) {
 }
 
 function ContextCard({ label, value }: { label: string; value: string }) {
+  const isZero = isZeroMetricValue(value);
   return (
-    <div className="rounded-xl border border-border/60 bg-surface-1 px-3.5 py-3">
+    <div className={cn(
+      "rounded-xl border border-border/60 bg-surface-1 px-3.5 py-3",
+      isZero && "border-border/35 bg-surface-1/45"
+    )}>
       <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
+      <p className={cn("mt-1 text-sm font-semibold text-foreground", isZero && "text-foreground-subtle/45")}>{value}</p>
     </div>
   );
 }

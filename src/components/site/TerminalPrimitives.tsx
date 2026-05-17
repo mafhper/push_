@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { ArrowRight, CircleAlert, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { PropsWithChildren, ReactNode } from "react";
+import { isZeroMetricValue } from "@/lib/metric-state";
 
 export function SectionHeading({
   kicker,
@@ -58,10 +59,21 @@ export function MetricTile({
   hint?: ReactNode;
   tone?: "neutral" | "success" | "warning";
 }) {
+  const isZero = isZeroMetricValue(value);
   return (
-    <div className={cn("rounded-3xl p-5 surface-panel", tone === "success" && "shadow-[0_0_0_1px_rgba(0,255,65,0.15)]", tone === "warning" && "shadow-[0_0_0_1px_rgba(175,141,17,0.18)]")}>
+    <div className={cn(
+      "rounded-3xl p-5 surface-panel",
+      tone === "success" && "shadow-[0_0_0_1px_rgba(0,255,65,0.15)]",
+      tone === "warning" && "shadow-[0_0_0_1px_rgba(175,141,17,0.18)]",
+      isZero && "opacity-60 saturate-50 shadow-none"
+    )}>
       <p className="terminal-label">{label}</p>
-      <p className={cn("mt-4 text-4xl font-black tracking-tighter", tone === "success" && "text-primary", tone === "warning" && "text-secondary")}>{value}</p>
+      <p className={cn(
+        "mt-4 text-4xl font-black tracking-tighter",
+        tone === "success" && "text-primary",
+        tone === "warning" && "text-secondary",
+        isZero && "text-muted-foreground"
+      )}>{value}</p>
       {hint ? <p className="mt-3 text-sm text-muted-foreground">{hint}</p> : null}
     </div>
   );

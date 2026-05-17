@@ -4,6 +4,7 @@ import { AttentionSignal, ScoredRepo } from '@/lib/attention';
 import { SeverityDot } from './SeverityDot';
 import { ShieldAlert, GitPullRequest, Archive, GitCommit, Info, ChevronRight, Hash, Activity, Clock, AlertTriangle, Boxes, CircleCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isZeroMetricValue } from '@/lib/metric-state';
 
 interface DashboardPanelProps {
   repos: ScoredRepo[];
@@ -262,12 +263,15 @@ function MetricTile({ icon, label, value, description, severity, onClick }: {
   onClick?: () => void
 }) {
   const Comp = onClick ? 'button' : 'div';
+  const isZero = isZeroMetricValue(value);
   return (
     <Comp
       onClick={onClick}
       className={cn(
-        "flex min-h-[6.75rem] w-full flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-4 py-3.5 text-left shadow-sm",
-        onClick && "cursor-pointer hover:shadow-md hover:bg-surface-2 hover:border-foreground-subtle/20 transition-all duration-200"
+        "flex min-h-[6.75rem] w-full flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-4 py-3.5 text-left shadow-sm transition-all duration-200",
+        isZero && "border-border/35 bg-surface-1/45 shadow-none",
+        onClick && "cursor-pointer hover:shadow-md hover:bg-surface-2 hover:border-foreground-subtle/20",
+        onClick && isZero && "hover:shadow-sm hover:bg-surface-1/70"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -277,9 +281,11 @@ function MetricTile({ icon, label, value, description, severity, onClick }: {
         </div>
         <span className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-foreground-subtle",
+          isZero && "bg-surface-2/60 text-foreground-subtle/45",
           severity === 'critical' && "bg-critical/10 text-critical",
           severity === 'warning' && "bg-warning/10 text-warning",
-          severity === 'success' && "bg-success/10 text-success"
+          severity === 'success' && "bg-success/10 text-success",
+          isZero && "bg-surface-2/60 text-foreground-subtle/45"
         )}>
           {icon}
         </span>
@@ -290,7 +296,8 @@ function MetricTile({ icon, label, value, description, severity, onClick }: {
           severity === 'critical' && "text-critical",
           severity === 'warning' && "text-warning",
           severity === 'success' && "text-success",
-          !severity && "text-foreground"
+          !severity && "text-foreground",
+          isZero && "text-foreground-subtle/45"
         )}>
           {value}
         </span>
