@@ -3,6 +3,7 @@ import type {
   CommitSummary,
   ContributorSummary,
   DependabotAlert,
+  DependencyInfo,
   LanguageBreakdown,
   RateLimitInfo,
   RepoSnapshotDetail,
@@ -278,6 +279,29 @@ async function buildPublicRepoDetail(owner: string, repo: string): Promise<RepoS
   const alerts: DependabotAlert[] = [];
   const health = calculateHealth(mappedRepo, workflowRuns, alerts);
 
+  const dependencies: DependencyInfo[] | undefined = await (async () => {
+    try {
+      const resp = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${mappedRepo.defaultBranch}/package.json`);
+      if (!resp.ok) return undefined;
+      const raw = await resp.text();
+      const pkg = JSON.parse(raw);
+      const deps: DependencyInfo[] = [];
+      if (pkg.dependencies && typeof pkg.dependencies === 'object') {
+        for (const [name, version] of Object.entries(pkg.dependencies)) {
+          deps.push({ name, version: String(version), type: 'dependencies' });
+        }
+      }
+      if (pkg.devDependencies && typeof pkg.devDependencies === 'object') {
+        for (const [name, version] of Object.entries(pkg.devDependencies)) {
+          deps.push({ name, version: String(version), type: 'devDependencies' });
+        }
+      }
+      return deps.length > 0 ? deps : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+
   const detail = {
     status: createPublicStatus(),
     featured: false,
@@ -288,6 +312,7 @@ async function buildPublicRepoDetail(owner: string, repo: string): Promise<RepoS
     alerts,
     languages,
     contributors,
+    dependencies,
     availability: {
       repository: createAvailability(true, "public-api"),
       commits: isFailure(commitsPayload)

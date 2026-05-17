@@ -6,9 +6,6 @@ export const LOCAL_RUNTIME_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
 export const PROMO_ROUTES = [
   { href: "/", labelKey: "home" },
-  { href: "/technology", labelKey: "technology" },
-  { href: "/faq", labelKey: "faq" },
-  { href: "/about", labelKey: "about" },
 ] as const;
 
 export const APP_ROUTES = [

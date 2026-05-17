@@ -3,6 +3,7 @@ import type {
   CommitSummary,
   ContributorSummary,
   DependabotAlert,
+  DependencyInfo,
   LanguageBreakdown,
   PullRequestSummary,
   RateLimitInfo,
@@ -10,6 +11,7 @@ import type {
   RepositoryRef,
   SnapshotManifest,
   SnapshotOverview,
+  TokenDiagnostics,
   WorkflowRun,
 } from "@/types";
 
@@ -138,6 +140,48 @@ type GitHubRateLimitPayload = {
   };
 };
 
+type GitHubReadmePayload = {
+  content?: string;
+  encoding?: string;
+  html_url?: string;
+};
+
+type GitHubRelease = {
+  id: number;
+  tag_name?: string;
+  name?: string | null;
+  prerelease?: boolean;
+  draft?: boolean;
+  published_at?: string | null;
+  html_url: string;
+};
+
+type GitHubIssue = {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  created_at: string;
+  updated_at: string;
+  html_url: string;
+  pull_request?: unknown;
+  user?: {
+    login?: string;
+  } | null;
+  labels?: Array<string | { name?: string }>;
+};
+
+type GitHubLabel = {
+  id: number;
+  name: string;
+  color: string;
+  description?: string | null;
+};
+
+type GitHubBranch = {
+  protected?: boolean;
+};
+
 function buildAssetUrl(relativePath: string) {
   const normalizedBase = SITE_BASE_URL.endsWith("/") ? SITE_BASE_URL : `${SITE_BASE_URL}/`;
   return `${normalizedBase}${relativePath.replace(/^\/+/, "")}`;
@@ -183,6 +227,14 @@ async function githubOptional<T>(pathname: string, token: string): Promise<T | G
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
   }
+}
+
+function classifyGitHubError(error: string) {
+  if (error.startsWith("401")) return "Invalid or expired token.";
+  if (error.startsWith("403")) return "GitHub refused this request. Check token scopes and repository access.";
+  if (error.startsWith("404")) return "Endpoint or repository data not found. The feature may be disabled for this repository.";
+  if (error.startsWith("429")) return "GitHub rate limit reached.";
+  return error;
 }
 
 function isFailure<T>(payload: T | GitHubFailure): payload is GitHubFailure {
@@ -289,6 +341,105 @@ function mapPullRequest(pullRequest: GitHubPullRequest): PullRequestSummary {
   };
 }
 
+function mapRelease(release: GitHubRelease) {
+  return {
+    id: release.id,
+    tagName: release.tag_name || "release",
+    name: release.name || release.tag_name || "Release",
+    prerelease: Boolean(release.prerelease),
+    draft: Boolean(release.draft),
+    publishedAt: release.published_at || null,
+    htmlUrl: release.html_url,
+  };
+}
+
+function mapIssue(issue: GitHubIssue) {
+  return {
+    id: issue.id,
+    number: issue.number,
+    title: issue.title,
+    state: issue.state,
+    createdAt: issue.created_at,
+    updatedAt: issue.updated_at,
+    htmlUrl: issue.html_url,
+    authorLogin: issue.user?.login || "unknown",
+    labels: (issue.labels || []).map((label) => typeof label === "string" ? label : label.name || "").filter(Boolean),
+  };
+}
+
+function mapLabel(label: GitHubLabel) {
+  return {
+    id: label.id,
+    name: label.name,
+    color: label.color,
+    description: label.description ?? null,
+  };
+}
+
+function decodeBase64Content(content: string) {
+  return atob(content.replace(/\s/g, ""));
+}
+
+async function fetchReadme(owner: string, repo: string, token: string) {
+  const payload = await githubOptional<GitHubReadmePayload>(`/repos/${owner}/${repo}/readme`, token);
+  if (isFailure(payload) || payload.encoding !== "base64" || !payload.content) {
+    return undefined;
+  }
+  return {
+    text: decodeBase64Content(payload.content).slice(0, 4000),
+    htmlUrl: payload.html_url || `https://github.com/${owner}/${repo}#readme`,
+  };
+}
+
+function parsePackageJson(raw: string): DependencyInfo[] {
+  try {
+    const pkg = JSON.parse(raw);
+    const deps: DependencyInfo[] = [];
+    if (pkg.dependencies && typeof pkg.dependencies === 'object') {
+      for (const [name, version] of Object.entries(pkg.dependencies)) {
+        deps.push({ name, version: String(version), type: 'dependencies' });
+      }
+    }
+    if (pkg.devDependencies && typeof pkg.devDependencies === 'object') {
+      for (const [name, version] of Object.entries(pkg.devDependencies)) {
+        deps.push({ name, version: String(version), type: 'devDependencies' });
+      }
+    }
+    return deps;
+  } catch {
+    return [];
+  }
+}
+
+async function fetchPackageJsonViaApi(owner: string, repo: string, token: string): Promise<DependencyInfo[] | null> {
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
+      { headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "User-Agent": "push_" } }
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (data.encoding === 'base64' && data.content) {
+      const decoded = decodeBase64Content(data.content);
+      return parsePackageJson(decoded);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPackageJsonViaRaw(owner: string, repo: string, defaultBranch: string): Promise<DependencyInfo[] | null> {
+  try {
+    const resp = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/package.json`);
+    if (!resp.ok) return null;
+    const raw = await resp.text();
+    return parsePackageJson(raw);
+  } catch {
+    return null;
+  }
+}
+
 function calculateHealth(repo: RepositoryRef, runs: WorkflowRun[], alerts: DependabotAlert[]) {
   let score = 100;
   const now = Date.now();
@@ -360,7 +511,7 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
         githubOptional<LanguageBreakdown>(`${repoPath}/languages`, token),
         githubOptional<GitHubContributor[]>(`${repoPath}/contributors?per_page=6`, token),
         githubOptional<GitHubDependabotAlert[]>(`${repoPath}/dependabot/alerts?state=open&per_page=20`, token),
-        githubOptional<GitHubPullRequest[]>(`${repoPath}/pulls?state=open&per_page=20`, token),
+        githubOptional<GitHubPullRequest[]>(`${repoPath}/pulls?state=open&per_page=100`, token),
       ]);
 
   const commits = !isFailure(commitsPayload) ? commitsPayload.map(mapCommit) : [];
@@ -370,6 +521,15 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
   const alerts = !isFailure(dependabotPayload) ? dependabotPayload.map(mapDependabot) : [];
   const pullRequests = !isFailure(pullRequestsPayload) ? pullRequestsPayload.map(mapPullRequest) : [];
   const health = calculateHealth(mappedRepo, workflowRuns, alerts);
+
+  const dependencies = await fetchPackageJsonViaApi(owner, repo, token);
+  const [releasesPayload, issuesPayload, labelsPayload, branchPayload, readme] = await Promise.all([
+    githubOptional<GitHubRelease[]>(`${repoPath}/releases?per_page=5`, token),
+    githubOptional<GitHubIssue[]>(`${repoPath}/issues?state=open&per_page=12`, token),
+    githubOptional<GitHubLabel[]>(`${repoPath}/labels?per_page=20`, token),
+    githubOptional<GitHubBranch>(`${repoPath}/branches/${encodeURIComponent(mappedRepo.defaultBranch)}`, token),
+    fetchReadme(owner, repo, token),
+  ]);
 
   const availability = {
     repository: createAvailability(true, "authenticated-api"),
@@ -386,7 +546,7 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
       ? createAvailability(false, "authenticated-api", contributorsPayload.error)
       : createAvailability(true, "authenticated-api"),
     dependabotAlerts: isFailure(dependabotPayload)
-      ? createAvailability(false, "authenticated-api", dependabotPayload.error)
+      ? createAvailability(false, "authenticated-api", classifyGitHubError(dependabotPayload.error))
       : createAvailability(true, "authenticated-api"),
     pullRequests: isFailure(pullRequestsPayload)
       ? createAvailability(false, "authenticated-api", pullRequestsPayload.error)
@@ -405,6 +565,16 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
     languages,
     contributors,
     availability,
+    dependencies: dependencies || undefined,
+    extended: {
+      readme,
+      releases: !isFailure(releasesPayload) ? releasesPayload.map(mapRelease) : [],
+      issues: !isFailure(issuesPayload) ? issuesPayload.filter((issue) => !issue.pull_request).map(mapIssue) : [],
+      labels: !isFailure(labelsPayload) ? labelsPayload.map(mapLabel) : [],
+      branchProtection: isFailure(branchPayload)
+        ? { available: false, protected: false, reason: classifyGitHubError(branchPayload.error) }
+        : { available: true, protected: Boolean(branchPayload.protected) },
+    },
   };
 }
 
@@ -434,6 +604,10 @@ export async function fetchRepoSnapshot(owner: string, repo: string): Promise<Re
   }
 
   const detail = await readJson<RepoSnapshotDetail>(relativePath);
+  if (!detail.dependencies) {
+    const rawDeps = await fetchPackageJsonViaRaw(owner, repo, detail.repo.defaultBranch);
+    if (rawDeps) detail.dependencies = rawDeps;
+  }
   repoCache.set(key, detail);
   return detail;
 }
@@ -529,6 +703,50 @@ export async function fetchLiveRateLimit(token: string): Promise<RateLimitInfo> 
     limit: core?.limit ?? 0,
     resetAt: core?.reset ? new Date(core.reset * 1000).toISOString() : new Date().toISOString(),
   };
+}
+
+export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
+  const trimmed = token.trim();
+  if (!trimmed) return { token: "invalid" };
+
+  try {
+    await githubRequest<{ login: string }>("/user", trimmed);
+    const rateLimit = await fetchLiveRateLimit(trimmed);
+    const repos = await fetchAccessibleRepos(trimmed);
+    const probeRepo = repos[0];
+    if (!probeRepo) {
+      return {
+        token: "valid",
+        rateLimit,
+        accessibleRepoCount: 0,
+        dependabotProbe: { status: "skipped", message: "No accessible public repositories returned by this token." },
+      };
+    }
+
+    const probe = await githubOptional<GitHubDependabotAlert[]>(`/repos/${probeRepo.owner}/${probeRepo.name}/dependabot/alerts?state=open&per_page=1`, trimmed);
+    if (!isFailure(probe)) {
+      return {
+        token: "valid",
+        rateLimit,
+        accessibleRepoCount: repos.length,
+        dependabotProbe: { status: "available", repoFullName: probeRepo.fullName },
+      };
+    }
+
+    const status = probe.error.startsWith("403") ? "forbidden" : probe.error.startsWith("404") ? "not_found" : "unavailable";
+    return {
+      token: "valid",
+      rateLimit,
+      accessibleRepoCount: repos.length,
+      dependabotProbe: { status, repoFullName: probeRepo.fullName, message: classifyGitHubError(probe.error) },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      token: message.includes("403") || message.includes("429") ? "rate_limited" : "invalid",
+      dependabotProbe: { status: "skipped", message: classifyGitHubError(message) },
+    };
+  }
 }
 
 export function clearSnapshotCache() {

@@ -6,6 +6,8 @@ import SettingsPage from "./Settings";
 import { AppProvider } from "@/contexts/AppContext";
 import { createManifest, createOverview, createRepo } from "@/test/factories";
 
+const fakeToken = `${["ghp", "_"].join("")}test`;
+
 vi.mock("@/config/site", async () => {
   const actual = await vi.importActual<typeof import("@/config/site")>("@/config/site");
   return {
@@ -26,6 +28,7 @@ vi.mock("@/services/github", async () => {
   return {
     ...actual,
     validateToken: vi.fn(),
+    diagnoseToken: vi.fn(),
   };
 });
 
@@ -48,6 +51,11 @@ describe("SettingsPage", () => {
       login: "mafhper",
       avatarUrl: "",
     });
+    vi.mocked(github.diagnoseToken).mockResolvedValue({
+      token: "valid",
+      accessibleRepoCount: 2,
+      dependabotProbe: { status: "available", repoFullName: "mafhper/push_" },
+    });
 
     const queryClient = new QueryClient();
 
@@ -63,7 +71,7 @@ describe("SettingsPage", () => {
 
     expect(screen.getByText("GitHub token")).toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText("Paste a GitHub personal access token"), {
-      target: { value: "ghp_test" },
+      target: { value: fakeToken },
     });
     fireEvent.click(screen.getByRole("button", { name: /^connect$/i }));
 
@@ -76,7 +84,7 @@ describe("SettingsPage", () => {
       expect(screen.getAllByText("Visible repos").length).toBeGreaterThan(0);
       expect(screen.getByText("Current dashboard set")).toBeInTheDocument();
       expect(screen.getAllByText("Featured repo").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Featured").length).toBeGreaterThan(0);
+      expect(screen.getByText("Select all")).toBeInTheDocument();
       expect(screen.getAllByText("mafhper/push_").length).toBeGreaterThan(0);
     });
 

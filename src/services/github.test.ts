@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchAccessibleRepos, validateToken } from "./github";
+import { diagnoseToken, fetchAccessibleRepos, validateToken } from "./github";
+
+const fakeClassicToken = `${["ghp", "_"].join("")}${"a".repeat(36)}`;
+const fakeShortToken = `${["ghp", "_"].join("")}test`;
 
 describe("fetchAccessibleRepos", () => {
   afterEach(() => {
@@ -58,7 +61,7 @@ describe("fetchAccessibleRepos", () => {
       ]),
     } as Response);
 
-    const repos = await fetchAccessibleRepos("ghp_test");
+    const repos = await fetchAccessibleRepos(fakeShortToken);
 
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(repos).toHaveLength(1);
@@ -78,7 +81,7 @@ describe("validateToken", () => {
       status: 403,
     } as Response);
 
-    await expect(validateToken(`ghp_${"a".repeat(36)}`)).resolves.toEqual({
+    await expect(validateToken(fakeClassicToken)).resolves.toEqual({
       login: "",
       avatarUrl: "",
       error: "rate_limited",
@@ -91,10 +94,90 @@ describe("validateToken", () => {
       status: 401,
     } as Response);
 
-    await expect(validateToken(`ghp_${"a".repeat(36)}`)).resolves.toEqual({
+    await expect(validateToken(fakeClassicToken)).resolves.toEqual({
       login: "",
       avatarUrl: "",
       error: "invalid_token",
     });
   });
 });
+
+describe("diagnoseToken", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("reports Dependabot access when the probe succeeds", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/user")) {
+        return { ok: true, status: 200, json: async () => ({ login: "mafhper" }) } as Response;
+      }
+      if (url.endsWith("/rate_limit")) {
+        return { ok: true, status: 200, json: async () => ({ resources: { core: { remaining: 42, limit: 5000, reset: 1780000000 } } }) } as Response;
+      }
+      if (url.includes("/user/repos")) {
+        return { ok: true, status: 200, json: async () => ([repoPayload()]) } as Response;
+      }
+      if (url.includes("/dependabot/alerts")) {
+        return { ok: true, status: 200, json: async () => ([]) } as Response;
+      }
+      return { ok: false, status: 404 } as Response;
+    });
+
+    await expect(diagnoseToken(fakeClassicToken)).resolves.toMatchObject({
+      token: "valid",
+      accessibleRepoCount: 1,
+      dependabotProbe: { status: "available", repoFullName: "mafhper/push_" },
+    });
+  });
+
+  it("reports missing Dependabot permissions when the probe is forbidden", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/user")) {
+        return { ok: true, status: 200, json: async () => ({ login: "mafhper" }) } as Response;
+      }
+      if (url.endsWith("/rate_limit")) {
+        return { ok: true, status: 200, json: async () => ({ resources: { core: { remaining: 42, limit: 5000, reset: 1780000000 } } }) } as Response;
+      }
+      if (url.includes("/user/repos")) {
+        return { ok: true, status: 200, json: async () => ([repoPayload()]) } as Response;
+      }
+      if (url.includes("/dependabot/alerts")) {
+        return { ok: false, status: 403 } as Response;
+      }
+      return { ok: false, status: 404 } as Response;
+    });
+
+    await expect(diagnoseToken(fakeClassicToken)).resolves.toMatchObject({
+      token: "valid",
+      dependabotProbe: { status: "forbidden" },
+    });
+  });
+});
+
+function repoPayload() {
+  return {
+    id: 1,
+    owner: { login: "mafhper" },
+    name: "push_",
+    full_name: "mafhper/push_",
+    default_branch: "main",
+    private: false,
+    archived: false,
+    html_url: "https://github.com/mafhper/push_",
+    description: "Public repo",
+    license: { spdx_id: "MIT", name: "MIT License" },
+    language: "TypeScript",
+    stargazers_count: 1,
+    forks_count: 0,
+    open_issues_count: 0,
+    watchers_count: 1,
+    pushed_at: "2026-03-19T12:00:00.000Z",
+    size: 120,
+    topics: [],
+    created_at: "2026-01-01T12:00:00.000Z",
+    updated_at: "2026-03-19T12:00:00.000Z",
+  };
+}

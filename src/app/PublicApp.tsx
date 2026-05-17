@@ -7,14 +7,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/contexts/AppContext";
 import { useApp } from "@/contexts/useApp";
 import { PromoLayout } from "@/components/Layout";
-import { PublicDashboardLayout } from "@/components/layout/PublicDashboardLayout";
+import { AppShell } from "@/components/layout/AppShell";
 import { PublicRuntimeProvider } from "@/contexts/PublicRuntimeProvider";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const HomePage = lazy(() => import("../pages/promo/Home"));
-const TechnologyPage = lazy(() => import("../pages/promo/Technology"));
-const FAQPage = lazy(() => import("../pages/promo/FAQ"));
-const AboutPage = lazy(() => import("../pages/promo/About"));
 const DashboardPage = lazy(() => import("../pages/public/PublicDashboard"));
 const RepoDetailPage = lazy(() => import("../pages/public/PublicRepoDetail"));
 const AlertsPage = lazy(() => import("../pages/public/PublicAlerts"));
@@ -42,14 +39,11 @@ export default function PublicApp() {
               <ScrollToTop />
               <Suspense fallback={<PublicLoadingFallback />}>
                 <Routes>
-                  <Route element={<PromoLayout />}>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/technology" element={<TechnologyPage />} />
-                    <Route path="/faq" element={<FAQPage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                  </Route>
+                <Route element={<PromoLayout />}>
+                  <Route path="/" element={<HomePage />} />
+                </Route>
 
-                  <Route path="/app" element={<PublicDashboardLayout />}>
+                  <Route path="/app" element={<AppShell runtime="public" />}>
                     <Route index element={<DashboardPage />} />
                     <Route path="repo/:owner/:repo" element={<RepoDetailPage />} />
                     <Route path="alerts" element={<AlertsPage />} />
@@ -70,5 +64,5 @@ export default function PublicApp() {
 
 function PublicLoadingFallback() {
   const { t } = useApp();
-  return <div className="editorial-frame px-6 py-20 text-sm text-muted-foreground">{t("loadingPublicShell")}</div>;
+  return <div className="px-6 py-20 text-sm text-muted-foreground">{t("loadingPublicShell")}</div>;
 }

@@ -1,53 +1,146 @@
-import React from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { LayoutDashboard, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScoredRepo } from '@/lib/attention';
+import { useApp } from '@/contexts/useApp';
+import { RepoLogo } from '@/components/repository/RepoLogo';
 import { SeverityDot } from './SeverityDot';
-import { SignalChip } from './SignalChip';
 
 interface TriageQueueProps {
   repos: ScoredRepo[];
   selectedRepoId?: string;
+  compact?: boolean;
+  onToggleCompact?: () => void;
 }
 
-export function TriageQueue({ repos, selectedRepoId }: TriageQueueProps) {
+export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCompact }: TriageQueueProps) {
+  const { t } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const filter = searchParams.get('filter') || 'all';
+  const filterLabels = {
+    all: t('triageFilterAll'),
+    critical: t('triageFilterCritical'),
+    warning: t('triageFilterWarning'),
+    healthy: t('triageFilterHealthy'),
+    archived: t('triageFilterArchived'),
+  };
+
+  const counts = {
+    all: repos.length,
+    critical: repos.filter(r => r.attentionScore >= 100).length,
+    warning: repos.filter(r => r.attentionScore >= 40 && r.attentionScore < 100).length,
+    healthy: repos.filter(r => r.attentionScore < 40 && !r.repo.archived).length,
+    archived: repos.filter(r => r.repo.archived).length,
+  };
 
   const filteredRepos = repos.filter(repo => {
     if (filter === 'all') return true;
     if (filter === 'critical') return repo.attentionScore >= 100;
     if (filter === 'warning') return repo.attentionScore >= 40 && repo.attentionScore < 100;
-    if (filter === 'healthy') return repo.attentionScore < 40;
+    if (filter === 'healthy') return repo.attentionScore < 40 && !repo.repo.archived;
     if (filter === 'archived') return repo.repo.archived;
     return true;
   });
 
+  function setFilter(newFilter: string) {
+    const params = new URLSearchParams(searchParams);
+    params.set('filter', newFilter);
+    if (params.get('repo')) params.delete('repo');
+    setSearchParams(params, { replace: true });
+  }
+
+  function selectRepo(id: number) {
+    const params = new URLSearchParams(searchParams);
+    params.set('repo', id.toString());
+    setSearchParams(params, { replace: true });
+  }
+
+  function showOverview() {
+    const params = new URLSearchParams(searchParams);
+    params.delete('repo');
+    setSearchParams(params, { replace: true });
+  }
+
   return (
-    <div className="flex flex-col h-full border-l border-border bg-background w-full min-w-[320px] max-w-[420px]">
-      <div className="flex shrink-0 items-center gap-2 p-3 border-b border-border">
-         <FilterButton label="All" value="all" active={filter === 'all'} onClick={() => setSearchParams({ filter: 'all' })} />
-         <FilterButton label="Critical" value="critical" active={filter === 'critical'} onClick={() => setSearchParams({ filter: 'critical' })} />
-         <FilterButton label="Warning" value="warning" active={filter === 'warning'} onClick={() => setSearchParams({ filter: 'warning' })} />
-         <FilterButton label="Healthy" value="healthy" active={filter === 'healthy'} onClick={() => setSearchParams({ filter: 'healthy' })} />
-         <FilterButton label="Archived" value="archived" active={filter === 'archived'} onClick={() => setSearchParams({ filter: 'archived' })} />
+    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden", compact && "lg:items-stretch")}>
+      <div className={cn("shrink-0 border-b border-border/50 px-5 py-4", compact && "lg:px-3 lg:py-3")}>
+        <div className={cn("flex items-start justify-between gap-3", compact && "lg:justify-center")}>
+          <div className={cn("min-w-0", compact && "lg:hidden")}>
+            <h2 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle">{t('repositoryTriage')}</h2>
+            <p className="mt-1 text-[10px] text-foreground-subtle/70">
+              {t('triageCountSummary', { total: repos.length, critical: counts.critical, warning: counts.warning })}
+            </p>
+          </div>
+          {onToggleCompact && (
+            <button
+              type="button"
+              onClick={onToggleCompact}
+              aria-label={compact ? t('expandSidebar') : t('collapseSidebar')}
+              title={compact ? t('expandSidebar') : t('collapseSidebar')}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-1 text-foreground-subtle transition-colors hover:text-foreground lg:flex"
+            >
+              <Menu size={15} />
+            </button>
+          )}
+        </div>
+        <p className={cn("hidden text-center font-mono text-[10px] font-semibold text-primary", compact && "lg:block")}>
+          {repos.length}
+        </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar">
+      <div className={cn("flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border/50 px-4 py-2.5", compact && "lg:hidden")}>
+        {(['all', 'critical', 'warning', 'healthy', 'archived'] as const).map(key => {
+          const count = counts[key];
+          return (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all duration-150 whitespace-nowrap",
+                filter === key
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-foreground-subtle hover:bg-surface-1 hover:text-foreground"
+              )}
+            >
+              {filterLabels[key]}
+              <span className="ml-1 font-mono opacity-60">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <button
+          type="button"
+          onClick={showOverview}
+          title={t('dashboardOverview')}
+          className={cn(
+            "group flex w-full items-center gap-2.5 border-l-[3px] px-5 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            !selectedRepoId ? "border-l-primary bg-surface-2 shadow-sm" : "border-l-transparent hover:bg-surface-1/60",
+            compact && "lg:flex-col lg:items-center lg:gap-1.5 lg:px-2 lg:py-3 lg:text-center"
+          )}
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-surface-1 text-primary">
+            <LayoutDashboard size={16} />
+          </span>
+          <span className={cn("min-w-0 flex-1 text-sm font-semibold text-foreground", compact && "lg:hidden")}>
+            {t('dashboardOverview')}
+          </span>
+        </button>
         {filteredRepos.length > 0 ? (
-          <div className="grid">
+          <div className="divide-y divide-border/20">
             {filteredRepos.map(repo => (
-              <TriageRow 
-                key={repo.repo.id} 
-                repo={repo} 
-                selected={selectedRepoId === repo.repo.id.toString()} 
-                onClick={() => setSearchParams({ repo: repo.repo.id.toString(), filter })}
+              <TriageRow
+                key={repo.repo.id}
+                repo={repo}
+                selected={selectedRepoId === repo.repo.id.toString()}
+                onClick={() => selectRepo(repo.repo.id)}
               />
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-48 text-micro text-foreground-subtle uppercase tracking-widest italic">
-             0 repositories needing attention · all clear
+          <div className="flex h-32 items-center justify-center px-6 text-center text-[10px] italic text-foreground-subtle/60">
+            {t('noRepositoriesMatchFilter')}
           </div>
         )}
       </div>
@@ -55,51 +148,80 @@ export function TriageQueue({ repos, selectedRepoId }: TriageQueueProps) {
   );
 }
 
-function FilterButton({ label, active, onClick }: { label: string; value: string; active: boolean; onClick: () => void }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={cn(
-        "px-2 py-0.5 text-micro font-medium rounded transition-colors",
-        active ? "bg-primary/10 text-primary" : "text-foreground-subtle hover:bg-surface-1 hover:text-foreground"
-      )}
-    >
-      {label}
-    </button>
-  );
-}
-
 function TriageRow({ repo, selected, onClick }: { repo: ScoredRepo; selected: boolean; onClick: () => void }) {
-  const mainSignals = repo.signals.slice(0, 3);
-  const severity: 'critical' | 'warning' | 'success' = repo.attentionScore >= 100 ? 'critical' : repo.attentionScore >= 40 ? 'warning' : 'success';
+  const { settings, t } = useApp();
+  const compact = settings.sidebarMode === 'compact';
+  const primarySignals = repo.signals.slice(0, 2);
+  const severity: 'critical' | 'warning' | 'success' =
+    repo.attentionScore >= 100 ? 'critical' :
+    repo.attentionScore >= 40 ? 'warning' : 'success';
+  const severityLabel = severity === 'critical' ? t('critical') : severity === 'warning' ? t('warning') : t('healthy');
+
+  const tooltip = `${repo.repo.fullName} · ${severityLabel} · score ${repo.attentionScore} · ${primarySignals.map((signal) => signal.label).join(', ') || t('healthy')}`;
 
   return (
     <button
       onClick={onClick}
+      title={tooltip}
       className={cn(
-        "group flex h-14 items-center gap-3 px-4 border-b border-border text-left transition-colors",
-        selected ? "bg-surface-3 border-l-2 border-l-primary" : "hover:bg-surface-1 border-l-2 border-l-transparent"
+        "group flex w-full items-center gap-2.5 px-5 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        compact && "lg:flex-col lg:items-center lg:gap-1.5 lg:px-2 lg:py-3 lg:text-center",
+        selected
+          ? "bg-surface-2 shadow-sm border-l-[3px] border-l-primary"
+          : "hover:bg-surface-1/60 border-l-[3px] border-l-transparent"
       )}
     >
-      <SeverityDot severity={severity} />
-      
-      <div className="flex flex-col min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-           <span className="text-body font-medium text-foreground truncate">{repo.repo.fullName}</span>
-           <span className="text-micro font-mono text-foreground-subtle">{repo.attentionScore}</span>
-        </div>
-        <div className="flex items-center gap-1.5 overflow-hidden">
-           {mainSignals.map((sig, i) => (
-             <React.Fragment key={sig.label}>
-                <SignalChip severity={sig.severity} label={sig.label} />
-                {i < mainSignals.length - 1 && <span className="text-micro text-foreground-subtle opacity-40">·</span>}
-             </React.Fragment>
-           ))}
+      <div className={cn("flex shrink-0 items-center gap-2", compact && "lg:block")}>
+        <RepoLogo owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className={cn("h-8 w-8", compact && "lg:h-9 lg:w-9")} />
+        <span className={cn(compact && "lg:hidden")}>
+          <SeverityDot severity={severity} label={severityLabel} />
+        </span>
+      </div>
+
+      <div className={cn("flex min-w-0 flex-1 flex-col", compact && "lg:hidden")}>
+        <span className={cn(
+          "text-sm font-semibold truncate leading-tight transition-colors",
+          selected ? "text-foreground" : "text-foreground group-hover:text-foreground"
+        )}>
+          {repo.repo.fullName}
+        </span>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {primarySignals.length > 0 ? (
+            primarySignals.map(sig => (
+              <span key={sig.label} className={cn(
+                "text-[10px] leading-none truncate",
+                sig.severity === 'critical' && "text-critical font-medium",
+                sig.severity === 'warning' && "text-warning",
+                sig.severity === 'info' && "text-foreground-subtle/70",
+              )}>
+                {sig.label}
+              </span>
+            ))
+          ) : (
+            <span className="text-[10px] text-foreground-subtle/50">{severityLabel}</span>
+          )}
         </div>
       </div>
 
-      <div className="text-micro text-foreground-subtle font-medium uppercase tabular-nums">
-        {repo.health.stalenessDays > 0 ? `${repo.health.stalenessDays}d` : 'fresh'}
+      <div className={cn("flex shrink-0 flex-col items-end gap-0.5", compact && "lg:flex-row lg:items-center lg:justify-center lg:gap-1")}>
+        <span className={cn("hidden", compact && "lg:inline-flex")}>
+          <SeverityDot severity={severity} label={severityLabel} />
+        </span>
+        <span className={cn(
+          "text-[10px] font-mono font-semibold leading-none",
+          severity === 'critical' && "text-critical",
+          severity === 'warning' && "text-warning",
+          severity === 'success' && "text-foreground-subtle/60",
+        )}>
+          {repo.attentionScore}
+        </span>
+        <span className={cn(
+          "text-[9px] leading-none",
+          compact && "lg:hidden",
+          selected ? "text-foreground-subtle/60" : "text-foreground-subtle/40"
+        )}>
+          {repo.health.stalenessDays > 0 ? `${repo.health.stalenessDays}d` : 'now'}
+        </span>
       </div>
     </button>
   );

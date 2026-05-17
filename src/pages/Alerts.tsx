@@ -50,7 +50,7 @@ export default function AlertsPage() {
   const failingRepos = data.repos.filter((entry) => entry.stats.latestWorkflowConclusion === "failure").length;
 
   return (
-    <div className="space-y-8">
+    <div className="h-full min-h-0 overflow-y-auto p-5 md:p-8 space-y-8">
       <SectionHeading
         kicker={t("securitySurface")}
         title={t("alertsAndDegradedRepos")}

@@ -3,6 +3,16 @@ import type { DictKey } from "@/i18n";
 import { detectBrowserLanguage } from "@/i18n";
 import type { Language, RateLimitInfo, Theme, UserSession, UserSettings } from "@/types";
 
+export const supportedThemes = [
+  "dark",
+  "light",
+  "phosphor-green",
+  "golden-matrix",
+  "blue-calm",
+  "green-ish",
+  "brown-earth",
+] as const satisfies readonly Theme[];
+
 export interface AppContextValue {
   settings: UserSettings;
   updateSettings: (partial: Partial<UserSettings>) => void;
@@ -32,13 +42,16 @@ export function detectTheme(): Theme {
 
 export function normalizeTheme(value?: string | null): Theme {
   const normalized = value?.trim().toLowerCase() ?? "";
-  return normalized === "light" ? "light" : "dark";
+  return supportedThemes.includes(normalized as Theme) ? normalized as Theme : "dark";
 }
 
 export const defaultSettings: UserSettings = {
   theme: detectTheme(),
   lang: detectLanguage(),
   dashboardDensity: "balanced",
+  sidebarMode: "expanded",
+  dataDetailMode: "balanced",
+  repoDetailModes: {},
   pollingInterval: 300,
   notificationsEnabled: false,
   highlightMode: "primary",

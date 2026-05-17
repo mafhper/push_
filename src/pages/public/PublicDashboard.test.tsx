@@ -8,6 +8,7 @@ import { createOverview } from "@/test/factories";
 vi.mock("@/hooks/useGitHubPublic", () => ({
   usePublicDashboardSnapshot: vi.fn(),
   usePublicProfileRepos: vi.fn(),
+  usePublicRepoSnapshot: vi.fn(),
 }));
 
 vi.mock("@/contexts/usePublicRuntime", () => ({
@@ -16,7 +17,7 @@ vi.mock("@/contexts/usePublicRuntime", () => ({
 
 describe("PublicDashboard", () => {
   it("renders real metrics only", async () => {
-    const { usePublicDashboardSnapshot, usePublicProfileRepos } = await import("@/hooks/useGitHubPublic");
+    const { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRepoSnapshot } = await import("@/hooks/useGitHubPublic");
     const { usePublicRuntime } = await import("@/contexts/usePublicRuntime");
     vi.mocked(usePublicRuntime).mockReturnValue({
       mode: "snapshot",
@@ -30,6 +31,7 @@ describe("PublicDashboard", () => {
       error: null,
     } as never);
     vi.mocked(usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
+    vi.mocked(usePublicRepoSnapshot).mockReturnValue({ data: null, isLoading: false, error: null } as never);
 
     renderWithAppProviders(
       <MemoryRouter>
@@ -37,13 +39,13 @@ describe("PublicDashboard", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Tracked repos")).toBeInTheDocument();
+    expect(screen.getByText("Repository Triage")).toBeInTheDocument();
     expect(screen.queryByText("Global Uptime")).not.toBeInTheDocument();
     expect(screen.queryByText("Traffic (24h)")).not.toBeInTheDocument();
   });
 
   it("renders an empty state when no repositories are tracked", async () => {
-    const { usePublicDashboardSnapshot, usePublicProfileRepos } = await import("@/hooks/useGitHubPublic");
+    const { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRepoSnapshot } = await import("@/hooks/useGitHubPublic");
     const { usePublicRuntime } = await import("@/contexts/usePublicRuntime");
     vi.mocked(usePublicRuntime).mockReturnValue({
       mode: "snapshot",
@@ -57,6 +59,7 @@ describe("PublicDashboard", () => {
       error: null,
     } as never);
     vi.mocked(usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
+    vi.mocked(usePublicRepoSnapshot).mockReturnValue({ data: null, isLoading: false, error: null } as never);
 
     renderWithAppProviders(
       <MemoryRouter>
@@ -64,6 +67,6 @@ describe("PublicDashboard", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Regenerate the snapshot dataset to repopulate the published overview.")).toBeInTheDocument();
+    expect(screen.getByText("Connect a local token or regenerate the published snapshot to populate the triage queue.")).toBeInTheDocument();
   });
 });

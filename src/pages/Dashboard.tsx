@@ -1,49 +1,30 @@
-import React from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useDashboardSnapshot } from '@/hooks/useGitHub';
-import { TriageQueue } from '@/components/console/TriageQueue';
-import { Inspector } from '@/components/console/Inspector';
-import { GlobalDashboard } from '@/components/console/GlobalDashboard';
+import { ConsoleLayout } from '@/components/console/ConsoleLayout';
 import { sortReposByAttention } from '@/lib/attention';
-import { EmptyPanel } from '@/components/site/TerminalPrimitives';
-import { useApp } from '@/contexts/useApp';
+import { Activity } from 'lucide-react';
 
 export default function Dashboard() {
-  const { t } = useApp();
   const { data, isLoading, error } = useDashboardSnapshot();
-  const [searchParams] = useSearchParams();
-  const repoId = searchParams.get('repo');
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-micro uppercase tracking-widest text-foreground-subtle">
+      <div className="flex h-full items-center justify-center gap-3 text-body text-foreground-subtle">
+        <Activity size={16} className="animate-pulse" />
         Loading console...
       </div>
     );
   }
 
   if (!data || error) {
-    return <EmptyPanel title={t("publishedSnapshot")} body={t("regenerateSnapshotOverview")} />;
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+        <Activity size={32} className="text-foreground-subtle opacity-20" />
+        <p className="text-body text-foreground-subtle">No snapshot data available. Run the app locally to connect your GitHub.</p>
+      </div>
+    );
   }
 
   const sortedRepos = sortReposByAttention(data.repos);
-  const selectedRepo = repoId ? sortedRepos.find(r => r.repo.id.toString() === repoId) || null : null;
 
-  return (
-    <div className="flex h-full w-full overflow-hidden">
-      {/* Área principal: Painel de Detalhes ou Dashboard Global */}
-      <div className="flex-1 overflow-y-auto no-scrollbar bg-surface-1 border-r border-border">
-        {selectedRepo ? (
-          <Inspector repo={selectedRepo} />
-        ) : (
-          <GlobalDashboard repos={sortedRepos} />
-        )}
-      </div>
-
-      {/* Barra lateral de seleção (à direita) */}
-      <div className="w-[320px] flex-shrink-0 border-l border-border bg-background h-full overflow-hidden">
-        <TriageQueue repos={sortedRepos} selectedRepoId={repoId || undefined} />
-      </div>
-    </div>
-  );
+  return <ConsoleLayout repos={sortedRepos} />;
 }

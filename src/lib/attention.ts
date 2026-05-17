@@ -12,32 +12,24 @@ export interface ScoredRepo extends OverviewRepoSnapshot {
 }
 
 /**
- * Calcula o Attention Score determinístico para um repositório.
- * attention(repo) = 
- *    100 * criticalAlertCount 
- *  +  40 * (dependabotOpenCount - criticalAlertCount) 
- *  +  60 * (latestWorkflowConclusion === "failure" ? 1 : 0) 
- *  +  15 * openPullRequestCount 
- *  +   2 * clamp(staleDays, 0, 365) 
- *  + (archived ? -1000 : 0)
+ * Calculates a deterministic attention score for a repository.
+ * The weights follow the dev-3 operating-console model.
  */
 export function calculateAttention(repo: OverviewRepoSnapshot): { score: number; signals: AttentionSignal[] } {
-  const { health, repo: meta } = repo;
+  const { health, repo: meta, stats } = repo;
   const signals: AttentionSignal[] = [];
   let score = 0;
 
-  // 1. Alertas Críticos de Segurança
-  if (health.criticalAlertCount > 0) {
-    score += 100 * health.criticalAlertCount;
+  if (health.dependabotCriticalCount > 0) {
+    score += 100 * health.dependabotCriticalCount;
     signals.push({
       kind: 'security',
       severity: 'critical',
-      label: `${health.criticalAlertCount} critical CVE${health.criticalAlertCount > 1 ? 's' : ''}`,
+      label: `${health.dependabotCriticalCount} critical CVE${health.dependabotCriticalCount > 1 ? 's' : ''}`,
     });
   }
 
-  // 2. Outros alertas Dependabot
-  const otherAlerts = health.dependabotOpenCount - health.criticalAlertCount;
+  const otherAlerts = health.dependabotOpenCount - health.dependabotCriticalCount;
   if (otherAlerts > 0) {
     score += 40 * otherAlerts;
     signals.push({
@@ -47,9 +39,6 @@ export function calculateAttention(repo: OverviewRepoSnapshot): { score: number;
     });
   }
 
-  // 3. Falhas de Workflow
-  // Nota: O modelo de dados atual em health tem failedRuns7d e status. 
-  // O relatório dev-3 sugere usar a conclusão do último run.
   if (health.status === 'critical' && health.failedRuns7d > 0) {
     score += 60;
     signals.push({
@@ -59,10 +48,7 @@ export function calculateAttention(repo: OverviewRepoSnapshot): { score: number;
     });
   }
 
-  // 4. PRs Abertos (se disponível no snapshot)
-  // O tipo RepoHealth atual não tem explicitamente openPullRequestCount, 
-  // mas o relatório menciona PRs. Vou verificar se o tipo suporta ou adicionar zero por enquanto.
-  const prCount = (health as any).openPullRequestCount || 0;
+  const prCount = stats.openPullRequestCount || 0;
   if (prCount > 0) {
     score += 15 * prCount;
     signals.push({
@@ -72,7 +58,6 @@ export function calculateAttention(repo: OverviewRepoSnapshot): { score: number;
     });
   }
 
-  // 5. Staleness
   if (health.stalenessDays > 0) {
     const clampedStale = Math.min(health.stalenessDays, 365);
     score += 2 * clampedStale;
@@ -85,7 +70,6 @@ export function calculateAttention(repo: OverviewRepoSnapshot): { score: number;
     }
   }
 
-  // 6. Arquivado
   if (meta.archived) {
     score -= 1000;
     signals.push({

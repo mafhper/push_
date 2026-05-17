@@ -61,7 +61,7 @@ export default function PublicAlertsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="h-full min-h-0 overflow-y-auto p-5 md:p-8 space-y-8">
       <SectionHeading
         kicker={t("securitySurface")}
         title={t("publicAlertsPublishedTitle")}

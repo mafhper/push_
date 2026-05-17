@@ -76,7 +76,7 @@ export default function RepoDetail() {
     .slice(0, 3);
 
   return (
-    <div className="space-y-6">
+    <div className="h-full min-h-0 overflow-y-auto p-5 md:p-8 space-y-6">
       <RepositoryHero
         backLabel={t("back")}
         sourceLabel={modeLabel === "local auth" ? t("localData") : t("snapshotLabel")}

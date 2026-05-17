@@ -1,69 +1,74 @@
+import { Activity, GitPullRequest, Package, ShieldAlert } from "lucide-react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useApp } from "@/contexts/useApp";
-import { ArrowRight, Github, ShieldAlert, Zap, Clock, Package } from "lucide-react";
+import { SignalFieldHero } from "@/components/site/SignalFieldHero";
+import { SITE_REPOSITORY_URL } from "@/config/site";
 
 export default function HomePage() {
-  const { t } = useApp();
-
   return (
-    <div className="max-w-4xl mx-auto py-20 px-6 space-y-24">
-      {/* Hero Section */}
-      <section className="text-center space-y-6">
-        <h1 className="font-headline text-display font-bold tracking-tight text-foreground">
-          {t("promoHomeTitleLead")} <span className="text-primary">{t("promoHomeTitleAccent")}</span>
-        </h1>
-        <p className="text-title text-foreground-muted max-w-2xl mx-auto leading-relaxed">
-          {t("promoHomeBody")}
-        </p>
-        <div className="flex items-center justify-center gap-4 pt-6">
-          <Link to="/app" className="flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-bold text-primary-foreground hover:bg-primary/90 transition-all">
-            {t("promoOpenDashboard")} <ArrowRight size={18} />
-          </Link>
-          <a href="https://github.com/mafhper/push_" className="flex items-center gap-2 rounded-lg border border-border px-8 py-3 font-semibold hover:bg-surface-1 transition-all">
-            <Github size={18} /> {t("promoViewRepository")}
-          </a>
+    <div className="bg-background">
+      <SignalFieldHero />
+
+      <section className="mx-auto grid max-w-6xl gap-10 px-6 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-8">
+        <div>
+          <p className="text-micro font-semibold uppercase tracking-wider text-primary">Why it exists</p>
+          <h2 className="mt-3 font-headline text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
+            Stop treating every repository as equally urgent.
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FeatureLine icon={<ShieldAlert size={17} />} title="Security first" body="Dependabot alerts and critical findings rise above ordinary repository activity." />
+          <FeatureLine icon={<Activity size={17} />} title="CI pressure" body="Failed workflows and degraded health are visible before status becomes background noise." />
+          <FeatureLine icon={<GitPullRequest size={17} />} title="Review load" body="Open PRs contribute to attention scoring so maintenance queues stay honest." />
+          <FeatureLine icon={<Package size={17} />} title="Runtime-scoped packages" body="Package inventory and alert availability are explicit in public and local modes." />
         </div>
       </section>
 
-      {/* Features Overview */}
-      <section className="grid md:grid-cols-3 gap-8">
-        <FeatureCard 
-          icon={<ShieldAlert size={24} className="text-critical" />}
-          title={t("promoHomeFeatureReposTitle")}
-          body={t("promoHomeFeatureReposBody")}
-        />
-        <FeatureCard 
-          icon={<Zap size={24} className="text-warning" />}
-          title={t("promoHomeFeatureAttentionTitle")}
-          body={t("promoHomeFeatureAttentionBody")}
-        />
-        <FeatureCard 
-          icon={<Package size={24} className="text-primary" />}
-          title={t("promoHomeFeatureSnapshotTitle")}
-          body={t("promoHomeFeatureSnapshotBody")}
-        />
+      <section className="border-y border-border/60 bg-surface-1/45">
+        <div className="mx-auto grid max-w-6xl gap-8 px-6 py-14 md:grid-cols-3 md:px-8">
+          <Metric label="Published runtime" value="No browser token" />
+          <Metric label="Local runtime" value="Memory-only token" />
+          <Metric label="Primary workflow" value="Queue to inspector" />
+        </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="rounded-2xl border border-border bg-surface-1 p-12 text-center space-y-6">
-        <h2 className="font-headline text-display font-bold">{t("promoOpenDashboardTitle")}</h2>
-        <p className="text-body text-foreground-muted">{t("promoOpenDashboardBody")}</p>
-        <Link to="/app" className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-bold text-primary-foreground">
-          {t("openApp")}
-        </Link>
+      <section className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-16 md:flex-row md:items-end md:justify-between md:px-8">
+        <div className="max-w-2xl">
+          <h2 className="font-headline text-3xl font-semibold text-foreground">Open the console.</h2>
+          <p className="mt-3 text-body text-foreground-muted">
+            Inspect the public snapshot now, or run locally with a GitHub token for richer package, Dependabot, workflow, and repository selection data.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link to="/app" className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+            Open console
+          </Link>
+          <a href={SITE_REPOSITORY_URL} className="inline-flex h-11 items-center justify-center rounded-lg border border-border px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-1">
+            View source
+          </a>
+        </div>
       </section>
     </div>
   );
 }
 
-function FeatureCard({ icon, title, body }: { icon: React.ReactNode, title: string, body: string }) {
+function FeatureLine({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
   return (
-    <div className="space-y-4">
-      <div className="h-12 w-12 rounded-lg bg-surface-2 border border-border flex items-center justify-center">
+    <div className="rounded-lg border border-border/60 bg-surface-1 p-4">
+      <div className="flex items-center gap-2 text-primary">
         {icon}
+        <h3 className="font-headline text-title font-semibold text-foreground">{title}</h3>
       </div>
-      <h3 className="font-headline text-title font-semibold">{title}</h3>
-      <p className="text-body text-foreground-muted leading-relaxed">{body}</p>
+      <p className="mt-3 text-body text-foreground-muted">{body}</p>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{label}</p>
+      <p className="mt-2 font-headline text-2xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }

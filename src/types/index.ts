@@ -1,10 +1,15 @@
-export type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light' | 'phosphor-green' | 'golden-matrix' | 'blue-calm' | 'green-ish' | 'brown-earth';
 export type Language = 'en' | 'pt-BR' | 'es';
+export type SidebarMode = 'expanded' | 'compact';
+export type DataDetailMode = 'balanced' | 'detailed' | 'full';
 
 export interface UserSettings {
   theme: Theme;
   lang: Language;
   dashboardDensity: 'balanced' | 'dense';
+  sidebarMode?: SidebarMode;
+  dataDetailMode?: DataDetailMode;
+  repoDetailModes?: Record<string, DataDetailMode>;
   pollingInterval?: number;
   notificationsEnabled?: boolean;
   highlightMode?: 'primary' | 'recent';
@@ -15,6 +20,18 @@ export interface UserSession {
   username: string;
   avatarUrl: string;
   authenticatedAt: string;
+  diagnostics?: TokenDiagnostics;
+}
+
+export interface TokenDiagnostics {
+  token: 'valid' | 'invalid' | 'rate_limited' | 'unknown';
+  rateLimit?: RateLimitInfo;
+  accessibleRepoCount?: number;
+  dependabotProbe?: {
+    status: 'available' | 'forbidden' | 'not_found' | 'unavailable' | 'skipped';
+    repoFullName?: string;
+    message?: string;
+  };
 }
 
 export interface RepositoryRef {
@@ -173,6 +190,58 @@ export interface SnapshotOverview {
   repos: OverviewRepoSnapshot[];
 }
 
+export interface DependencyInfo {
+  name: string;
+  version: string;
+  type: 'dependencies' | 'devDependencies';
+}
+
+export interface ReleaseSummary {
+  id: number;
+  tagName: string;
+  name: string;
+  prerelease: boolean;
+  draft: boolean;
+  publishedAt: string | null;
+  htmlUrl: string;
+}
+
+export interface IssueSummary {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  createdAt: string;
+  updatedAt: string;
+  htmlUrl: string;
+  authorLogin: string;
+  labels: string[];
+}
+
+export interface RepoLabelSummary {
+  id: number;
+  name: string;
+  color: string;
+  description: string | null;
+}
+
+export interface BranchProtectionSummary {
+  available: boolean;
+  protected: boolean;
+  reason?: string;
+}
+
+export interface RepoExtendedInfo {
+  readme?: {
+    text: string;
+    htmlUrl: string;
+  };
+  releases?: ReleaseSummary[];
+  issues?: IssueSummary[];
+  labels?: RepoLabelSummary[];
+  branchProtection?: BranchProtectionSummary;
+}
+
 export interface RepoSnapshotDetail {
   status: SnapshotStatus;
   featured: boolean;
@@ -185,6 +254,8 @@ export interface RepoSnapshotDetail {
   languages: LanguageBreakdown;
   contributors: ContributorSummary[];
   availability: OverviewRepoSnapshot['availability'];
+  dependencies?: DependencyInfo[];
+  extended?: RepoExtendedInfo;
 }
 
 export const LANGUAGE_COLORS: Record<string, string> = {

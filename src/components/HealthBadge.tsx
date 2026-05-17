@@ -21,6 +21,11 @@ export function HealthBadge({ status, score, size = 'md' }: HealthBadgeProps) {
       className: 'bg-critical/10 text-critical border-critical/20 animate-pulse-critical',
     },
   };
+  const labels = {
+    healthy: 'Healthy',
+    warning: 'Warning',
+    critical: 'Critical',
+  };
 
   const { icon: Icon, className } = config[status];
   const sizeClasses = {
@@ -31,8 +36,13 @@ export function HealthBadge({ status, score, size = 'md' }: HealthBadgeProps) {
   const iconSizes = { sm: 12, md: 14, lg: 16 };
 
   return (
-    <span className={`inline-flex items-center rounded-full border font-medium transition-theme ${className} ${sizeClasses[size]}`}>
+    <span
+      aria-label={`${labels[status]} health score ${score}`}
+      title={`${labels[status]} health score ${score}`}
+      className={`inline-flex items-center rounded-full border font-medium transition-theme ${className} ${sizeClasses[size]}`}
+    >
       <Icon size={iconSizes[size]} strokeWidth={1.5} />
+      {size === 'lg' ? <span className="text-xs font-bold uppercase tracking-wider">{labels[status]}</span> : <span className="sr-only">{labels[status]}</span>}
       {score}
     </span>
   );

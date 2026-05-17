@@ -54,10 +54,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('theme-dark', 'theme-light');
+    root.classList.remove('theme-dark', 'theme-light', 'theme-phosphor-green', 'theme-golden-matrix', 'theme-blue-calm', 'theme-green-ish', 'theme-brown-earth');
     root.classList.add(`theme-${normalizedSettings.theme}`);
-    root.style.colorScheme = normalizedSettings.theme;
+    root.style.colorScheme = normalizedSettings.theme === 'light' ? 'light' : 'dark';
   }, [normalizedSettings.theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = normalizedSettings.lang;
+  }, [normalizedSettings.lang]);
 
   useEffect(() => {
     // Clear legacy persisted sessions from older iterations of the app.

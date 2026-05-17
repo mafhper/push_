@@ -39,7 +39,7 @@ export default function PublicRepoDetail() {
   const totalLanguageBytes = languageEntries.reduce((sum, [, value]) => sum + value, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="h-full min-h-0 overflow-y-auto p-5 md:p-8 space-y-6">
       <RepositoryHero
         backLabel={t("back")}
         sourceLabel={mode === "public-profile" ? t("publicApiLabel") : t("snapshotLabel")}

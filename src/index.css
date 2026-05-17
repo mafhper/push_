@@ -13,17 +13,17 @@
 @layer base {
   :root,
   :root.theme-dark {
-    --background: 222 14% 7%;
-    --surface-1:  222 12% 10%;
-    --surface-2:  222 11% 13%;
-    --surface-3:  222 10% 17%;
+    --background: 0 0% 4%;
+    --surface-1:  0 0% 7%;
+    --surface-2:  0 0% 10%;
+    --surface-3:  0 0% 14%;
 
-    --foreground:        220 14% 96%;
-    --foreground-muted:  220  8% 78%; /* Aumentado contraste */
-    --foreground-subtle: 220  6% 65%; /* Aumentado contraste */
+    --foreground:        0 0% 96%;
+    --foreground-muted:  0 0% 78%;
+    --foreground-subtle: 0 0% 62%;
 
-    --border:        222 10% 25%;
-    --border-strong: 222 10% 35%;
+    --border:        0 0% 23%;
+    --border-strong: 0 0% 34%;
 
     --primary:             212 92% 60%;
     --primary-foreground:  220 14% 98%;
@@ -51,18 +51,235 @@
     --input: var(--surface-3);
   }
 
-  * {
-    @apply border-border;
+  :root.theme-light {
+    --background: 220 24% 96%;
+    --surface-1:  0 0% 100%;
+    --surface-2:  220 24% 93%;
+    --surface-3:  220 20% 88%;
+
+    --foreground:        222 22% 10%;
+    --foreground-muted:  222 10% 30%;
+    --foreground-subtle: 222  8% 44%;
+
+    --border:        220 16% 78%;
+    --border-strong: 220 14% 62%;
+
+    --primary:             212 90% 48%;
+    --primary-foreground:  0 0% 100%;
+
+    --success:    150 55% 34%;
+    --warning:     38 88% 42%;
+    --critical:     0 72% 48%;
+    --info:       200 78% 42%;
+
+    --ring:          212 90% 48%;
+    --selection-bg:  212 90% 48% / 0.18;
+
+    --card: var(--surface-1);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface-1);
+    --popover-foreground: var(--foreground);
+    --muted: var(--surface-2);
+    --muted-foreground: var(--foreground-muted);
+    --accent: var(--surface-2);
+    --accent-foreground: var(--foreground);
+    --destructive: var(--critical);
+    --destructive-foreground: var(--primary-foreground);
+    --input: var(--surface-3);
+  }
+
+  :root.theme-phosphor-green {
+    --background: 144 32% 4%;
+    --surface-1:  144 28% 7%;
+    --surface-2:  144 24% 10%;
+    --surface-3:  144 20% 14%;
+    --foreground:        132 40% 92%;
+    --foreground-muted:  132 18% 74%;
+    --foreground-subtle: 132 12% 58%;
+    --border:        144 20% 24%;
+    --border-strong: 144 24% 34%;
+    --primary:             121 100% 55%;
+    --primary-foreground:  144 32% 4%;
+    --success:    121 72% 48%;
+    --warning:     52 88% 58%;
+    --critical:     0 78% 60%;
+    --info:       158 80% 58%;
+    --ring:          121 100% 55%;
+    --selection-bg:  121 100% 55% / 0.22;
+  }
+
+  :root.theme-golden-matrix {
+    --background: 42 28% 5%;
+    --surface-1:  42 22% 8%;
+    --surface-2:  42 18% 11%;
+    --surface-3:  42 16% 15%;
+    --foreground:        48 42% 92%;
+    --foreground-muted:  44 20% 76%;
+    --foreground-subtle: 42 12% 60%;
+    --border:        42 18% 26%;
+    --border-strong: 42 24% 38%;
+    --primary:             44 96% 58%;
+    --primary-foreground:  42 28% 5%;
+    --success:    118 44% 48%;
+    --warning:     36 96% 56%;
+    --critical:     0 72% 58%;
+    --info:       204 72% 58%;
+    --ring:          44 96% 58%;
+    --selection-bg:  44 96% 58% / 0.22;
+  }
+
+  :root.theme-blue-calm {
+    --background: 214 26% 8%;
+    --surface-1:  214 22% 11%;
+    --surface-2:  214 18% 15%;
+    --surface-3:  214 16% 19%;
+    --foreground:        210 32% 94%;
+    --foreground-muted:  210 16% 78%;
+    --foreground-subtle: 210 10% 62%;
+    --border:        214 16% 28%;
+    --border-strong: 214 20% 40%;
+    --primary:             199 92% 62%;
+    --primary-foreground:  214 26% 8%;
+    --success:    158 56% 48%;
+    --warning:     42 88% 58%;
+    --critical:     0 70% 60%;
+    --info:       199 92% 62%;
+    --ring:          199 92% 62%;
+    --selection-bg:  199 92% 62% / 0.22;
+  }
+
+  :root.theme-green-ish {
+    --background: 158 24% 7%;
+    --surface-1:  158 20% 10%;
+    --surface-2:  158 17% 14%;
+    --surface-3:  158 14% 18%;
+    --foreground:        150 26% 93%;
+    --foreground-muted:  150 14% 76%;
+    --foreground-subtle: 150 10% 60%;
+    --border:        158 14% 28%;
+    --border-strong: 158 18% 40%;
+    --primary:             154 74% 52%;
+    --primary-foreground:  158 24% 7%;
+    --success:    154 74% 48%;
+    --warning:     45 88% 58%;
+    --critical:     0 70% 60%;
+    --info:       190 72% 58%;
+    --ring:          154 74% 52%;
+    --selection-bg:  154 74% 52% / 0.22;
+  }
+
+  :root.theme-brown-earth {
+    --background: 28 18% 8%;
+    --surface-1:  28 16% 12%;
+    --surface-2:  28 14% 16%;
+    --surface-3:  28 12% 20%;
+    --foreground:        36 26% 92%;
+    --foreground-muted:  34 14% 76%;
+    --foreground-subtle: 32 10% 60%;
+    --border:        28 14% 30%;
+    --border-strong: 28 18% 42%;
+    --primary:             32 78% 58%;
+    --primary-foreground:  28 18% 8%;
+    --success:    136 44% 48%;
+    --warning:     42 88% 58%;
+    --critical:     0 70% 60%;
+    --info:       200 62% 58%;
+    --ring:          32 78% 58%;
+    --selection-bg:  32 78% 58% / 0.22;
+  }
+
+  :root.theme-phosphor-green,
+  :root.theme-golden-matrix,
+  :root.theme-blue-calm,
+  :root.theme-green-ish,
+  :root.theme-brown-earth {
+    --card: var(--surface-1);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface-2);
+    --popover-foreground: var(--foreground);
+    --muted: var(--surface-2);
+    --muted-foreground: var(--foreground-muted);
+    --accent: var(--surface-3);
+    --accent-foreground: var(--foreground);
+    --destructive: var(--critical);
+    --destructive-foreground: var(--foreground);
+    --input: var(--surface-3);
+  }
+
+  html {
+    min-height: 100%;
   }
 
   body {
+    min-height: 100%;
     @apply bg-background text-foreground-muted antialiased;
     font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 16px; /* Base mais legível */
+    font-size: 16px;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  html.app-shell-active,
+  html.app-shell-active body,
+  body.app-shell-active {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html.app-shell-active #root {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--foreground-subtle) / 0.55) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: hsl(var(--foreground-subtle) / 0.45);
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground-subtle) / 0.7);
+    background-clip: padding-box;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply text-foreground;
     font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .app-viewport {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

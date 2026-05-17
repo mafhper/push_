@@ -11,9 +11,6 @@ import { AppShell } from "@/components/layout/AppShell";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const HomePage = lazy(() => import("../pages/promo/Home"));
-const TechnologyPage = lazy(() => import("../pages/promo/Technology"));
-const FAQPage = lazy(() => import("../pages/promo/FAQ"));
-const AboutPage = lazy(() => import("../pages/promo/About"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const RepoDetailPage = lazy(() => import("../pages/RepoDetail"));
 const AlertsPage = lazy(() => import("../pages/Alerts"));
@@ -42,9 +39,6 @@ export default function LocalApp() {
               <Routes>
                 <Route element={<PromoLayout />}>
                   <Route path="/" element={<HomePage />} />
-                  <Route path="/technology" element={<TechnologyPage />} />
-                  <Route path="/faq" element={<FAQPage />} />
-                  <Route path="/about" element={<AboutPage />} />
                 </Route>
 
                 <Route path="/app" element={<AppShell />}>
@@ -67,5 +61,5 @@ export default function LocalApp() {
 
 function AppLoadingFallback() {
   const { t } = useApp();
-  return <div className="editorial-frame px-6 py-20 text-sm text-muted-foreground">{t("loadingAppShell")}</div>;
+  return <div className="px-6 py-20 text-sm text-muted-foreground">{t("loadingAppShell")}</div>;
 }
