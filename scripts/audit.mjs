@@ -5,7 +5,16 @@ import path from "node:path";
 const skipPrechecks = process.argv.includes("--skip-prechecks");
 
 function run(command, args) {
-  const result = spawnSync(command, args, { stdio: "inherit", shell: true });
+  const npmCli = process.env.npm_execpath
+    ?? path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
+  const useNpmCli = command === "npm" && existsSync(npmCli);
+  const executable = useNpmCli ? process.execPath : command;
+  const executableArgs = useNpmCli ? [npmCli, ...args] : args;
+  const result = spawnSync(executable, executableArgs, { stdio: "inherit" });
+  if (result.error) {
+    console.error(result.error.message);
+    process.exit(1);
+  }
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
