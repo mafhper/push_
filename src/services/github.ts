@@ -237,6 +237,14 @@ function classifyGitHubError(error: string) {
   return error;
 }
 
+function classifyDependabotError(error: string) {
+  if (error.startsWith("401")) return "Invalid or expired token.";
+  if (error.startsWith("403")) return "GitHub refused Dependabot alerts. Check token scopes and repository access.";
+  if (error.startsWith("404")) return "Dependabot alerts are not enabled or not available for this repository.";
+  if (error.startsWith("429")) return "GitHub rate limit reached.";
+  return classifyGitHubError(error);
+}
+
 function isFailure<T>(payload: T | GitHubFailure): payload is GitHubFailure {
   return typeof payload === "object" && payload !== null && "error" in payload;
 }
@@ -546,7 +554,7 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
       ? createAvailability(false, "authenticated-api", contributorsPayload.error)
       : createAvailability(true, "authenticated-api"),
     dependabotAlerts: isFailure(dependabotPayload)
-      ? createAvailability(false, "authenticated-api", classifyGitHubError(dependabotPayload.error))
+      ? createAvailability(false, "authenticated-api", classifyDependabotError(dependabotPayload.error))
       : createAvailability(true, "authenticated-api"),
     pullRequests: isFailure(pullRequestsPayload)
       ? createAvailability(false, "authenticated-api", pullRequestsPayload.error)
@@ -723,22 +731,38 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
       };
     }
 
-    const probe = await githubOptional<GitHubDependabotAlert[]>(`/repos/${probeRepo.owner}/${probeRepo.name}/dependabot/alerts?state=open&per_page=1`, trimmed);
-    if (!isFailure(probe)) {
-      return {
-        token: "valid",
-        rateLimit,
-        accessibleRepoCount: repos.length,
-        dependabotProbe: { status: "available", repoFullName: probeRepo.fullName },
-      };
+    const probeRepos = repos.slice(0, 8);
+    const failures: Array<{ repo: RepositoryRef; error: string }> = [];
+    for (const repo of probeRepos) {
+      const probe = await githubOptional<GitHubDependabotAlert[]>(`/repos/${repo.owner}/${repo.name}/dependabot/alerts?state=open&per_page=1`, trimmed);
+      if (!isFailure(probe)) {
+        return {
+          token: "valid",
+          rateLimit,
+          accessibleRepoCount: repos.length,
+          dependabotProbe: { status: "available", repoFullName: repo.fullName },
+        };
+      }
+      failures.push({ repo, error: probe.error });
     }
 
-    const status = probe.error.startsWith("403") ? "forbidden" : probe.error.startsWith("404") ? "not_found" : "unavailable";
+    const firstForbidden = failures.find((failure) => failure.error.startsWith("403"));
+    const firstNotFound = failures.find((failure) => failure.error.startsWith("404"));
+    const representative = firstForbidden ?? firstNotFound ?? failures[0];
+    const status = representative.error.startsWith("403")
+      ? "forbidden"
+      : representative.error.startsWith("404")
+        ? "not_found"
+        : "unavailable";
     return {
       token: "valid",
       rateLimit,
       accessibleRepoCount: repos.length,
-      dependabotProbe: { status, repoFullName: probeRepo.fullName, message: classifyGitHubError(probe.error) },
+      dependabotProbe: {
+        status,
+        repoFullName: representative.repo.fullName,
+        message: classifyDependabotError(representative.error),
+      },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

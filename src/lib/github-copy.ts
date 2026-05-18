@@ -12,6 +12,18 @@ export function resolveDependabotReason(
     return t("dependabotRequiresAuth");
   }
 
+  if (normalized.includes("refused dependabot") || normalized.includes("check token scopes")) {
+    return t("dependabotForbiddenDetail");
+  }
+
+  if (normalized.includes("not enabled") || normalized.includes("feature may be disabled") || normalized.includes("repository data not found")) {
+    return t("dependabotRepoUnavailable");
+  }
+
+  if (normalized.includes("no commits")) {
+    return t("dependabotRepoEmpty");
+  }
+
   if (normalized.includes("no active issues")) {
     return t("dependabotReturnedNoIssues");
   }

@@ -5,6 +5,7 @@ import { ExternalLink, ShieldAlert, GitPullRequest, Activity, Clock, AlertTriang
 import { cn } from '@/lib/utils';
 import { isZeroMetricValue } from '@/lib/metric-state';
 import { AttentionSignal, ScoredRepo } from '@/lib/attention';
+import { resolveDependabotReason } from '@/lib/github-copy';
 import { SeverityDot } from './SeverityDot';
 import { useRepoSnapshot } from '@/hooks/useGitHub';
 import { usePublicRepoSnapshot } from '@/hooks/useGitHubPublic';
@@ -284,11 +285,11 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   <p className="text-sm text-foreground-subtle">
                     {!detail
                       ? 'Loading alert status...'
-                      : detail.availability.dependabotAlerts.reason
-                        ? detail.availability.dependabotAlerts.reason
-                        : session?.token
-                          ? t('dependabotUnavailableLocal')
-                          : 'No open Dependabot alerts in the loaded data.'}
+                      : resolveDependabotReason(
+                        detail.availability.dependabotAlerts.reason,
+                        t,
+                        session?.token ? "dependabotReturnedNoIssues" : "dependabotRequiresAuth",
+                      )}
                   </p>
                 )}
               </section>
@@ -584,11 +585,11 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                     <ShieldAlert size={20} className="text-foreground-subtle opacity-30" />
                     <p className="mt-2 text-body text-foreground-subtle italic">{!detail ? 'Loading alerts...' : 'No Dependabot alerts open'}</p>
                     <p className="mt-1 max-w-md text-micro text-foreground-subtle/60">
-                      {detail?.availability.dependabotAlerts.reason
-                        ? detail.availability.dependabotAlerts.reason
-                        : session?.token
-                          ? t('dependabotUnavailableLocal')
-                          : 'Authenticated GitHub access is required for live Dependabot alert data.'}
+                      {resolveDependabotReason(
+                        detail?.availability.dependabotAlerts.reason,
+                        t,
+                        session?.token ? "dependabotReturnedNoIssues" : "dependabotRequiresAuth",
+                      )}
                     </p>
                   </div>
                 )}
@@ -841,10 +842,9 @@ function DependencyRiskSummary({ detail }: { detail?: RepoSnapshotDetail }) {
       <MiniStat icon={<Package size={15} />} label="Dev deps" value={devCount.toString()} description="Build/test dependency count." />
       <div className="rounded-xl border border-border/60 bg-surface-1 px-3.5 py-3 text-micro text-foreground-subtle sm:col-span-4">
         <span className={cn("font-semibold", dependabotAvailable ? "text-success" : "text-warning")}>
-          {dependabotAvailable ? "Authenticated alert data available." : session?.token ? t("dependabotUnavailableLocal") : t("dependabotUnavailableRuntime")}
+          {dependabotAvailable ? "Authenticated alert data available." : resolveDependabotReason(detail?.availability.dependabotAlerts.reason, t, session?.token ? "dependabotReturnedNoIssues" : "dependabotRequiresAuth")}
         </span>{" "}
         <span>
-          {detail?.availability.dependabotAlerts.reason ? `${detail.availability.dependabotAlerts.reason} ` : ""}
           {t("packageInventorySource")}
         </span>
       </div>

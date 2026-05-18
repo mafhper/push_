@@ -155,18 +155,46 @@ describe("diagnoseToken", () => {
       dependabotProbe: { status: "forbidden" },
     });
   });
+
+  it("continues probing when the first repository has no Dependabot alerts endpoint", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/user")) {
+        return { ok: true, status: 200, json: async () => ({ login: "mafhper" }) } as Response;
+      }
+      if (url.endsWith("/rate_limit")) {
+        return { ok: true, status: 200, json: async () => ({ resources: { core: { remaining: 42, limit: 5000, reset: 1780000000 } } }) } as Response;
+      }
+      if (url.includes("/user/repos")) {
+        return { ok: true, status: 200, json: async () => ([repoPayload("empty"), repoPayload("push_")]) } as Response;
+      }
+      if (url.includes("/repos/mafhper/empty/dependabot/alerts")) {
+        return { ok: false, status: 404 } as Response;
+      }
+      if (url.includes("/repos/mafhper/push_/dependabot/alerts")) {
+        return { ok: true, status: 200, json: async () => ([]) } as Response;
+      }
+      return { ok: false, status: 404 } as Response;
+    });
+
+    await expect(diagnoseToken(fakeClassicToken)).resolves.toMatchObject({
+      token: "valid",
+      accessibleRepoCount: 2,
+      dependabotProbe: { status: "available", repoFullName: "mafhper/push_" },
+    });
+  });
 });
 
-function repoPayload() {
+function repoPayload(name = "push_") {
   return {
     id: 1,
     owner: { login: "mafhper" },
-    name: "push_",
-    full_name: "mafhper/push_",
+    name,
+    full_name: `mafhper/${name}`,
     default_branch: "main",
     private: false,
     archived: false,
-    html_url: "https://github.com/mafhper/push_",
+    html_url: `https://github.com/mafhper/${name}`,
     description: "Public repo",
     license: { spdx_id: "MIT", name: "MIT License" },
     language: "TypeScript",
