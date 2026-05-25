@@ -62,10 +62,10 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
   }
 
   return (
-    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden", compact && "lg:items-stretch")}>
-      <div className={cn("shrink-0 border-b border-border/50 px-5 py-4", compact && "lg:px-3 lg:py-3")}>
-        <div className={cn("flex items-start justify-between gap-3", compact && "lg:justify-center")}>
-          <div className={cn("min-w-0", compact && "lg:hidden")}>
+    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden", compact && "md:items-stretch")}>
+      <div className={cn("shrink-0 border-b border-border/50 px-5 py-4", compact && "md:px-3 md:py-3")}>
+        <div className={cn("flex items-start justify-between gap-3", compact && "md:justify-center")}>
+          <div className={cn("min-w-0", compact && "md:hidden")}>
             <h2 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle">{t('repositoryTriage')}</h2>
             <p className="mt-1 text-[10px] text-foreground-subtle/70">
               {t('triageCountSummary', { total: repos.length, critical: counts.critical, warning: counts.warning })}
@@ -77,18 +77,18 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
               onClick={onToggleCompact}
               aria-label={compact ? t('expandSidebar') : t('collapseSidebar')}
               title={compact ? t('expandSidebar') : t('collapseSidebar')}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-1 text-foreground-subtle transition-colors hover:text-foreground lg:flex"
+              className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface-1 text-foreground-subtle transition-colors hover:text-foreground lg:inline-flex"
             >
               <Menu size={15} />
             </button>
           )}
         </div>
-        <p className={cn("hidden text-center font-mono text-[10px] font-semibold text-primary", compact && "lg:block")}>
+        <p className={cn("hidden text-center font-mono text-[10px] font-semibold text-primary", compact && "md:block")}>
           {repos.length}
         </p>
       </div>
 
-      <div className={cn("flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border/50 px-4 py-2.5", compact && "lg:hidden")}>
+      <div className={cn("flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border/50 px-4 py-2.5", compact && "md:hidden")}>
         {(['all', 'critical', 'warning', 'healthy', 'archived'] as const).map(key => {
           const count = counts[key];
           return (
@@ -117,13 +117,13 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
           className={cn(
             "group flex w-full items-center gap-2.5 border-l-[3px] px-5 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             !selectedRepoId ? "border-l-primary bg-surface-2 shadow-sm" : "border-l-transparent hover:bg-surface-1/60",
-            compact && "lg:flex-col lg:items-center lg:gap-1.5 lg:px-2 lg:py-3 lg:text-center"
+            compact && "md:flex-col md:items-center md:gap-1.5 md:px-2 md:py-3 md:text-center"
           )}
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-surface-1 text-primary">
             <LayoutDashboard size={16} />
           </span>
-          <span className={cn("min-w-0 flex-1 text-sm font-semibold text-foreground", compact && "lg:hidden")}>
+          <span className={cn("min-w-0 flex-1 text-sm font-semibold text-foreground", compact && "md:hidden")}>
             {t('dashboardOverview')}
           </span>
         </button>
@@ -134,6 +134,7 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
                 key={repo.repo.id}
                 repo={repo}
                 selected={selectedRepoId === repo.repo.id.toString()}
+                compact={compact}
                 onClick={() => selectRepo(repo.repo.id)}
               />
             ))}
@@ -148,9 +149,8 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
   );
 }
 
-function TriageRow({ repo, selected, onClick }: { repo: ScoredRepo; selected: boolean; onClick: () => void }) {
-  const { settings, t } = useApp();
-  const compact = settings.sidebarMode === 'compact';
+function TriageRow({ repo, selected, compact, onClick }: { repo: ScoredRepo; selected: boolean; compact: boolean; onClick: () => void }) {
+  const { t } = useApp();
   const primarySignals = repo.signals.slice(0, 2);
   const severity: 'critical' | 'warning' | 'success' =
     repo.attentionScore >= 100 ? 'critical' :
@@ -165,20 +165,20 @@ function TriageRow({ repo, selected, onClick }: { repo: ScoredRepo; selected: bo
       title={tooltip}
       className={cn(
         "group flex w-full items-center gap-2.5 px-5 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        compact && "lg:flex-col lg:items-center lg:gap-1.5 lg:px-2 lg:py-3 lg:text-center",
+        compact && "md:flex-col md:items-center md:gap-1.5 md:px-2 md:py-3 md:text-center",
         selected
           ? "bg-surface-2 shadow-sm border-l-[3px] border-l-primary"
           : "hover:bg-surface-1/60 border-l-[3px] border-l-transparent"
       )}
     >
-      <div className={cn("flex shrink-0 items-center gap-2", compact && "lg:block")}>
-        <RepoLogo owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className={cn("h-8 w-8", compact && "lg:h-9 lg:w-9")} />
-        <span className={cn(compact && "lg:hidden")}>
+      <div className={cn("flex shrink-0 items-center gap-2", compact && "md:block")}>
+        <RepoLogo owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className={cn("h-8 w-8", compact && "md:h-9 md:w-9")} />
+        <span className={cn(compact && "md:hidden")}>
           <SeverityDot severity={severity} label={severityLabel} />
         </span>
       </div>
 
-      <div className={cn("flex min-w-0 flex-1 flex-col", compact && "lg:hidden")}>
+      <div className={cn("flex min-w-0 flex-1 flex-col", compact && "md:hidden")}>
         <span className={cn(
           "text-sm font-semibold truncate leading-tight transition-colors",
           selected ? "text-foreground" : "text-foreground group-hover:text-foreground"
@@ -203,8 +203,8 @@ function TriageRow({ repo, selected, onClick }: { repo: ScoredRepo; selected: bo
         </div>
       </div>
 
-      <div className={cn("flex shrink-0 flex-col items-end gap-0.5", compact && "lg:flex-row lg:items-center lg:justify-center lg:gap-1")}>
-        <span className={cn("hidden", compact && "lg:inline-flex")}>
+      <div className={cn("flex shrink-0 flex-col items-end gap-0.5", compact && "md:flex-row md:items-center md:justify-center md:gap-1")}>
+        <span className={cn("hidden", compact && "md:inline-flex")}>
           <SeverityDot severity={severity} label={severityLabel} />
         </span>
         <span className={cn(
@@ -217,7 +217,7 @@ function TriageRow({ repo, selected, onClick }: { repo: ScoredRepo; selected: bo
         </span>
         <span className={cn(
           "text-[9px] leading-none",
-          compact && "lg:hidden",
+          compact && "md:hidden",
           selected ? "text-foreground-subtle/60" : "text-foreground-subtle/40"
         )}>
           {repo.health.stalenessDays > 0 ? `${repo.health.stalenessDays}d` : 'now'}
