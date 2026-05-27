@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Github, KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, Moon, Sun } from "lucide-react";
+import { KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, Moon, Sun, UserRound } from "lucide-react";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
@@ -165,7 +165,7 @@ export default function SettingsPage() {
                   {session?.avatarUrl ? (
                     <img src={session.avatarUrl} alt="" className="h-10 w-10 rounded-full ring-1 ring-border" />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-3 text-primary"><Github size={16} /></div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-3 text-primary"><UserRound size={16} /></div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-micro text-foreground-subtle">{t("currentIdentity")}</p>

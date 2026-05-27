@@ -1,7 +1,7 @@
 import { APP_ROUTES, SITE_NAME, SITE_REPOSITORY_URL } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { cn } from "@/lib/utils";
-import { Github, Settings, ShieldAlert, SquareTerminal } from "lucide-react";
+import { GitBranch, Settings, ShieldAlert, SquareTerminal } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 
 function AppFooter({ modeLabel }: { modeLabel: string }) {
@@ -153,7 +153,7 @@ export function DashboardLayoutFrame({
           <div className="rounded-[1.9rem] ops-surface-deep p-3">
             <p className="px-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/32">{t("control")}</p>
             <Link to="/app/settings" className="button-primary-terminal mt-3 w-full justify-center px-4 py-3.5 text-[11px] uppercase tracking-[0.22em]">
-              <Github size={14} />
+              <GitBranch size={14} />
               {t("manageRepos")}
             </Link>
             <div className="mt-3 rounded-[1.2rem] bg-white/[0.03] px-3 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
@@ -198,7 +198,7 @@ export function DashboardLayoutFrame({
                 {t("settings")}
               </Link>
               <a href={SITE_REPOSITORY_URL} className="button-secondary-terminal px-4 py-2.5 text-sm">
-                <Github size={14} />
+                <GitBranch size={14} />
                 {t("githubRepository")}
               </a>
             </div>

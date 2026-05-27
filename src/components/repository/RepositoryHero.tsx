@@ -1,4 +1,4 @@
-import { Activity, ArrowLeft, Clock3, GitPullRequest, Github, Shield, ShieldAlert, Star } from "lucide-react";
+import { Activity, ArrowLeft, Clock3, GitBranch, GitPullRequest, Shield, ShieldAlert, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
@@ -271,7 +271,7 @@ export function RepositoryHero({
             </div>
 
             <a href={repoUrl} className="button-primary-terminal mt-6 w-full justify-center text-sm">
-              <Github size={15} />
+              <GitBranch size={15} />
               {t("repoOpenRepo")}
             </a>
           </aside>

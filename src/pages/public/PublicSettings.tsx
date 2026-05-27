@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { Github, Search, Moon, Sun, LoaderCircle } from "lucide-react";
+import { AtSign, Search, Moon, Sun, LoaderCircle } from "lucide-react";
 import { useApp } from "@/contexts/useApp";
 import { usePublicRuntime } from "@/contexts/usePublicRuntime";
 import { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRateLimit, usePublicSnapshotManifest } from "@/hooks/useGitHubPublic";
@@ -73,7 +73,7 @@ export default function PublicSettingsPage() {
                 <label className="text-micro font-semibold text-foreground-subtle uppercase tracking-wider">{t("gitHubUsername")}</label>
                 <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
                   <div className="relative flex-1">
-                    <Github size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle/40" />
+                    <AtSign size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle/40" />
                     <input
                       type="text" autoComplete="off"
                       value={usernameInput}
