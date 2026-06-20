@@ -8,16 +8,16 @@ test.describe("public runtime", () => {
   test("settings page stays snapshot-only", async ({ page }) => {
     await page.goto("/app/settings");
 
-    await expect(page.getByRole("heading", { name: "Snapshot status" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Published snapshot" })).toBeVisible();
     await expect(page.getByText("The published site does not accept a GitHub token.")).toBeVisible();
-    await expect(page.getByPlaceholder("Cole um GitHub Personal Access Token")).toHaveCount(0);
+    await expect(page.getByPlaceholder("Paste a GitHub personal access token")).toHaveCount(0);
     await expect(page.getByText("Current identity")).toHaveCount(0);
   });
 
   test("dashboard avoids synthetic metrics", async ({ page }) => {
     await page.goto("/app");
 
-    await expect(page.getByRole("heading", { name: "Tracked Repositories" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Fleet Overview" })).toBeVisible();
     await expect(page.getByText("Global Uptime")).toHaveCount(0);
     await expect(page.getByText("Traffic (24h)")).toHaveCount(0);
   });

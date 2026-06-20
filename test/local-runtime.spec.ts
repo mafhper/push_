@@ -10,6 +10,6 @@ test.describe("local runtime", () => {
 
     await expect(page.getByText("GitHub access")).toBeVisible();
     await expect(page.getByText("GitHub token")).toBeVisible();
-    await expect(page.getByPlaceholder("Cole um GitHub Personal Access Token")).toBeVisible();
+    await expect(page.getByPlaceholder("Paste a GitHub personal access token")).toBeVisible();
   });
 });
