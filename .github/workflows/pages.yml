@@ -73,6 +73,7 @@ jobs:
       - name: Generate snapshots
         env:
           GH_STATS_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run data:sync
 
       - name: Build site
