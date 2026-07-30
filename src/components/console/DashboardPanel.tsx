@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { AttentionSignal, ScoredRepo } from '@/lib/attention';
 import { SeverityDot } from './SeverityDot';
 import { ShieldAlert, GitPullRequest, Archive, GitCommit, Info, ChevronRight, Hash, Activity, Clock, AlertTriangle, Boxes, CircleCheck } from 'lucide-react';

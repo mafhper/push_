@@ -1,6 +1,6 @@
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 export default function TechnologyPage() {
   const { t } = useApp();

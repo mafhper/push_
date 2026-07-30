@@ -1,5 +1,5 @@
 import { SITE_NAME, SITE_REPOSITORY_URL } from "@/config/site";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router";
 
 export function PromoLayout() {
   return (

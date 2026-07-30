@@ -4,7 +4,7 @@ import { useWorkflowRuns, useDependabotAlerts } from '@/hooks/useGitHub';
 import { calculateHealth, formatRelativeTime } from '@/utils/health';
 import { Shield, Activity, CheckCircle2, AlertTriangle, XCircle, BarChart3, Clock, Star } from 'lucide-react';
 import type { RepositoryRef } from '@/types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 interface ComparisonTableProps {
   repos: RepositoryRef[];

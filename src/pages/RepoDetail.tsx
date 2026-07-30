@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { ExternalLink, History } from "lucide-react";
 import { RepositoryHero } from "@/components/repository/RepositoryHero";
 import { WorkflowPulsePanel } from "@/components/repository/WorkflowPulsePanel";

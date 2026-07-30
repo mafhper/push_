@@ -4,7 +4,7 @@ import { useWorkflowRuns, useDependabotAlerts } from '@/hooks/useGitHub';
 import { calculateHealth } from '@/utils/health';
 import { Shield, Activity, CheckCircle2, AlertTriangle, XCircle, Heart, Zap, Globe, GitCommit } from 'lucide-react';
 import type { RepositoryRef, RepoHealth } from '@/types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 interface GlobalHealthSummaryProps {
   repos: RepositoryRef[];

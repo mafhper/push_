@@ -2,7 +2,7 @@ import { APP_ROUTES, SITE_NAME, SITE_REPOSITORY_URL } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { cn } from "@/lib/utils";
 import { GitBranch, Settings, ShieldAlert, SquareTerminal } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router";
 
 function AppFooter({ modeLabel }: { modeLabel: string }) {
   const { t } = useApp();

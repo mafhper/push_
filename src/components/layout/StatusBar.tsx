@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Settings, Search, User, ShieldAlert, CircleCheck, GitBranch } from 'lucide-react';
 import { useApp } from '@/contexts/useApp';
 import { useDashboardSnapshot, useRateLimit } from '@/hooks/useGitHub';

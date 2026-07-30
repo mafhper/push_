@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, GitFork, Clock, Shield, Activity, XCircle, ChevronRight, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useApp } from '@/contexts/useApp';
 import { ProjectImage } from '@/components/ProjectImage';
 import { formatRelativeTime } from '@/utils/health';

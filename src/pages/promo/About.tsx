@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
 
