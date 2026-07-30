@@ -1,5 +1,5 @@
 import { Activity, ArrowLeft, Clock3, GitBranch, GitPullRequest, Shield, ShieldAlert, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
 import { isZeroMetricValue } from "@/lib/metric-state";

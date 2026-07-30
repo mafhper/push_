@@ -10,7 +10,7 @@ import {
   ExternalLink, ArrowRight, Clock, Star, GitFork
 } from 'lucide-react';
 import type { RepositoryRef } from '@/types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 interface MainRepoHighlightProps {
   repo: RepositoryRef;

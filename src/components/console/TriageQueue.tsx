@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { LayoutDashboard, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScoredRepo } from '@/lib/attention';

@@ -1,6 +1,6 @@
 import { Activity, GitPullRequest, Package, ShieldAlert } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { SITE_REPOSITORY_URL } from "@/config/site";
 
 const HERO_EVENTS = [

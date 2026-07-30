@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { Activity } from 'lucide-react';
 import { GlobalDashboard } from '@/components/console/GlobalDashboard';
 import { Inspector } from '@/components/console/Inspector';

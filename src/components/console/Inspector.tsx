@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { ExternalLink, ShieldAlert, GitPullRequest, Activity, Clock, AlertTriangle, User, ChevronRight, ChevronDown, RefreshCw, Package, GitBranch, GitCommit, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isZeroMetricValue } from '@/lib/metric-state';
