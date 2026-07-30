@@ -7,6 +7,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG_PATH = path.join(ROOT, "data", "repositories.json");
 const OUTPUT_ROOT = path.join(ROOT, process.env.SNAPSHOT_OUTPUT || "public/data");
 const OUTPUT_REPOS = path.join(OUTPUT_ROOT, "repos");
+const GITHUB_OWNER_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
+const GITHUB_REPOSITORY_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
 
 async function ensureDir(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
@@ -14,6 +16,48 @@ async function ensureDir(dirPath) {
 
 async function readJson(filePath) {
   return JSON.parse(await fs.readFile(filePath, "utf8"));
+}
+
+function validateRepositoryEntry(entry) {
+  if (!entry || typeof entry.owner !== "string" || typeof entry.repo !== "string") {
+    throw new Error("Each repository entry must provide string owner and repo fields.");
+  }
+  if (!GITHUB_OWNER_PATTERN.test(entry.owner)) {
+    throw new Error(`Invalid GitHub owner in snapshot configuration: ${entry.owner}`);
+  }
+  if (
+    !GITHUB_REPOSITORY_PATTERN.test(entry.repo) ||
+    entry.repo === "." ||
+    entry.repo === ".."
+  ) {
+    throw new Error(`Invalid GitHub repository in snapshot configuration: ${entry.repo}`);
+  }
+
+  return {
+    owner: entry.owner,
+    repo: entry.repo,
+  };
+}
+
+function resolveSnapshotPath(baseDir, fileName) {
+  const resolvedBase = path.resolve(baseDir);
+  const resolvedFile = path.resolve(resolvedBase, fileName);
+  const relativePath = path.relative(resolvedBase, resolvedFile);
+  if (
+    !relativePath ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath) ||
+    path.extname(resolvedFile) !== ".json"
+  ) {
+    throw new Error(`Snapshot path must remain a JSON file under ${resolvedBase}.`);
+  }
+  return resolvedFile;
+}
+
+async function writeJsonSnapshot(filePath, payload) {
+  const serialized = JSON.stringify(payload, null, 2);
+  await fs.writeFile(filePath, `${serialized}\n`, "utf8");
 }
 
 async function loadEnvFile() {
@@ -104,6 +148,20 @@ function mapContributor(contributor) {
   };
 }
 
+function mapLanguages(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+
+  return Object.fromEntries(
+    Object.entries(data).filter(
+      ([language, bytes]) =>
+        typeof language === "string" &&
+        typeof bytes === "number" &&
+        Number.isFinite(bytes) &&
+        bytes >= 0,
+    ),
+  );
+}
+
 function mapDependabot(alert) {
   return {
     id: alert.number,
@@ -174,7 +232,7 @@ async function fetchGitHub(pathname, token) {
   });
 
   if (!response.ok) {
-    throw new Error(`${response.status} ${pathname} ${await response.text()}`);
+    throw new Error(`${response.status} ${pathname}`);
   }
 
   if (response.status === 204) return [];
@@ -208,8 +266,9 @@ async function main() {
   const overviewRepos = [];
   let resolvedFeaturedRepo = "";
 
-  for (const entry of config.repositories) {
-    const repoPath = `/repos/${entry.owner}/${entry.repo}`;
+  for (const configuredEntry of config.repositories) {
+    const entry = validateRepositoryEntry(configuredEntry);
+    const repoPath = `/repos/${encodeURIComponent(entry.owner)}/${encodeURIComponent(entry.repo)}`;
     const repoPayload = await fetchOptional(repoPath, token);
 
     if (repoPayload.error) {
@@ -246,7 +305,7 @@ async function main() {
     const workflowRuns = Array.isArray(workflowsPayload?.workflow_runs)
       ? workflowsPayload.workflow_runs.map(mapWorkflowRun)
       : [];
-    const languages = languagesPayload && !languagesPayload.error ? languagesPayload : {};
+    const languages = languagesPayload && !languagesPayload.error ? mapLanguages(languagesPayload) : {};
     const contributors = Array.isArray(contributorsPayload) ? contributorsPayload.map(mapContributor) : [];
     const alerts = Array.isArray(dependabotPayload) ? dependabotPayload.map(mapDependabot) : [];
     const health = calculateHealth(repo, workflowRuns, alerts);
@@ -305,7 +364,7 @@ async function main() {
       availability,
     });
 
-    await fs.writeFile(path.join(OUTPUT_REPOS, fileName), JSON.stringify(detail, null, 2), "utf8");
+    await writeJsonSnapshot(resolveSnapshotPath(OUTPUT_REPOS, fileName), detail);
   }
 
   const status = {
@@ -331,8 +390,8 @@ async function main() {
     repos: overviewRepos,
   };
 
-  await fs.writeFile(path.join(OUTPUT_ROOT, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
-  await fs.writeFile(path.join(OUTPUT_ROOT, "overview.json"), JSON.stringify(overview, null, 2), "utf8");
+  await writeJsonSnapshot(resolveSnapshotPath(OUTPUT_ROOT, "manifest.json"), manifest);
+  await writeJsonSnapshot(resolveSnapshotPath(OUTPUT_ROOT, "overview.json"), overview);
 
   console.log(`Snapshots written to ${OUTPUT_ROOT}`);
 }
