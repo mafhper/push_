@@ -4,15 +4,15 @@ import { Link } from "react-router";
 import { SITE_REPOSITORY_URL } from "@/config/site";
 
 const HERO_EVENTS = [
-  { icon: <ShieldAlert size={15} />, label: "Critical package alert", value: "+100", tone: "text-danger" },
-  { icon: <Activity size={15} />, label: "Workflow failed on main", value: "+60", tone: "text-danger" },
+  { icon: <ShieldAlert size={15} />, label: "Critical package alert", value: "+100", tone: "text-critical" },
+  { icon: <Activity size={15} />, label: "Workflow failed on main", value: "+60", tone: "text-critical" },
   { icon: <GitPullRequest size={15} />, label: "Open review queue", value: "+15 each", tone: "text-primary" },
   { icon: <Package size={15} />, label: "Package inventory", value: "runtime scoped", tone: "text-foreground-muted" },
 ];
 
 export function SignalFieldHero() {
   return (
-    <section className="relative isolate overflow-hidden border-b border-border/70 bg-background">
+    <section className="signal-field-hero relative isolate overflow-hidden border-b border-border/70 bg-background">
       <SignalLanesCanvas />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_65%_36%,rgba(42,139,255,0.16),transparent_34%),linear-gradient(180deg,rgba(17,24,39,0.18),rgba(5,7,10,0.86))]" />
 
