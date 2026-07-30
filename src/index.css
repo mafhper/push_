@@ -267,6 +267,24 @@
   }
 }
 
+@layer components {
+  .signal-field-hero {
+    --background: 0 0% 4%;
+    --surface-1: 0 0% 7%;
+    --surface-2: 0 0% 10%;
+    --surface-3: 0 0% 14%;
+    --foreground: 0 0% 96%;
+    --foreground-muted: 0 0% 78%;
+    --foreground-subtle: 0 0% 62%;
+    --border: 0 0% 38%;
+    --primary: 212 92% 60%;
+    --primary-foreground: 220 14% 98%;
+    --critical: 0 75% 58%;
+    --ring: 212 92% 60%;
+    color-scheme: dark;
+  }
+}
+
 @layer utilities {
   .app-viewport {
     width: 100%;
