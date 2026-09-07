@@ -91,7 +91,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.5",
     "autoprefixer": "^10.4.27",
-    "browserslist": "^4.28.1",
+    "browserslist": "^4.28.7",
     "caniuse-lite": "^1.0.30001781",
     "eslint": "^10.1.0",
     "eslint-plugin-react-hooks": "^7.1.1",
