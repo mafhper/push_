@@ -48,3 +48,4 @@ _dev/
 *.sln
 *.sw?
 bun.lock
+bun.lockb
