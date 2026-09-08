@@ -100,7 +100,7 @@ jobs:
             printf '%s\n' "| macOS Apple Silicon | [Bundle .app](https://github.com/${repo}/releases/download/${ref}/push_${version}_aarch64.app.tar.gz) | Distribuição manual |"
             printf '%s\n' "| Linux x64 | [AppImage](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.AppImage) | Aplicação portátil |"
             printf '%s\n' "| Debian/Ubuntu x64 | [Pacote DEB](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.deb) | Pacote nativo |"
-            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/push_${version}_x86_64.rpm) | Pacote nativo |"
+            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/push-${version}-1.x86_64.rpm) | Pacote nativo |"
             printf '%s\n' ''
             printf '%s\n' '<details>'
             printf '%s\n' '<summary>Outros detalhes de instalação</summary>'
@@ -310,7 +310,7 @@ jobs:
             printf '%s\n' "| macOS Apple Silicon | [Bundle .app](https://github.com/${repo}/releases/download/${ref}/push_${version}_aarch64.app.tar.gz) | Distribuição manual |"
             printf '%s\n' "| Linux x64 | [AppImage](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.AppImage) | Aplicação portátil |"
             printf '%s\n' "| Debian/Ubuntu x64 | [Pacote DEB](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.deb) | Pacote nativo |"
-            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/push_${version}_x86_64.rpm) | Pacote nativo |"
+            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/push-${version}-1.x86_64.rpm) | Pacote nativo |"
             printf '%s\n' ''
             printf '%s\n' '<details>'
             printf '%s\n' '<summary>Outros detalhes de instalação</summary>'
