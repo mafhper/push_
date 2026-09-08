@@ -18,19 +18,19 @@ import {
   fetchSnapshotManifest,
 } from '@/services/github';
 
-function getRuntimeQueryKey(localRuntime: boolean, username?: string, authenticatedAt?: string) {
-  if (!localRuntime || !username || !authenticatedAt) {
+function getRuntimeQueryKey(localRuntime: boolean, username?: string) {
+  if (!localRuntime || !username) {
     return 'snapshot';
   }
 
-  return `${username}:${authenticatedAt}`;
+  return `${username}`;
 }
 
 export function useRepos() {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['repos', tokenKey],
@@ -43,7 +43,7 @@ export function useCommits(owner: string, repo: string) {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['commits', owner, repo, tokenKey],
@@ -57,7 +57,7 @@ export function useWorkflowRuns(owner: string, repo: string) {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['workflows', owner, repo, tokenKey],
@@ -72,7 +72,7 @@ export function useDependabotAlerts(owner: string, repo: string) {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['dependabot', owner, repo, tokenKey],
@@ -86,7 +86,7 @@ export function useLanguages(owner: string, repo: string) {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['languages', owner, repo, tokenKey],
@@ -101,7 +101,7 @@ export function useContributors(owner: string, repo: string) {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['contributors', owner, repo, tokenKey],
@@ -116,7 +116,7 @@ export function useRateLimit() {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['rateLimit', tokenKey],
@@ -137,7 +137,7 @@ export function useDashboardSnapshot() {
   const { session, selectedRepos, primaryRepo } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['dashboard-overview', tokenKey, selectedRepos.join('|'), primaryRepo ?? 'default'],
@@ -150,7 +150,7 @@ export function useRepoSnapshot(owner: string, repo: string) {
   const { session } = useApp();
   const localRuntime = isLocalSecureRuntime();
   const token = localRuntime ? session?.token?.trim() : '';
-  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username, session?.authenticatedAt);
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
 
   return useQuery({
     queryKey: ['repo-snapshot', owner, repo, tokenKey],
