@@ -779,23 +779,6 @@ export function clearSnapshotCache() {
   repoCache.clear();
 }
 
-// Compatibility exports kept for local authenticated mode and legacy call sites.
-export function initOctokit(_token: string) {
-  return null;
-}
-
-export function getOctokit() {
-  return null;
-}
-
-export function clearOctokit() {
-  return undefined;
-}
-
-export function extractRateLimit(_headers: Record<string, string | undefined>): RateLimitInfo | null {
-  return null;
-}
-
 export async function validateToken(token: string): Promise<{ login: string; avatarUrl: string; error?: string } | null> {
   const trimmed = token.trim();
   if (!trimmed) return null;

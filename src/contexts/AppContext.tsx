@@ -3,14 +3,18 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { type DictKey, interpolate, resolveLanguage, translate } from '@/i18n';
 import { diagnoseToken, validateToken } from '@/services/github';
 import { clearGithubToken, loadGithubToken } from '@/services/secure-storage';
+import { clearIdentity, loadIdentity } from '@/services/presentation-identity';
+import { removePersistedQueryCache } from '@/services/query-persistence';
+import { bootMark } from '@/services/startup-metrics';
 import { isTauriRuntime } from '@/config/site';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import type { RateLimitInfo, UserSession, UserSettings, Theme } from '@/types';
+import type { RateLimitInfo, SessionStatus, UserSession, UserSettings, Theme } from '@/types';
 import { AppContext, defaultSettings, normalizeTheme, type AppContextValue } from '@/contexts/app-context';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings, clearSettings] = useLocalStorage<UserSettings>('gl_settings', defaultSettings);
   const [sessionState, setSessionState] = useState<UserSession | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<SessionStatus>('loading');
   const [primaryRepo, setPrimaryRepo, clearPrimary] = useLocalStorage<string | null>('gl_primary_repo', null);
   const [selectedRepos, setSelectedRepos, clearSelected] = useLocalStorage<string[]>('gl_selected_repos', []);
   const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitInfo | null>(null);
@@ -38,17 +42,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSessionState(session);
   }, []);
 
+  const logout = useCallback(() => {
+    setSessionState(null);
+    setSessionStatus('anonymous');
+    clearIdentity();
+    void clearGithubToken();
+    void removePersistedQueryCache();
+  }, []);
+
   const clearAll = useCallback(() => {
-    setSession(null);
+    setSessionState(null);
+    setSessionStatus('anonymous');
     clearPrimary();
     clearSelected();
     clearSettings();
+    clearIdentity();
     Object.keys(localStorage).forEach(k => {
       if ((k.startsWith('gl_') && k.includes('session')) || k.startsWith('gl_cache_')) {
         localStorage.removeItem(k);
       }
     });
-  }, [clearPrimary, clearSelected, clearSettings, setSession]);
+    void removePersistedQueryCache();
+  }, [clearPrimary, clearSelected, clearSettings]);
 
   useEffect(() => {
     if (normalizedSettings.theme !== settings.theme || normalizedSettings.lang !== settings.lang) {
@@ -111,16 +126,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     async function restoreSession() {
       const storedToken = await loadGithubToken();
-      if (cancelled || !storedToken) return;
+      if (cancelled) return;
+
+      if (!storedToken) {
+        setSessionStatus('anonymous');
+        bootMark('session-loaded');
+        return;
+      }
+
+      const identity = loadIdentity();
+      if (!cancelled) {
+        setSession({ token: storedToken, username: identity?.username ?? '', avatarUrl: identity?.avatarUrl ?? '' });
+        setSessionStatus('authenticated');
+        bootMark('session-loaded');
+      }
+
       const viewer = await validateToken(storedToken);
       if (cancelled) return;
       if (!viewer || !viewer.login) {
         await clearGithubToken();
+        if (cancelled) return;
+        setSessionState(null);
+        setSessionStatus('invalid');
         return;
       }
+
       const diagnostics = await diagnoseToken(storedToken);
       if (!cancelled) {
-        setSession({ token: storedToken, username: viewer.login, avatarUrl: viewer.avatarUrl, authenticatedAt: new Date().toISOString(), diagnostics });
+        setSession({ token: storedToken, username: viewer.login, avatarUrl: viewer.avatarUrl, diagnostics });
       }
     }
     void restoreSession();
@@ -135,6 +168,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateSettings,
     session: sessionState,
     setSession,
+    sessionStatus,
+    logout,
     primaryRepo,
     setPrimaryRepo,
     selectedRepos,
@@ -144,8 +179,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     t,
     clearAll,
   }), [
-    normalizedSettings, sessionState, primaryRepo, selectedRepos, rateLimitInfo,
-    setSession, setPrimaryRepo, setSelectedRepos, t, clearAll, updateSettings
+    normalizedSettings, sessionState, sessionStatus, primaryRepo, selectedRepos, rateLimitInfo,
+    setSession, setPrimaryRepo, setSelectedRepos, t, clearAll, updateSettings, logout
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

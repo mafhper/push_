@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import type { DictKey } from "@/i18n";
 import { detectBrowserLanguage } from "@/i18n";
-import type { Language, RateLimitInfo, Theme, UserSession, UserSettings } from "@/types";
+import type { Language, RateLimitInfo, SessionStatus, Theme, UserSession, UserSettings } from "@/types";
 
 export const supportedThemes = [
   "dark",
@@ -18,6 +18,8 @@ export interface AppContextValue {
   updateSettings: (partial: Partial<UserSettings>) => void;
   session: UserSession | null;
   setSession: (session: UserSession | null) => void;
+  sessionStatus: SessionStatus;
+  logout: () => void;
   primaryRepo: string | null;
   setPrimaryRepo: (repo: string | null) => void;
   selectedRepos: string[];

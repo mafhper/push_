@@ -19,9 +19,10 @@ export interface UserSession {
   token: string;
   username: string;
   avatarUrl: string;
-  authenticatedAt: string;
   diagnostics?: TokenDiagnostics;
 }
+
+export type SessionStatus = 'loading' | 'authenticated' | 'anonymous' | 'invalid';
 
 export interface TokenDiagnostics {
   token: 'valid' | 'invalid' | 'rate_limited' | 'unknown';

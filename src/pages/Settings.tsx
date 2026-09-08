@@ -7,11 +7,12 @@ import { formatDateTime } from "@/i18n";
 import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
 import { diagnoseToken, validateToken } from "@/services/github";
-import { clearGithubToken, saveGithubToken } from "@/services/secure-storage";
+import { saveGithubToken } from "@/services/secure-storage";
+import { saveIdentity } from "@/services/presentation-identity";
 import type { DataDetailMode, Theme } from "@/types";
 
 export default function SettingsPage() {
-  const { settings, updateSettings, session, setSession, primaryRepo, setPrimaryRepo, selectedRepos, setSelectedRepos, t } = useApp();
+  const { settings, updateSettings, session, setSession, logout, sessionStatus, primaryRepo, setPrimaryRepo, selectedRepos, setSelectedRepos, t } = useApp();
   const localSecureMode = isLocalSecureRuntime();
   const { data: manifest } = useSnapshotManifest();
   const { data: overview } = useDashboardSnapshot();
@@ -83,14 +84,16 @@ export default function SettingsPage() {
       setConnectError(t(key)); return;
     }
     const diagnostics = await diagnoseToken(trimmed);
-    setSession({ token: trimmed, username: viewer.login, avatarUrl: viewer.avatarUrl, authenticatedAt: new Date().toISOString(), diagnostics });
+    setSession({ token: trimmed, username: viewer.login, avatarUrl: viewer.avatarUrl, diagnostics });
     await saveGithubToken(trimmed);
+    saveIdentity({ username: viewer.login, avatarUrl: viewer.avatarUrl, savedAt: new Date().toISOString() });
     setTokenInput("");
   }
 
   function handleDisconnect() {
-    setSession(null); setSelectedRepos([]); setPrimaryRepo(null); setTokenInput(""); setConnectError(null);
-    void clearGithubToken();
+    logout();
+    setTokenInput("");
+    setConnectError(null);
   }
 
   function toggleRepo(fullName: string) {
@@ -155,10 +158,14 @@ export default function SettingsPage() {
               <span className={cn(
                 "text-micro font-semibold px-2 py-1 rounded-md shrink-0",
                 localSecureMode && session && "bg-success/10 text-success",
-                localSecureMode && !session && "bg-warning/10 text-warning",
+                localSecureMode && !session && sessionStatus === "invalid" && "bg-critical/10 text-critical",
+                localSecureMode && !session && sessionStatus !== "invalid" && "bg-warning/10 text-warning",
                 !localSecureMode && "bg-surface-3 text-foreground-subtle"
               )}>
-                {localSecureMode ? (session ? t("localAuth") : t("awaitingTokenLabel")) : t("snapshotOnly")}
+                {localSecureMode && session ? t("localAuth")
+                  : localSecureMode && sessionStatus === "invalid" ? t("invalidToken")
+                  : localSecureMode ? t("awaitingTokenLabel")
+                  : t("snapshotOnly")}
               </span>
             </div>
 
