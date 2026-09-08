@@ -5,7 +5,10 @@ import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/700.css";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { bootMark } from "@/services/startup-metrics";
 import "./index.css";
+
+bootMark("boot-start");
 
 document.documentElement.classList.add("terminal");
 
