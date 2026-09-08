@@ -21,7 +21,13 @@ export const LOCAL_SYNC_DOC = [
   "runbookStep4",
 ] as const;
 
+export function isTauriRuntime() {
+  if (typeof window === "undefined") return false;
+  return Boolean((window as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
+}
+
 export function isLocalSecureRuntime() {
   if (typeof window === "undefined") return false;
+  if (__PUSH_RUNTIME_MODE__ === "local") return true;
   return import.meta.env.DEV && LOCAL_RUNTIME_HOSTS.has(window.location.hostname);
 }

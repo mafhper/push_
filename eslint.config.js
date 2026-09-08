@@ -23,6 +23,11 @@ export default tseslint.config(
       ".cursor",
       ".windsurf",
       ".claude-code",
+      "src-tauri/target",
+      "src-tauri/gen/schemas",
+      "src-tauri/gen/android",
+      "src-tauri/gen/apple",
+      "src-tauri/gen/templates",
     ],
   },
   {

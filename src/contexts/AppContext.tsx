@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { type DictKey, interpolate, resolveLanguage, translate } from '@/i18n';
-import type { RateLimitInfo, UserSession, UserSettings } from '@/types';
+import { diagnoseToken, validateToken } from '@/services/github';
+import { clearGithubToken, loadGithubToken } from '@/services/secure-storage';
+import { isTauriRuntime } from '@/config/site';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import type { RateLimitInfo, UserSession, UserSettings, Theme } from '@/types';
 import { AppContext, defaultSettings, normalizeTheme, type AppContextValue } from '@/contexts/app-context';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -60,6 +64,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [normalizedSettings.theme]);
 
   useEffect(() => {
+    if (!isTauriRuntime()) return;
+
+    const isNeutral = (theme: Theme): boolean => theme === 'light' || theme === 'dark';
+    const followSystem = (system: unknown): void => {
+      setSettings(prev => {
+        const theme = normalizeTheme(prev.theme);
+        if (!isNeutral(theme)) return prev;
+        const next: Theme = system === 'light' ? 'light' : 'dark';
+        return next === theme ? prev : { ...prev, theme: next };
+      });
+    };
+
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+
+    (async () => {
+      if (disposed) return;
+      const windowApi = getCurrentWindow();
+      try {
+        followSystem(await windowApi.theme());
+      } catch { /* SO sem preferência: mantém o atual */ }
+      windowApi.onThemeChanged(({ payload }) => followSystem(payload)).then(fn => { if (!disposed) unlisten = fn; });
+    })();
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [setSettings]);
+
+  useEffect(() => {
     document.documentElement.lang = normalizedSettings.lang;
   }, [normalizedSettings.lang]);
 
@@ -70,6 +105,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         window.localStorage.removeItem(key);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function restoreSession() {
+      const storedToken = await loadGithubToken();
+      if (cancelled || !storedToken) return;
+      const viewer = await validateToken(storedToken);
+      if (cancelled) return;
+      if (!viewer || !viewer.login) {
+        await clearGithubToken();
+        return;
+      }
+      const diagnostics = await diagnoseToken(storedToken);
+      if (!cancelled) {
+        setSession({ token: storedToken, username: viewer.login, avatarUrl: viewer.avatarUrl, authenticatedAt: new Date().toISOString(), diagnostics });
+      }
+    }
+    void restoreSession();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo(() => ({

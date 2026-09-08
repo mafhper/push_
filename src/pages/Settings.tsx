@@ -7,6 +7,7 @@ import { formatDateTime } from "@/i18n";
 import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
 import { diagnoseToken, validateToken } from "@/services/github";
+import { clearGithubToken, saveGithubToken } from "@/services/secure-storage";
 import type { DataDetailMode, Theme } from "@/types";
 
 export default function SettingsPage() {
@@ -83,11 +84,13 @@ export default function SettingsPage() {
     }
     const diagnostics = await diagnoseToken(trimmed);
     setSession({ token: trimmed, username: viewer.login, avatarUrl: viewer.avatarUrl, authenticatedAt: new Date().toISOString(), diagnostics });
+    await saveGithubToken(trimmed);
     setTokenInput("");
   }
 
   function handleDisconnect() {
     setSession(null); setSelectedRepos([]); setPrimaryRepo(null); setTokenInput(""); setConnectError(null);
+    void clearGithubToken();
   }
 
   function toggleRepo(fullName: string) {

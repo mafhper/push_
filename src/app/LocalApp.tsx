@@ -6,7 +6,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/contexts/AppContext";
 import { useApp } from "@/contexts/useApp";
-import { PromoLayout } from "@/components/Layout";
+import {
+  PromoLayout as PromoLayoutWeb,
+} from "@/components/Layout";
 import { AppShell } from "@/components/layout/AppShell";
 import ScrollToTop from "@/components/ScrollToTop";
 
@@ -37,9 +39,14 @@ export default function LocalApp() {
             <ScrollToTop />
             <Suspense fallback={<AppLoadingFallback />}>
               <Routes>
-                <Route element={<PromoLayout />}>
-                  <Route path="/" element={<HomePage />} />
-                </Route>
+                {!__PUSH_TAURI_BUILD__ && (
+                  <Route element={<PromoLayoutWeb />}>
+                    <Route path="/" element={<HomePage />} />
+                  </Route>
+                )}
+                {__PUSH_TAURI_BUILD__ && (
+                  <Route path="/" element={<Navigate to="/app" replace />} />
+                )}
 
                 <Route path="/app" element={<AppShell />}>
                   <Route index element={<DashboardPage />} />

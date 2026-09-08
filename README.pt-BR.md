@@ -4,7 +4,8 @@
 
 Push_ é um dashboard de atenção para repositórios no GitHub, feito para uma função principal: mostrar primeiro o que precisa de ação.
 
-Ele opera em dois modos:
+Ele opera em três modos:
+- `desktop` (Tauri): app nativo para Windows/macOS/Linux, com dashboard completo e token salvo no keyring do sistema
 - `localhost`: modo local seguro, com token do GitHub só em memória para descoberta de repositórios e diagnósticos mais ricos
 - `GitHub Pages`: modo público por snapshot, com dados estáticos e sem fluxo de token no navegador
 
@@ -27,6 +28,19 @@ Muitos dashboards pessoais desperdiçam espaço com métricas de vaidade. O Push
 - Detecção automática do idioma do navegador com override manual em settings
 
 ## Modos de runtime
+
+### Modo desktop (Tauri)
+
+- App nativo construído com Tauri 2, sem depender do navegador
+- O token do GitHub é salvo no keyring do sistema (`tauri-plugin-keyring-store`), nunca em `localStorage`
+- A sessão é restaurada do keyring na abertura e validada contra a API do GitHub
+- Titlebar customizada por plataforma com controles nativos de janela
+- Sincronia de tema com o SO (`light`/`dark`) além dos 7 temas nomeados do app
+
+```bash
+npm run tauri:dev    # rodar em desenvolvimento
+npm run tauri:build  # gerar o instalador (NSIS no Windows)
+```
 
 ### Modo local seguro
 
@@ -85,6 +99,7 @@ npm run data:sync
 - O runtime publicado no GitHub Pages não aceita token
 - Nenhum token é persistido em `localStorage`, `sessionStorage`, cookies ou no bundle estático
 - O modo local seguro mantém credenciais só em memória
+- O modo desktop salva o token no keyring do sistema operacional, não em arquivos
 - Validações sensíveis bloqueiam regressões comuns antes do `push`
 
 ## Validação e gates de qualidade

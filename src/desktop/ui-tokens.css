@@ -1,0 +1,129 @@
+/* ============================================================================
+   push_ desktop chrome · ui-tokens.css
+   Traduz o contrato cromático `--ui-*` do Tauri UI Kit por cima dos tokens
+   HSL já existentes do Push_ (src/index.css). NENHUM token `--pu-*` é
+   renomeado aqui: os valores cromáticos referenciam as variáveis de tema
+   existentes, então os 7 temas do Push_ fluem automaticamente para o chrome
+   (brief §4.2 — "traduzir, não substituir").
+   Tokens estruturais (spacing/raios/fontes) são literais, como no kit.
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ---------- Tipografia do chrome ---------- */
+  --ui-font-family-sans: "Manrope", system-ui, sans-serif;
+  --ui-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --ui-font-size-window-title: 12px;
+  --ui-font-size-section-title: 11px;
+  --ui-font-size-label: 10px;
+  --ui-font-size-value: 11px;
+  --ui-font-size-secondary: 10px;
+
+  --ui-font-weight-regular: 400;
+  --ui-font-weight-medium: 500;
+  --ui-font-weight-semibold: 600;
+  --ui-font-weight-bold: 700;
+
+  --ui-line-height-tight: 1.2;
+  --ui-line-height-normal: 1.4;
+  --ui-line-height-loose: 1.6;
+
+  /* ---------- Spacing ---------- */
+  --ui-space-1: 2px;
+  --ui-space-2: 4px;
+  --ui-space-3: 6px;
+  --ui-space-4: 8px;
+  --ui-space-5: 10px;
+  --ui-space-6: 12px;
+  --ui-space-7: 16px;
+  --ui-space-8: 20px;
+  --ui-space-9: 24px;
+  --ui-space-10: 32px;
+
+  /* ---------- Sizes / densidade ---------- */
+  --ui-size-control-xs: 20px;
+  --ui-size-control-sm: 24px;
+  --ui-size-control-md: 28px;
+  --ui-size-control-lg: 32px;
+  --ui-size-control-xl: 36px;
+
+  --ui-size-icon: 14px;
+  --ui-size-icon-sm: 12px;
+
+  --ui-size-rail: 40px;
+  --ui-size-cell: 32px;
+
+  --ui-density-compact: 0.85;
+  --ui-density-normal: 1;
+  --ui-density-comfortable: 1.15;
+
+  /* ---------- Radii ---------- */
+  --ui-radius-none: 0;
+  --ui-radius-sm: 6px;
+  --ui-radius-md: 8px;
+  --ui-radius-pill: 999px;
+
+  /* ---------- Borders ---------- */
+  --ui-border-width: 1px;
+  --ui-border-width-strong: 2px;
+
+  /* ---------- Z-index ---------- */
+  --ui-z-tooltip: 1000;
+  --ui-z-popover: 1100;
+  --ui-z-modal: 1200;
+  --ui-z-toast: 1300;
+
+  /* ---------- Motion ---------- */
+  --ui-motion-fast: 80ms;
+  --ui-motion-normal: 120ms;
+  --ui-motion-slow: 200ms;
+  --ui-motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- Focus ---------- */
+  --ui-focus-ring-width: 2px;
+  --ui-focus-ring-offset: 2px;
+
+  /* ---------- Contrato cromático (mapeado dos tokens HSL Push_) ---------- */
+  --ui-bg: hsl(var(--background));
+  --ui-surface: hsl(var(--surface-1));
+  --ui-surface-raised: hsl(var(--surface-2));
+  --ui-surface-hover: hsl(var(--surface-3));
+  --ui-surface-input: hsl(var(--surface-2));
+
+  --ui-border: hsl(var(--border));
+  --ui-border-subtle: hsl(var(--border));
+  --ui-border-strong: hsl(var(--border-strong));
+
+  --ui-text: hsl(var(--foreground));
+  --ui-text-secondary: hsl(var(--foreground-muted));
+  --ui-text-muted: hsl(var(--foreground-subtle));
+  --ui-text-disabled: hsl(var(--foreground-subtle) / 0.6);
+
+  --ui-accent: hsl(var(--primary));
+  --ui-accent-hover: color-mix(in srgb, hsl(var(--primary)) 88%, hsl(var(--foreground)) 12%);
+  --ui-accent-active: color-mix(in srgb, hsl(var(--primary)) 100%, hsl(var(--background)) 18%);
+  --ui-accent-foreground: hsl(var(--primary-foreground));
+
+  --ui-selection: hsl(var(--selection-bg));
+  --ui-focus: hsl(var(--ring));
+
+  --ui-success: hsl(var(--success));
+  --ui-warning: hsl(var(--warning));
+  --ui-danger: hsl(var(--critical));
+  --ui-danger-hover: color-mix(in srgb, hsl(var(--critical)) 88%, hsl(var(--foreground)) 12%);
+
+  --ui-icon: hsl(var(--foreground-muted));
+  --ui-icon-muted: hsl(var(--foreground-subtle));
+
+  --ui-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --ui-scrollbar-thumb: hsl(var(--border-strong));
+  --ui-scrollbar-track: transparent;
+}
+
+:root.theme-light,
+[data-theme="light"] {
+  color-scheme: light;
+}

@@ -56,13 +56,18 @@ function createPagesFallbackPlugin(basePath: string) {
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, __dirname, "");
   const basePath = resolveBasePath(env);
-  const runtimeAppPath =
-    command === "serve" || mode === "development"
-      ? path.resolve(__dirname, "./src/app/LocalApp.tsx")
-      : path.resolve(__dirname, "./src/app/PublicApp.tsx");
+  const isTauriBuild = Boolean(env.TAURI_ENV_PLATFORM);
+  const isLocalRuntime = command === "serve" || mode === "development" || isTauriBuild;
+  const runtimeAppPath = isLocalRuntime
+    ? path.resolve(__dirname, "./src/app/LocalApp.tsx")
+    : path.resolve(__dirname, "./src/app/PublicApp.tsx");
 
   return {
     base: basePath,
+    define: {
+      __PUSH_RUNTIME_MODE__: JSON.stringify(isLocalRuntime ? "local" : "public"),
+      __PUSH_TAURI_BUILD__: JSON.stringify(isTauriBuild),
+    },
     server: {
       host: "::",
       port: 8080,
