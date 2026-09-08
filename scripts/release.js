@@ -1,11 +1,11 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import util from "util";
 import { assertAlignedVersions } from "./release-version.mjs";
 
-const execAsync = util.promisify(exec);
+const execFileAsync = util.promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -51,7 +51,7 @@ async function updateCargoVersion(newVersion) {
 
 async function updatePackageJson(type) {
   try {
-    await execAsync(`npm version ${type} --no-git-tag-version`);
+    await execFileAsync("npm", ["version", type, "--no-git-tag-version"]);
     const pkgPath = path.join(__dirname, "..", "package.json");
     const pkgData = JSON.parse(await fs.readFile(pkgPath, "utf8"));
     return pkgData.version;
