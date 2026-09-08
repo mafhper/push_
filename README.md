@@ -1,8 +1,8 @@
 [English](README.md) | [Português (Brasil)](README.pt-BR.md) | [Español](README.es.md)
 
-# Push_
+# push_
 
-Push_ is a GitHub repository attention dashboard built for one job: surface what needs action first.
+push_ is a GitHub repository attention dashboard built for one job: surface what needs action first.
 
 It ships in three runtime modes:
 - `desktop` (Tauri): native Windows/macOS/Linux app, full dashboard with the token saved in the system keyring
@@ -11,7 +11,7 @@ It ships in three runtime modes:
 
 ## Why it exists
 
-Most personal dashboards waste space on vanity metrics. Push_ is built around operational signals:
+Most personal dashboards waste space on vanity metrics. push_ is built around operational signals:
 - open alerts
 - degraded repository health
 - failed workflow runs

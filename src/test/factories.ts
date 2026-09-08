@@ -142,7 +142,7 @@ export function createRepoDetail(overrides: Partial<RepoSnapshotDetail> = {}): R
 export function createManifest(overrides: Partial<SnapshotManifest> = {}): SnapshotManifest {
   return {
     site: {
-      name: "Push_",
+      name: "push_",
       tagline: "Public GitHub dashboard",
       description: "Dashboard",
     },

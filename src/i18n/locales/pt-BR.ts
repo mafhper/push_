@@ -2,7 +2,7 @@ import type { MessageDictionary } from "@/i18n/locales/en";
 import { technicalGlossary } from "@/i18n/glossary";
 
 export const ptBR: MessageDictionary = {
-  appName: "Push_",
+  appName: "push_",
   search: "Buscar usuário do GitHub",
   repos: "Repositórios",
   followers: "Seguidores",
@@ -500,7 +500,7 @@ export const ptBR: MessageDictionary = {
   openDetail: "Abrir detalhe",
   authKicker: "Runtime seguro",
   authTitle: "A autenticação no navegador fica só no ambiente local.",
-  authBody: "Push_ aceita token do GitHub apenas em localhost e o mantém em memória na aba atual. O runtime publicado no Pages continua funcionando só por snapshot.",
+  authBody: "push_ aceita token do GitHub apenas em localhost e o mantém em memória na aba atual. O runtime publicado no Pages continua funcionando só por snapshot.",
   authBoundaryTitle: "Por que esse limite existe",
   authBoundaryBody1: "GitHub Pages é um host estático. Pedir Personal Access Tokens ali criaria um risco público desnecessário.",
   authBoundaryBody2: "A arquitetura atual mantém segredos em sessões locais e na geração de snapshots, depois publica apenas os arquivos de dados gerados.",
@@ -549,7 +549,7 @@ export const ptBR: MessageDictionary = {
   promoOpenDashboardBody: "Veja a visão pública ou inspecione a origem.",
   promoReadRepository: "Ler repositório",
   promoAboutTitle: "Sobre",
-  promoAboutBody: "Push_ é um dashboard público para repositórios selecionados do GitHub.",
+  promoAboutBody: "push_ é um dashboard público para repositórios selecionados do GitHub.",
   promoEnterDashboard: "Entrar no dashboard",
   promoVisitGitHub: "Visitar GitHub",
   promoAboutSummaryLead: "Promo-site e dashboard compartilham um repositório e um sistema visual.",
@@ -561,7 +561,7 @@ export const ptBR: MessageDictionary = {
   promoAboutPrincipleScanBody: "Saúde, atividade e alertas continuam fáceis de ler.",
   promoAboutPrincipleLastTitle: "Feito para durar",
   promoAboutPrincipleLastBody: "Shells compartilhados e dados tipados deixam a manutenção previsível.",
-  promoAboutFocusTitle: "No que o Push_ foca",
+  promoAboutFocusTitle: "No que o push_ foca",
   promoAboutFocusBody: "Clareza, segurança, performance e código sustentável.",
   promoAboutCardUiTitle: "UI/UX",
   promoAboutCardUiBody: "Hierarquia clara, contraste legível e layouts estáveis.",

@@ -1,8 +1,8 @@
 [English](README.md) | [Português (Brasil)](README.pt-BR.md) | [Español](README.es.md)
 
-# Push_
+# push_
 
-Push_ é um dashboard de atenção para repositórios no GitHub, feito para uma função principal: mostrar primeiro o que precisa de ação.
+push_ é um dashboard de atenção para repositórios no GitHub, feito para uma função principal: mostrar primeiro o que precisa de ação.
 
 Ele opera em três modos:
 - `desktop` (Tauri): app nativo para Windows/macOS/Linux, com dashboard completo e token salvo no keyring do sistema
@@ -11,7 +11,7 @@ Ele opera em três modos:
 
 ## Por que existe
 
-Muitos dashboards pessoais desperdiçam espaço com métricas de vaidade. O Push_ é guiado por sinais operacionais:
+Muitos dashboards pessoais desperdiçam espaço com métricas de vaidade. O push_ é guiado por sinais operacionais:
 - alertas abertos
 - saúde degradada do repositório
 - falhas de workflow

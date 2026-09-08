@@ -1,9 +1,9 @@
 /* ============================================================================
    push_ desktop chrome · ui-tokens.css
    Traduz o contrato cromático `--ui-*` do Tauri UI Kit por cima dos tokens
-   HSL já existentes do Push_ (src/index.css). NENHUM token `--pu-*` é
+   HSL já existentes do push_ (src/index.css). NENHUM token `--pu-*` é
    renomeado aqui: os valores cromáticos referenciam as variáveis de tema
-   existentes, então os 7 temas do Push_ fluem automaticamente para o chrome
+   existentes, então os 7 temas do push_ fluem automaticamente para o chrome
    (brief §4.2 — "traduzir, não substituir").
    Tokens estruturais (spacing/raios/fontes) são literais, como no kit.
    ========================================================================== */
@@ -86,7 +86,7 @@
   --ui-focus-ring-width: 2px;
   --ui-focus-ring-offset: 2px;
 
-  /* ---------- Contrato cromático (mapeado dos tokens HSL Push_) ---------- */
+  /* ---------- Contrato cromático (mapeado dos tokens HSL push_) ---------- */
   --ui-bg: hsl(var(--background));
   --ui-surface: hsl(var(--surface-1));
   --ui-surface-raised: hsl(var(--surface-2));

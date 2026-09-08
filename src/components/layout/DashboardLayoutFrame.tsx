@@ -32,7 +32,7 @@ function AppFooter({ modeLabel }: { modeLabel: string }) {
   return (
     <footer className="terminal-footer mt-auto overflow-hidden border-t border-white/5">
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center overflow-hidden">
-        <div className="wordmark-ghost translate-y-[28%] text-[30vw] leading-none opacity-50 md:text-[24vw] lg:text-[20vw]">PUSH_</div>
+        <div className="wordmark-ghost translate-y-[28%] text-[30vw] leading-none opacity-50 md:text-[24vw] lg:text-[20vw]">push_</div>
       </div>
       <div className="editorial-frame relative grid gap-6 px-6 py-10 md:px-10 md:py-12 lg:grid-cols-[minmax(0,1.2fr)_22rem] lg:items-end">
         <div className="space-y-5">
@@ -103,7 +103,7 @@ export function DashboardLayoutFrame({
         <div className="space-y-4 px-2">
           <div className="rounded-[1.9rem] ops-surface px-4 py-4">
             <Link to="/app" className="block text-3xl font-black tracking-tighter text-primary">
-              Push<span className="text-foreground">_</span>
+              push<span className="text-foreground">_</span>
             </Link>
             <div className="mt-4 flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_12px_rgba(0,255,65,0.8)]" />

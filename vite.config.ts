@@ -30,7 +30,7 @@ function createPagesFallbackPlugin(basePath: string) {
     '<html lang="en">',
     "  <head>",
     '    <meta charset="utf-8" />',
-    "    <title>Push_ redirect</title>",
+    "    <title>push_ redirect</title>",
     `    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; script-src 'self' 'sha256-${scriptHash}'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: https: blob:; font-src 'self' data:" />`,
     '    <meta name="referrer" content="strict-origin-when-cross-origin" />',
     "  </head>",

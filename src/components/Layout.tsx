@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_REPOSITORY_URL } from "@/config/site";
+import { SITE_REPOSITORY_URL } from "@/config/site";
 import { Link, Outlet } from "react-router";
 
 export function PromoLayout() {
@@ -7,7 +7,7 @@ export function PromoLayout() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
           <Link to="/" className="font-headline text-xl font-bold tracking-tight">
-            {SITE_NAME}<span className="text-primary">_</span>
+            push<span className="text-primary">_</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
