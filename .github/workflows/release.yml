@@ -79,10 +79,10 @@ jobs:
           img="docs/images/releases/release.webp"
           {
             printf '%s\n' '<p align="center">'
-            printf '%s\n' "  <img src=\"https://raw.githubusercontent.com/${repo}/${ref}/${img}\" alt=\"Push_ Desktop App\" width=\"960\">"
+            printf '%s\n' "  <img src=\"https://raw.githubusercontent.com/${repo}/${ref}/${img}\" alt=\"push_ Desktop App\" width=\"960\">"
             printf '%s\n' '</p>'
             printf '%s\n' ''
-            printf '%s\n' "Push_ v${version} é o dashboard desktop do seu GitHub de um jeito rápido, privado e direto — sem login, sem cloud, sem anúncio."
+            printf '%s\n' "push_ v${version} é o dashboard desktop do seu GitHub de um jeito rápido, privado e direto — sem login, sem cloud, sem anúncio."
             if [ -f "$notes_file" ]; then
               printf '%s\n' ''
               printf '%s\n' '## Destaques'
@@ -94,20 +94,20 @@ jobs:
             printf '%s\n' ''
             printf '%s\n' '| Plataforma | Download | Uso |'
             printf '%s\n' '| --- | --- | --- |'
-            printf '%s\n' "| Windows x64 | [Instalador EXE](https://github.com/${repo}/releases/download/${ref}/Push_${version}_x64-setup.exe) | Instalação padrão (currentUser) |"
-            printf '%s\n' "| Windows x64 | [Pacote MSI](https://github.com/${repo}/releases/download/${ref}/Push_${version}_x64_en-US.msi) | Implantação gerenciada |"
-            printf '%s\n' "| macOS Apple Silicon | [DMG](https://github.com/${repo}/releases/download/${ref}/Push_${version}_aarch64.dmg) | Instalação gráfica |"
-            printf '%s\n' "| macOS Apple Silicon | [Bundle .app](https://github.com/${repo}/releases/download/${ref}/Push_${version}_aarch64.app.tar.gz) | Distribuição manual |"
-            printf '%s\n' "| Linux x64 | [AppImage](https://github.com/${repo}/releases/download/${ref}/Push_${version}_amd64.AppImage) | Aplicação portátil |"
-            printf '%s\n' "| Debian/Ubuntu x64 | [Pacote DEB](https://github.com/${repo}/releases/download/${ref}/Push_${version}_amd64.deb) | Pacote nativo |"
-            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/Push_${version}_x86_64.rpm) | Pacote nativo |"
+            printf '%s\n' "| Windows x64 | [Instalador EXE](https://github.com/${repo}/releases/download/${ref}/push_${version}_x64-setup.exe) | Instalação padrão (currentUser) |"
+            printf '%s\n' "| Windows x64 | [Pacote MSI](https://github.com/${repo}/releases/download/${ref}/push_${version}_x64_en-US.msi) | Implantação gerenciada |"
+            printf '%s\n' "| macOS Apple Silicon | [DMG](https://github.com/${repo}/releases/download/${ref}/push_${version}_aarch64.dmg) | Instalação gráfica |"
+            printf '%s\n' "| macOS Apple Silicon | [Bundle .app](https://github.com/${repo}/releases/download/${ref}/push_${version}_aarch64.app.tar.gz) | Distribuição manual |"
+            printf '%s\n' "| Linux x64 | [AppImage](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.AppImage) | Aplicação portátil |"
+            printf '%s\n' "| Debian/Ubuntu x64 | [Pacote DEB](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.deb) | Pacote nativo |"
+            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/push_${version}_x86_64.rpm) | Pacote nativo |"
             printf '%s\n' ''
             printf '%s\n' '<details>'
             printf '%s\n' '<summary>Outros detalhes de instalação</summary>'
             printf '%s\n' ''
             printf '%s\n' '- O instalador EXE (NSIS) é a opção recomendada para a maioria das pessoas no Windows.'
             printf '%s\n' '- O MSI serve para implantação gerenciada.'
-            printf '%s\n' '- No macOS, arraste o Push_ para a pasta Aplicativos.'
+            printf '%s\n' '- No macOS, arraste o push_ para a pasta Aplicativos.'
             printf '%s\n' '- O token GitHub é salvo no keychain do sistema (Keyring) e não em arquivos.'
             printf '%s\n' ''
             printf '%s\n' '</details>'
@@ -147,7 +147,7 @@ jobs:
             if id="$(gh release view "$ref" --json id --jq '.id' 2>/dev/null)"; then
               break
             fi
-            if gh release create "$ref" --target main --title "Push_ v${version}" --notes-file "$body_file" >/dev/null 2>&1; then
+            if gh release create "$ref" --target main --title "push_ v${version}" --notes-file "$body_file" >/dev/null 2>&1; then
               echo "created release $ref"
             else
               echo "create attempt $i failed; retrying"
@@ -174,7 +174,7 @@ jobs:
         with:
           args: ${{ matrix.tauriArgs }}
           tagName: v__VERSION__ # tauri-action will replace this
-          releaseName: 'Push_ v__VERSION__'
+          releaseName: 'push_ v__VERSION__'
           releaseId: ${{ steps.create-release.outputs.release_id }}
           generateReleaseNotes: false
           releaseDraft: false
@@ -229,7 +229,7 @@ jobs:
         with:
           args: --bundles dmg
           tagName: v__VERSION__ # tauri-action will replace this
-          releaseName: 'Push_ v__VERSION__'
+          releaseName: 'push_ v__VERSION__'
           releaseId: ${{ steps.create-release.outputs.release_id }}
           generateReleaseNotes: false
           releaseDraft: false
@@ -289,10 +289,10 @@ jobs:
           img="docs/images/releases/release.webp"
           {
             printf '%s\n' '<p align="center">'
-            printf '%s\n' "  <img src=\"https://raw.githubusercontent.com/${repo}/${ref}/${img}\" alt=\"Push_ Desktop App\" width=\"960\">"
+            printf '%s\n' "  <img src=\"https://raw.githubusercontent.com/${repo}/${ref}/${img}\" alt=\"push_ Desktop App\" width=\"960\">"
             printf '%s\n' '</p>'
             printf '%s\n' ''
-            printf '%s\n' "Push_ v${version} é o dashboard desktop do seu GitHub de um jeito rápido, privado e direto — sem login, sem cloud, sem anúncio."
+            printf '%s\n' "push_ v${version} é o dashboard desktop do seu GitHub de um jeito rápido, privado e direto — sem login, sem cloud, sem anúncio."
             if [ -f "$notes_file" ]; then
               printf '%s\n' ''
               printf '%s\n' '## Destaques'
@@ -304,20 +304,20 @@ jobs:
             printf '%s\n' ''
             printf '%s\n' '| Plataforma | Download | Uso |'
             printf '%s\n' '| --- | --- | --- |'
-            printf '%s\n' "| Windows x64 | [Instalador EXE](https://github.com/${repo}/releases/download/${ref}/Push_${version}_x64-setup.exe) | Instalação padrão (currentUser) |"
-            printf '%s\n' "| Windows x64 | [Pacote MSI](https://github.com/${repo}/releases/download/${ref}/Push_${version}_x64_en-US.msi) | Implantação gerenciada |"
-            printf '%s\n' "| macOS Apple Silicon | [DMG](https://github.com/${repo}/releases/download/${ref}/Push_${version}_aarch64.dmg) | Instalação gráfica |"
-            printf '%s\n' "| macOS Apple Silicon | [Bundle .app](https://github.com/${repo}/releases/download/${ref}/Push_${version}_aarch64.app.tar.gz) | Distribuição manual |"
-            printf '%s\n' "| Linux x64 | [AppImage](https://github.com/${repo}/releases/download/${ref}/Push_${version}_amd64.AppImage) | Aplicação portátil |"
-            printf '%s\n' "| Debian/Ubuntu x64 | [Pacote DEB](https://github.com/${repo}/releases/download/${ref}/Push_${version}_amd64.deb) | Pacote nativo |"
-            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/Push_${version}_x86_64.rpm) | Pacote nativo |"
+            printf '%s\n' "| Windows x64 | [Instalador EXE](https://github.com/${repo}/releases/download/${ref}/push_${version}_x64-setup.exe) | Instalação padrão (currentUser) |"
+            printf '%s\n' "| Windows x64 | [Pacote MSI](https://github.com/${repo}/releases/download/${ref}/push_${version}_x64_en-US.msi) | Implantação gerenciada |"
+            printf '%s\n' "| macOS Apple Silicon | [DMG](https://github.com/${repo}/releases/download/${ref}/push_${version}_aarch64.dmg) | Instalação gráfica |"
+            printf '%s\n' "| macOS Apple Silicon | [Bundle .app](https://github.com/${repo}/releases/download/${ref}/push_${version}_aarch64.app.tar.gz) | Distribuição manual |"
+            printf '%s\n' "| Linux x64 | [AppImage](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.AppImage) | Aplicação portátil |"
+            printf '%s\n' "| Debian/Ubuntu x64 | [Pacote DEB](https://github.com/${repo}/releases/download/${ref}/push_${version}_amd64.deb) | Pacote nativo |"
+            printf '%s\n' "| Fedora/RHEL x64 | [Pacote RPM](https://github.com/${repo}/releases/download/${ref}/push_${version}_x86_64.rpm) | Pacote nativo |"
             printf '%s\n' ''
             printf '%s\n' '<details>'
             printf '%s\n' '<summary>Outros detalhes de instalação</summary>'
             printf '%s\n' ''
             printf '%s\n' '- O instalador EXE (NSIS) é a opção recomendada para a maioria das pessoas no Windows.'
             printf '%s\n' '- O MSI serve para implantação gerenciada.'
-            printf '%s\n' '- No macOS, arraste o Push_ para a pasta Aplicativos.'
+            printf '%s\n' '- No macOS, arraste o push_ para a pasta Aplicativos.'
             printf '%s\n' '- O token GitHub é salvo no keychain do sistema (Keyring) e não em arquivos.'
             printf '%s\n' ''
             printf '%s\n' '</details>'

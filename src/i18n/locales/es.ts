@@ -2,7 +2,7 @@ import type { MessageDictionary } from "@/i18n/locales/en";
 import { technicalGlossary } from "@/i18n/glossary";
 
 export const es: MessageDictionary = {
-  appName: "Push_",
+  appName: "push_",
   search: "Buscar usuario de GitHub",
   repos: "Repositorios",
   followers: "Seguidores",
@@ -500,7 +500,7 @@ export const es: MessageDictionary = {
   openDetail: "Abrir detalle",
   authKicker: "Runtime seguro",
   authTitle: "La autenticación en el navegador queda solo en local.",
-  authBody: "Push_ acepta token de GitHub solo en localhost y lo mantiene en memoria en la pestaña actual. El runtime publicado en Pages sigue funcionando solo con snapshot.",
+  authBody: "push_ acepta token de GitHub solo en localhost y lo mantiene en memoria en la pestaña actual. El runtime publicado en Pages sigue funcionando solo con snapshot.",
   authBoundaryTitle: "Por qué existe este límite",
   authBoundaryBody1: "GitHub Pages es un host estático. Pedir Personal Access Tokens allí crearía un riesgo público innecesario.",
   authBoundaryBody2: "La arquitectura actual mantiene los secretos en sesiones locales y en la generación de snapshots, y luego publica solo los archivos de datos generados.",
@@ -549,7 +549,7 @@ export const es: MessageDictionary = {
   promoOpenDashboardBody: "Mira la vista pública o inspecciona el origen.",
   promoReadRepository: "Leer repositorio",
   promoAboutTitle: "Sobre",
-  promoAboutBody: "Push_ es un dashboard público para repositorios seleccionados de GitHub.",
+  promoAboutBody: "push_ es un dashboard público para repositorios seleccionados de GitHub.",
   promoEnterDashboard: "Entrar al dashboard",
   promoVisitGitHub: "Visitar GitHub",
   promoAboutSummaryLead: "El promo-site y el dashboard comparten un repositorio y un sistema visual.",
@@ -561,7 +561,7 @@ export const es: MessageDictionary = {
   promoAboutPrincipleScanBody: "Salud, actividad y alertas siguen siendo fáciles de leer.",
   promoAboutPrincipleLastTitle: "Hecho para durar",
   promoAboutPrincipleLastBody: "Shells compartidos y datos tipados mantienen el mantenimiento predecible.",
-  promoAboutFocusTitle: "En qué se enfoca Push_",
+  promoAboutFocusTitle: "En qué se enfoca push_",
   promoAboutFocusBody: "Claridad, seguridad, performance y código mantenible.",
   promoAboutCardUiTitle: "UI/UX",
   promoAboutCardUiBody: "Jerarquía clara, contraste legible y layouts estables.",

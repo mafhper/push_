@@ -1,6 +1,6 @@
 {
   "site": {
-    "name": "Push_",
+    "name": "push_",
     "tagline": "A semantic command center for your public GitHub footprint.",
     "description": "Promo site and static dashboard for published repositories, generated securely from snapshots."
   },

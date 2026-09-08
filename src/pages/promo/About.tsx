@@ -18,7 +18,7 @@ export default function AboutPage() {
             kicker={t("about")}
             title={
               <>
-                {t("promoAboutTitle")} <span className="text-primary">Push_.</span>
+                {t("promoAboutTitle")} <span className="text-primary">push_.</span>
               </>
             }
             body={t("promoAboutBody")}
