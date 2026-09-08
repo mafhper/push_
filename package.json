@@ -102,7 +102,7 @@
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.19.15",
     "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3",
+    "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.0.5",
     "autoprefixer": "^10.5.4",
     "browserslist": "^4.28.7",
