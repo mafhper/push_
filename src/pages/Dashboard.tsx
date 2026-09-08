@@ -1,18 +1,35 @@
+import { useEffect, useRef } from 'react';
 import { useDashboardSnapshot } from '@/hooks/useGitHub';
 import { ConsoleLayout } from '@/components/console/ConsoleLayout';
+import { DashboardSkeleton } from '@/components/console/DashboardSkeleton';
+import { BackgroundRefreshIndicator } from '@/components/console/BackgroundRefreshIndicator';
 import { sortReposByAttention } from '@/lib/attention';
+import { bootMark, logStartupReport } from '@/services/startup-metrics';
 import { Activity } from 'lucide-react';
 
 export default function Dashboard() {
-  const { data, isLoading, error } = useDashboardSnapshot();
+  const { data, isPending, isFetching, error } = useDashboardSnapshot();
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center gap-3 text-body text-foreground-subtle">
-        <Activity size={16} className="animate-pulse" />
-        Loading console...
-      </div>
-    );
+  const paintedRef = useRef(false);
+  const freshRef = useRef(false);
+
+  useEffect(() => {
+    if (data && !paintedRef.current) {
+      paintedRef.current = true;
+      bootMark('dashboard-painted');
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (data && !isFetching && !freshRef.current) {
+      freshRef.current = true;
+      bootMark('dashboard-fresh');
+      logStartupReport();
+    }
+  }, [data, isFetching]);
+
+  if (isPending && !data) {
+    return <DashboardSkeleton />;
   }
 
   if (!data || error) {
@@ -26,5 +43,10 @@ export default function Dashboard() {
 
   const sortedRepos = sortReposByAttention(data.repos);
 
-  return <ConsoleLayout repos={sortedRepos} />;
+  return (
+    <>
+      <ConsoleLayout repos={sortedRepos} />
+      {isFetching && <BackgroundRefreshIndicator />}
+    </>
+  );
 }
