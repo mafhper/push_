@@ -6,7 +6,7 @@ import styles from "./PlatformTitlebar.module.css";
 
 export interface PlatformTitlebarProps {
   profile: PlatformProfile;
-  title: string;
+  title?: string;
   children?: ReactNode;
   appIcon?: ReactNode;
   labels?: { minimize?: string; maximize?: string; close?: string };
@@ -21,7 +21,7 @@ export function PlatformTitlebar({ profile, title, children, appIcon, labels }: 
       <div className={styles.drag} data-tauri-drag-region>
         {isMac && <MacDots />}
         {!isMac && appIcon && <span className={styles.appIcon}>{appIcon}</span>}
-        <span className={styles.title}>{title}</span>
+        {title && <span className={styles.title}>{title}</span>}
       </div>
       {children && <div className={styles.center}>{children}</div>}
       {!isMac && <WindowControls style={profile.windowControls} closeHoverBehavior={profile.closeHoverBehavior} labels={labels} />}

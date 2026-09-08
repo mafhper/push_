@@ -5,7 +5,7 @@ import { PlatformTitlebar } from "./PlatformTitlebar";
 import styles from "./DesktopShell.module.css";
 
 export interface DesktopShellProps {
-  title: string;
+  title?: string;
   children: ReactNode;
   titlebarContent?: ReactNode;
   appIcon?: ReactNode;

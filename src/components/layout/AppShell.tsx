@@ -37,16 +37,5 @@ export function AppShell({ runtime = 'local' }: { runtime?: AppShellRuntime }) {
 
   if (!isTauri) return content;
 
-  return (
-    <DesktopShell
-      title="Push_"
-      appIcon={
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-        </svg>
-      }
-    >
-      {content}
-    </DesktopShell>
-  );
+  return <DesktopShell>{content}</DesktopShell>;
 }
