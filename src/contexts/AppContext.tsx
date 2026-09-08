@@ -3,6 +3,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { type DictKey, interpolate, resolveLanguage, translate } from '@/i18n';
 import { diagnoseToken, validateToken } from '@/services/github';
 import { clearGithubToken, loadGithubToken } from '@/services/secure-storage';
+import { removePersistedQueryCache } from '@/services/query-persistence';
 import { isTauriRuntime } from '@/config/site';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { RateLimitInfo, UserSession, UserSettings, Theme } from '@/types';
@@ -48,6 +49,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem(k);
       }
     });
+    void removePersistedQueryCache();
   }, [clearPrimary, clearSelected, clearSettings, setSession]);
 
   useEffect(() => {

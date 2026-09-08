@@ -15,6 +15,7 @@
     "core:window:allow-start-dragging",
     "core:window:allow-show",
     "core:event:allow-emit",
+    "store:default",
     "log:default",
     "os:default",
     "window-state:default",

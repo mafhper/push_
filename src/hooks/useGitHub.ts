@@ -64,6 +64,7 @@ export function useWorkflowRuns(owner: string, repo: string) {
     queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.workflowRuns) : fetchWorkflowRuns(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
@@ -92,6 +93,7 @@ export function useLanguages(owner: string, repo: string) {
     queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.languages) : fetchLanguages(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 60 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 }
 
@@ -106,6 +108,7 @@ export function useContributors(owner: string, repo: string) {
     queryFn: () => token ? fetchLiveRepoSnapshot(token, owner, repo).then((detail) => detail.contributors) : fetchContributors(owner, repo),
     enabled: !!owner && !!repo,
     staleTime: 30 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }
 
