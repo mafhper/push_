@@ -24,7 +24,7 @@ async function updateTauriConfig(newVersion) {
     const content = await fs.readFile(tauriConfigPath, "utf8");
     const config = JSON.parse(content);
     config.version = newVersion;
-    config.productName = "push_";
+    config.productName = "push";
     if (Array.isArray(config.app?.windows) && config.app.windows[0]) {
       config.app.windows[0].title = "push_";
     }
