@@ -17,6 +17,13 @@ output
 .env.*
 !.env.example
 
+# Tauri build artifacts
+src-tauri/target
+src-tauri/gen/schemas
+src-tauri/gen/android
+src-tauri/gen/apple
+src-tauri/gen/templates
+
 # Private agent/operator workspace
 AGENTS.md
 GEMINI.md

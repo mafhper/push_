@@ -1,0 +1,82 @@
+.controls {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.btn:focus-visible {
+  outline: var(--ui-focus-ring-width) solid var(--ui-focus);
+  outline-offset: var(--ui-focus-ring-offset);
+}
+
+/* ---------- Windows: retângulos à direita, close vermelho no hover ---------- */
+.kind-windows {
+  gap: 0;
+}
+.kind-windows .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--ui-icon-muted);
+  cursor: pointer;
+}
+.kind-windows .btn:hover {
+  background: var(--ui-surface-hover);
+  color: var(--ui-text);
+}
+.kind-windows .btn:last-child:hover {
+  background: #e81123;
+  color: #fff;
+}
+
+/* ---------- Linux / GNOME: circulares à direita, monocromáticos ---------- */
+.kind-linux {
+  gap: var(--ui-space-3);
+  align-items: center;
+  padding-right: var(--ui-space-3);
+}
+.kind-linux .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--ui-surface-raised);
+  color: var(--ui-icon-muted);
+  cursor: pointer;
+}
+.kind-linux .btn:hover {
+  background: var(--ui-border);
+  color: var(--ui-text);
+}
+.closeNeutral .btn:last-child:hover {
+  background: var(--ui-border);
+  color: var(--ui-text);
+}
+
+/* ---------- macOS: dots (decorativos) ---------- */
+.macDots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+}
+.macDots span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ff5f57;
+}
+.macDots span:nth-child(2) {
+  background: #febc2e;
+}
+.macDots span:nth-child(3) {
+  background: #28c840;
+}
