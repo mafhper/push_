@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "1.1.0"
+version = "1.1.1"
 description = "push_ is a semantic command center for your public GitHub footprint."
 authors = ["PushUnderline Team"]
 license = "MIT OR Apache-2.0"
