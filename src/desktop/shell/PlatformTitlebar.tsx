@@ -17,13 +17,25 @@ export function PlatformTitlebar({ profile, title, children, appIcon, labels }: 
   const isMac = profile.windowControls === "traffic-lights";
 
   return (
-    <header className={styles.titlebar} style={style} data-os={profile.id}>
+    <header className={styles.titlebar} style={style} data-os={profile.id} data-tauri-drag-region>
       <div className={styles.drag} data-tauri-drag-region>
         {isMac && <MacDots />}
-        {!isMac && appIcon && <span className={styles.appIcon}>{appIcon}</span>}
-        {title && <span className={styles.title}>{title}</span>}
+        {!isMac && appIcon && (
+          <span className={styles.appIcon} data-tauri-drag-region>
+            {appIcon}
+          </span>
+        )}
+        {title && (
+          <span className={styles.title} data-tauri-drag-region>
+            {title}
+          </span>
+        )}
       </div>
-      {children && <div className={styles.center}>{children}</div>}
+      {children && (
+        <div className={styles.center} data-tauri-drag-region>
+          {children}
+        </div>
+      )}
       {!isMac && <WindowControls style={profile.windowControls} closeHoverBehavior={profile.closeHoverBehavior} labels={labels} />}
     </header>
   );

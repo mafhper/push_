@@ -1,4 +1,5 @@
 export const SITE_NAME = "push_";
+export const APP_VERSION = __PUSH_APP_VERSION__;
 export const SITE_TAGLINE = "A semantic command center for your public GitHub footprint.";
 export const SITE_REPOSITORY_URL = "https://github.com/mafhper/push_";
 export const SITE_BASE_URL = import.meta.env.BASE_URL;

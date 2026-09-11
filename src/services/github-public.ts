@@ -277,7 +277,6 @@ async function buildPublicRepoDetail(owner: string, repo: string): Promise<RepoS
   const languages = !isFailure(languagesPayload) ? languagesPayload : {};
   const contributors = !isFailure(contributorsPayload) ? contributorsPayload.map(mapContributor) : [];
   const alerts: DependabotAlert[] = [];
-  const health = calculateHealth(mappedRepo, workflowRuns, alerts);
 
   const dependencies: DependencyInfo[] | undefined = await (async () => {
     try {
@@ -301,6 +300,12 @@ async function buildPublicRepoDetail(owner: string, repo: string): Promise<RepoS
       return undefined;
     }
   })();
+
+  const health = calculateHealth(mappedRepo, workflowRuns, alerts, {
+    availability: { dependabotAlerts: createAvailability(false, "public-api", "Dependabot alerts require an authenticated token.") },
+    dependencies,
+    dataMode: "public",
+  });
 
   const detail = {
     status: createPublicStatus(),

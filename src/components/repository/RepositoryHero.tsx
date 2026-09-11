@@ -29,6 +29,7 @@ export function RepositoryHero({
   lastPushAt,
   runs,
   pullRequests,
+  updatedAt,
 }: {
   backLabel: string;
   sourceLabel: string;
@@ -49,8 +50,10 @@ export function RepositoryHero({
   lastPushAt: string;
   runs: WorkflowRun[];
   pullRequests?: PullRequestSummary[];
+  updatedAt?: string;
 }) {
   const { t } = useApp();
+  const freshnessLabel = updatedAt ? t("repoDataFreshness", { when: formatRelativeTime(updatedAt, t) }) : null;
   const trendRuns = runs.slice(0, TREND_RUNS).reverse();
   const maxDuration = Math.max(...trendRuns.map((run) => run.durationMs), 1);
   const attentionItems = buildAttentionItems({
@@ -80,6 +83,7 @@ export function RepositoryHero({
             </Link>
             <StatusPill tone={sourceTone}>{sourceLabel}</StatusPill>
             <StatusPill tone={healthTone}>{healthLabel}</StatusPill>
+            {freshnessLabel ? <StatusPill tone="neutral">{freshnessLabel}</StatusPill> : null}
           </div>
 
           <div className="inline-flex items-center gap-2 rounded-full ops-surface-soft px-4 py-2">

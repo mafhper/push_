@@ -1,7 +1,7 @@
 import React, { useLayoutEffect } from 'react';
 import { Outlet } from 'react-router';
 import { StatusBar } from './StatusBar';
-import { isTauriRuntime } from '@/config/site';
+import { isTauriRuntime, APP_VERSION } from '@/config/site';
 import { setupExternalLinkHandler } from '@/services/open-external';
 import { revealWindowWhenReady } from '@/services/window-reveal';
 import { bootMark } from '@/services/startup-metrics';
@@ -37,5 +37,15 @@ export function AppShell({ runtime = 'local' }: { runtime?: AppShellRuntime }) {
 
   if (!isTauri) return content;
 
-  return <DesktopShell>{content}</DesktopShell>;
+  const appIcon = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  );
+
+  return (
+    <DesktopShell title={`v${APP_VERSION}`} appIcon={appIcon}>
+      {content}
+    </DesktopShell>
+  );
 }

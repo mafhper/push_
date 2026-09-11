@@ -1,8 +1,13 @@
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { useParams } from "react-router";
 import { ExternalLink, History } from "lucide-react";
 import { RepositoryHero } from "@/components/repository/RepositoryHero";
+import { RepositoryHealthSection } from "@/components/repository/RepositoryHealthSection";
+import { ViewModeSelector } from "@/components/repository/ViewModeSelector";
 import { WorkflowPulsePanel } from "@/components/repository/WorkflowPulsePanel";
+import { WorkflowRunDetail } from "@/components/repository/WorkflowRunDetail";
+import { contextFromSnapshotDetail, evaluateRepositoryHealth } from "@/health";
 import { EmptyPanel, StatusPill } from "@/components/site/TerminalPrimitives";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
@@ -10,15 +15,16 @@ import { useRepoSnapshot } from "@/hooks/useGitHub";
 import { formatDate } from "@/i18n";
 import { resolveDependabotReason } from "@/lib/github-copy";
 import { cn } from "@/lib/utils";
-import { LANGUAGE_COLORS } from "@/types";
+import { LANGUAGE_COLORS, type DataDetailMode } from "@/types";
 
 export default function RepoDetail() {
   const { owner = "", repo = "" } = useParams();
-  const { session, settings, t } = useApp();
+  const { session, settings, updateSettings, t } = useApp();
   const { data, isLoading, error } = useRepoSnapshot(owner, repo);
   const localRuntime = isLocalSecureRuntime();
   const isLocalAuthenticated = localRuntime && Boolean(session?.token);
   const modeLabel = data?.status.dataMode === "authenticated" || isLocalAuthenticated ? "local auth" : "snapshot";
+  const report = useMemo(() => (data ? evaluateRepositoryHealth(contextFromSnapshotDetail(data)) : null), [data]);
 
   if (isLoading) {
     return <EmptyPanel title={t("loadingRepository")} body={t("loadingRepositoryBody")} />;
@@ -27,6 +33,12 @@ export default function RepoDetail() {
   if (!data || error) {
     return <EmptyPanel title={t("repositoryUnavailable")} body={t("repositoryUnavailableBody")} />;
   }
+
+  const viewMode: DataDetailMode = settings.repoDetailModes?.[data.repo.fullName] ?? settings.dataDetailMode ?? "balanced";
+
+  const setViewMode = (mode: DataDetailMode) => {
+    updateSettings({ repoDetailModes: { ...(settings.repoDetailModes ?? {}), [data.repo.fullName]: mode } });
+  };
 
   const languageEntries = Object.entries(data.languages);
   const totalLanguageBytes = languageEntries.reduce((sum, [, value]) => sum + value, 0);
@@ -77,27 +89,40 @@ export default function RepoDetail() {
 
   return (
     <div className="h-full min-h-0 overflow-y-auto p-5 md:p-8 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="terminal-label">{t("dataDetailLevel")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {viewMode === "balanced" ? t("detailBalancedHint") : viewMode === "detailed" ? t("detailDetailedHint") : t("detailFullHint")}
+          </p>
+        </div>
+        <ViewModeSelector value={viewMode} onChange={setViewMode} />
+      </div>
+
       <RepositoryHero
         backLabel={t("back")}
         sourceLabel={modeLabel === "local auth" ? t("localData") : t("snapshotLabel")}
         sourceTone={modeLabel === "local auth" ? "warning" : "neutral"}
-        healthLabel={data.health.status === "healthy" ? t("healthy") : data.health.status === "warning" ? t("watch") : t("criticalLabel")}
-        healthTone={data.health.status === "healthy" ? "success" : data.health.status === "warning" ? "warning" : "critical"}
+        healthLabel={report.status === "healthy" ? t("healthy") : report.status === "warning" ? t("watch") : t("criticalLabel")}
+        healthTone={report.status === "healthy" ? "success" : report.status === "warning" ? "warning" : "critical"}
         name={data.repo.name}
         description={data.repo.description || t("keyHealthSignalsBody")}
         repoUrl={data.repo.htmlUrl}
         stars={data.repo.stars}
-        score={data.health.score}
-        workflowSuccessRate={data.health.workflowSuccessRate}
-        openAlerts={data.health.dependabotOpenCount}
+        score={report.score}
+        workflowSuccessRate={report.metrics.workflowSuccessRate}
+        openAlerts={report.metrics.dependabotOpenCount}
         openPullRequests={data.pullRequests?.length ?? 0}
-        criticalAlerts={data.health.dependabotCriticalCount}
-        failedRuns7d={data.health.failedRuns7d}
-        stalenessDays={data.health.stalenessDays}
+        criticalAlerts={report.metrics.dependabotCriticalCount}
+        failedRuns7d={report.metrics.failedRuns7d}
+        stalenessDays={report.metrics.stalenessDays}
         lastPushAt={data.repo.lastPushAt}
         runs={data.workflowRuns}
         pullRequests={data.pullRequests}
+        updatedAt={data.status?.generatedAt}
       />
+
+      <RepositoryHealthSection report={report} mode={viewMode} />
 
       <div className="grid gap-6 xl:grid-cols-[1.48fr_1fr] xl:items-start">
         <WorkflowPulsePanel
@@ -121,7 +146,7 @@ export default function RepoDetail() {
             <div className="grid gap-3 md:grid-cols-3">
               <DetailRow label={t("openPullRequests")} value={`${data.pullRequests?.length ?? 0}`} highlighted={(data.pullRequests?.length ?? 0) > 0} tone={(data.pullRequests?.length ?? 0) > 0 ? "warning" : "neutral"} />
               <DetailRow label={t("openAlertsLabel")} value={`${data.alerts.length}`} highlighted={data.alerts.length > 0} tone={data.alerts.length > 0 ? "critical" : "neutral"} />
-              <DetailRow label={t("failingWorkflows")} value={`${data.health.failedRuns7d}`} highlighted={data.health.failedRuns7d > 0} tone={data.health.failedRuns7d > 0 ? "warning" : "neutral"} />
+              <DetailRow label={t("failingWorkflows")} value={`${report.metrics.failedRuns7d}`} highlighted={report.metrics.failedRuns7d > 0} tone={report.metrics.failedRuns7d > 0 ? "warning" : "neutral"} />
             </div>
 
             {priorityShortcuts.length > 0 ? (
@@ -143,7 +168,7 @@ export default function RepoDetail() {
 
             {data.pullRequests && data.pullRequests.length > 0 ? (
               <div className="mt-6 space-y-3">
-                {data.pullRequests.slice(0, 4).map((pullRequest) => (
+                {data.pullRequests.slice(0, viewMode === "balanced" ? 4 : data.pullRequests.length).map((pullRequest) => (
                   <a key={pullRequest.id} href={pullRequest.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.25rem] bg-black/20 px-4 py-4 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.15)]">
                     <div className="min-w-0">
                       <p className="line-clamp-2 break-words text-sm font-semibold text-foreground">#{pullRequest.number} {pullRequest.title}</p>
@@ -173,7 +198,7 @@ export default function RepoDetail() {
 
             <div className="space-y-3">
               {data.alerts.length > 0 ? (
-                data.alerts.slice(0, 3).map((alert) => (
+                data.alerts.slice(0, viewMode === "balanced" ? 3 : data.alerts.length).map((alert) => (
                   <a key={alert.id} href={alert.htmlUrl} className="block rounded-[1.35rem] ops-surface-soft px-4 py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
@@ -201,65 +226,143 @@ export default function RepoDetail() {
             </a>
           </section>
 
-          <section className="rounded-[2rem] ops-surface p-6">
-            <p className="terminal-label">{t("repositoryFacts")}</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("repositoryFacts")}</h2>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <DetailRow label={t("license")} value={data.repo.license ?? t("unavailable")} highlighted={Boolean(data.repo.license)} />
-              <DetailRow label={t("mainBranch")} value={data.repo.defaultBranch} highlighted />
-              <DetailRow label={t("size")} value={`${(data.repo.size / 1024).toFixed(1)} MB`} />
-              <DetailRow label={t("visibility")} value={data.repo.isPrivate ? t("privateLabel") : t("publicLabel")} highlighted={!data.repo.isPrivate} />
-              <DetailRow label={t("created")} value={formatDate(data.repo.createdAt, settings.lang)} />
-              <DetailRow label={t("lastPush")} value={data.repo.lastPushAt ? formatDate(data.repo.lastPushAt, settings.lang) : t("unavailable")} />
-              <DetailRow
-                label={t("security")}
-                value={data.availability.dependabotAlerts.available ? t("available") : t("unavailable")}
-                highlighted={data.availability.dependabotAlerts.available}
-              />
-              <DetailRow
-                label={t("external")}
-                value={
-                  <a href={data.repo.htmlUrl} className="inline-flex items-center gap-2 text-primary hover:underline">
-                    {t("openOnGitHub")} <ExternalLink size={13} />
-                  </a>
-                }
-              />
-            </div>
-
-            <div className="mt-8 rounded-[1.35rem] ops-surface-soft p-4">
-              <p className="text-sm font-semibold text-foreground">
-                {data.availability.dependabotAlerts.available ? t("securityDataAvailable") : t("securityDataUnavailable")}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {data.availability.dependabotAlerts.available
-                  ? modeLabel === "local auth" ? t("securityDataLoadedSession") : t("securityDataLoadedSnapshot")
-                  : resolveDependabotReason(data.availability.dependabotAlerts.reason, t)}
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <p className="terminal-label">{t("languageMix")}</p>
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/5">
-                {languageEntries.map(([language, bytes]) => {
-                  const width = totalLanguageBytes > 0 ? `${(bytes / totalLanguageBytes) * 100}%` : "0%";
-                  return <div key={language} className="float-left h-full" style={{ width, backgroundColor: LANGUAGE_COLORS[language] ?? "#00FF41" }} />;
-                })}
-              </div>
-              <div className="mt-5 space-y-3">
-                {languageEntries.map(([language, bytes]) => (
-                  <div key={language} className="flex items-center justify-between text-sm">
-                    <span className="inline-flex items-center gap-3">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: LANGUAGE_COLORS[language] ?? "#00FF41" }} />
-                      {language}
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground">{totalLanguageBytes > 0 ? Math.round((bytes / totalLanguageBytes) * 100) : 0}%</span>
+          {viewMode !== "balanced" && data.contributors.length > 0 && (
+            <section className="rounded-[2rem] ops-surface p-6">
+              <p className="terminal-label">{t("contributors")}</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("contributors")}</h2>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {data.contributors.slice(0, viewMode === "full" ? data.contributors.length : 8).map((contributor) => (
+                  <div key={contributor.login} className="flex items-center gap-2 rounded-[1.15rem] ops-surface-soft px-3 py-2">
+                    {contributor.avatarUrl ? (
+                      <img src={contributor.avatarUrl} alt={contributor.login} className="h-6 w-6 rounded-full bg-white/8 object-cover" />
+                    ) : null}
+                    <span className="text-sm text-foreground">@{contributor.login}</span>
+                    <span className="font-mono text-xs text-muted-foreground">× {contributor.contributions}</span>
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </div>
       </div>
+
+      {viewMode !== "balanced" && data.workflowRuns.length > 0 && (
+        <section className="rounded-[2rem] ops-surface p-6">
+          <div className="mb-6">
+            <p className="terminal-label">{t("workflows")}</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("workflows")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {modeLabel === "local auth" ? t("recentWorkflowRunsSession", { count: data.workflowRuns.length }) : t("recentWorkflowRunsSnapshot", { count: data.workflowRuns.length })}
+            </p>
+          </div>
+          <WorkflowRunDetail runs={data.workflowRuns} />
+        </section>
+      )}
+
+      {viewMode !== "balanced" && data.dependencies && data.dependencies.length > 0 && (
+        <section className="rounded-[2rem] ops-surface p-6">
+          <div className="mb-6">
+            <p className="terminal-label">{t("dependencies")}</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("dependencies")}</h2>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {data.dependencies.map((dep) => (
+              <div key={dep.name} className="flex items-center justify-between gap-4 rounded-[1.15rem] ops-surface-soft px-4 py-3">
+                <span className="min-w-0 truncate text-sm font-semibold text-foreground">{dep.name}</span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="font-mono text-xs text-muted-foreground">{dep.version}</span>
+                  <StatusPill tone={dep.type === "dependencies" ? "neutral" : "success"}>
+                    {dep.type === "dependencies" ? t("dependencies") : "dev"}
+                  </StatusPill>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="rounded-[2rem] ops-surface p-6">
+        <p className="terminal-label">{t("repositoryFacts")}</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("repositoryFacts")}</h2>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <DetailRow label={t("license")} value={data.repo.license ?? t("unavailable")} highlighted={Boolean(data.repo.license)} />
+          <DetailRow label={t("mainBranch")} value={data.repo.defaultBranch} highlighted />
+          <DetailRow label={t("size")} value={`${(data.repo.size / 1024).toFixed(1)} MB`} />
+          <DetailRow label={t("visibility")} value={data.repo.isPrivate ? t("privateLabel") : t("publicLabel")} highlighted={!data.repo.isPrivate} />
+          <DetailRow label={t("created")} value={formatDate(data.repo.createdAt, settings.lang)} />
+          <DetailRow label={t("lastPush")} value={data.repo.lastPushAt ? formatDate(data.repo.lastPushAt, settings.lang) : t("unavailable")} />
+          <DetailRow
+            label={t("security")}
+            value={data.availability.dependabotAlerts.available ? t("available") : t("unavailable")}
+            highlighted={data.availability.dependabotAlerts.available}
+          />
+          {viewMode === "full" && data.extended?.branchProtection != null && (
+            <DetailRow
+              label={t("branchProtection")}
+              value={data.extended.branchProtection.protected ? t("activeLabel") : t("none")}
+              highlighted={data.extended.branchProtection.protected}
+              tone={data.extended.branchProtection.protected ? "success" : "warning"}
+            />
+          )}
+          <DetailRow
+            label={t("external")}
+            value={
+              <a href={data.repo.htmlUrl} className="inline-flex items-center gap-2 text-primary hover:underline">
+                {t("openOnGitHub")} <ExternalLink size={13} />
+              </a>
+            }
+          />
+        </div>
+
+        <div className="mt-8 rounded-[1.35rem] ops-surface-soft p-4">
+          <p className="text-sm font-semibold text-foreground">
+            {data.availability.dependabotAlerts.available ? t("securityDataAvailable") : t("securityDataUnavailable")}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {data.availability.dependabotAlerts.available
+              ? modeLabel === "local auth" ? t("securityDataLoadedSession") : t("securityDataLoadedSnapshot")
+              : resolveDependabotReason(data.availability.dependabotAlerts.reason, t)}
+          </p>
+        </div>
+
+        {viewMode === "full" && data.extended?.releases && data.extended.releases.length > 0 && (
+          <div className="mt-6">
+            <p className="terminal-label">{t("releases")}</p>
+            <div className="mt-4 space-y-2">
+              {data.extended.releases.slice(0, 5).map((release) => (
+                <a key={release.id} href={release.htmlUrl} className="flex items-center justify-between gap-4 rounded-[1.15rem] ops-surface-soft px-4 py-3 transition-colors hover:bg-black/12">
+                  <span className="min-w-0 truncate text-sm font-semibold text-foreground">{release.name || release.tagName}</span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    {release.prerelease && <StatusPill tone="warning">{t("draft")}</StatusPill>}
+                    <span className="font-mono text-xs text-muted-foreground">{release.tagName}</span>
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6">
+          <p className="terminal-label">{t("languageMix")}</p>
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/5">
+            {languageEntries.map(([language, bytes]) => {
+              const width = totalLanguageBytes > 0 ? `${(bytes / totalLanguageBytes) * 100}%` : "0%";
+              return <div key={language} className="float-left h-full" style={{ width, backgroundColor: LANGUAGE_COLORS[language] ?? "#00FF41" }} />;
+            })}
+          </div>
+          <div className="mt-5 space-y-3">
+            {languageEntries.slice(0, viewMode === "full" ? languageEntries.length : 6).map(([language, bytes]) => (
+              <div key={language} className="flex items-center justify-between text-sm">
+                <span className="inline-flex items-center gap-3">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: LANGUAGE_COLORS[language] ?? "#00FF41" }} />
+                  {language}
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">{totalLanguageBytes > 0 ? Math.round((bytes / totalLanguageBytes) * 100) : 0}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className="rounded-[2rem] ops-surface p-6">
         <div className="mb-6 flex items-start justify-between">
@@ -275,7 +378,7 @@ export default function RepoDetail() {
 
         <div className="grid gap-3 xl:grid-cols-2">
           {data.commits.length > 0 ? (
-            data.commits.slice(0, 6).map((commit) => (
+            data.commits.slice(0, viewMode === "balanced" ? 6 : data.commits.length).map((commit) => (
               <a key={commit.sha} href={commit.htmlUrl} className="flex items-start gap-4 rounded-[1.35rem] ops-surface-soft px-4 py-4">
                 <div className="mt-1 h-10 w-10 overflow-hidden rounded-full bg-white/6">
                   {commit.authorAvatar ? <img src={commit.authorAvatar} alt={commit.authorLogin} className="h-full w-full object-cover" /> : null}
@@ -308,7 +411,7 @@ function DetailRow({
   label: string;
   value: ReactNode;
   highlighted?: boolean;
-  tone?: "neutral" | "warning" | "critical";
+  tone?: "neutral" | "warning" | "critical" | "success";
 }) {
   return (
     <div className={cn(
@@ -321,6 +424,7 @@ function DetailRow({
         highlighted ? "rounded-full px-3 py-1 text-sm font-semibold" : "text-sm font-semibold text-foreground",
         highlighted && tone === "critical" && "bg-destructive/10 text-destructive",
         highlighted && tone === "warning" && "bg-secondary/12 text-secondary",
+        highlighted && tone === "success" && "bg-success/10 text-success",
         highlighted && tone === "neutral" && "bg-primary/10 text-primary",
       )}>{value}</span>
     </div>

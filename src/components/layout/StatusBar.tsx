@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
-import { Settings, Search, User, ShieldAlert, CircleCheck, GitBranch } from 'lucide-react';
+import { RefreshCw, Settings, Search, User, ShieldAlert, CircleCheck, GitBranch } from 'lucide-react';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/contexts/useApp';
 import { useDashboardSnapshot, useRateLimit } from '@/hooks/useGitHub';
 import { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRateLimit, usePublicSnapshotManifest } from '@/hooks/useGitHubPublic';
@@ -157,6 +158,8 @@ function StatusBarFrame({
           <kbd className="hidden font-mono text-[8px] opacity-30 sm:ml-1 sm:inline">⌘K</kbd>
         </button>
 
+        <RefreshButton />
+
         <Link to="/app/settings" className="flex h-8 w-8 items-center justify-center text-foreground-subtle transition-colors hover:text-primary">
           <Settings size={18} />
         </Link>
@@ -175,6 +178,26 @@ function StatusBarFrame({
         )}
       </div>
     </header>
+  );
+}
+
+function RefreshButton() {
+  const queryClient = useQueryClient();
+  const isFetching = useIsFetching();
+  const { t } = useApp();
+  const running = isFetching > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={() => queryClient.invalidateQueries()}
+      disabled={running}
+      title={running ? t('statusRefreshing') : t('statusRefresh')}
+      aria-label={running ? t('statusRefreshing') : t('statusRefresh')}
+      className="flex h-8 w-8 items-center justify-center text-foreground-subtle transition-colors hover:text-primary disabled:cursor-wait disabled:opacity-70"
+    >
+      <RefreshCw size={16} className={running ? 'animate-spin' : undefined} />
+    </button>
   );
 }
 

@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/useApp';
 import { calculateHealth, formatRelativeTime } from '@/utils/health';
 import { HealthBadge } from '@/components/HealthBadge';
 import { LanguageBar } from '@/components/LanguageBar';
-import { ProjectImage } from '@/components/ProjectImage';
+import { RepositoryAvatar } from '@/components/repository/RepositoryAvatar';
 import { 
   GitCommit, Activity, ShieldAlert, CheckCircle2, XCircle, 
   ExternalLink, ArrowRight, Clock, Star, GitFork
@@ -49,7 +49,7 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex flex-col sm:flex-row gap-6">
             <div className="shrink-0 flex items-center justify-center relative">
-              <ProjectImage 
+              <RepositoryAvatar 
                 owner={repo.owner}
                 repo={repo.name}
                 defaultBranch={repo.defaultBranch}

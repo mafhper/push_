@@ -2,6 +2,9 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import crypto from "node:crypto";
+import { readFileSync } from "node:fs";
+
+const appPackage = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8")) as { version: string };
 
 function resolveBasePath(env: Record<string, string>) {
   const explicitBase = env.VITE_SITE_BASE_PATH?.trim();
@@ -67,6 +70,7 @@ export default defineConfig(({ command, mode }) => {
     define: {
       __PUSH_RUNTIME_MODE__: JSON.stringify(isLocalRuntime ? "local" : "public"),
       __PUSH_TAURI_BUILD__: JSON.stringify(isTauriBuild),
+      __PUSH_APP_VERSION__: JSON.stringify(appPackage.version),
     },
     server: {
       host: "::",

@@ -1,9 +1,11 @@
 import { SITE_BASE_URL } from "@/config/site";
+import { calculateHealth } from "@/utils/health";
 import type {
   CommitSummary,
   ContributorSummary,
   DependabotAlert,
   DependencyInfo,
+  GitHubPagesInfo,
   LanguageBreakdown,
   PullRequestSummary,
   RateLimitInfo,
@@ -51,6 +53,11 @@ type GitHubRepo = {
   topics?: string[];
   created_at?: string;
   updated_at?: string;
+  security_and_analysis?: {
+    advanced_security?: { status?: string };
+    secret_scanning?: { status?: string };
+    dependabot_security_updates?: { status?: string };
+  };
 };
 
 type GitHubCommit = {
@@ -154,6 +161,8 @@ type GitHubRelease = {
   draft?: boolean;
   published_at?: string | null;
   html_url: string;
+  assets?: Array<{ name?: string; size?: number; browser_download_url?: string }>;
+  body?: string | null;
 };
 
 type GitHubIssue = {
@@ -180,6 +189,38 @@ type GitHubLabel = {
 
 type GitHubBranch = {
   protected?: boolean;
+};
+
+type GitHubBranchProtection = {
+  required_status_checks?: {
+    contexts?: string[];
+    checks?: Array<{ context: string }>;
+  } | null;
+  required_pull_request_reviews?: {
+    require_code_owner_reviews?: boolean;
+  } | null;
+};
+
+type GitHubContentEntry = {
+  name: string;
+  type: string;
+};
+
+type GitHubPages = {
+  url?: string;
+  html_url?: string;
+  status?: string;
+};
+
+type GitHubPagesBuild = {
+  status?: string;
+  error?: {
+    message?: string;
+  } | null;
+};
+
+type GitHubCodeScanningAlert = {
+  number: number;
 };
 
 function buildAssetUrl(relativePath: string) {
@@ -349,6 +390,38 @@ function mapPullRequest(pullRequest: GitHubPullRequest): PullRequestSummary {
   };
 }
 
+function mapSecurityAnalysis(security: GitHubRepo["security_and_analysis"]) {
+  if (!security) return undefined;
+  return {
+    advancedSecurity: security.advanced_security?.status === "enabled",
+    secretScanning: security.secret_scanning?.status === "enabled",
+    dependabotSecurityUpdates: security.dependabot_security_updates?.status === "enabled",
+  };
+}
+
+function mapCodeScanning(payload: GitHubCodeScanningAlert[] | GitHubFailure): { openAlerts: number } | null | undefined {
+  if (isFailure(payload)) {
+    return payload.error.startsWith("404") ? null : undefined;
+  }
+  return { openAlerts: payload.length };
+}
+
+function mapPages(pagesPayload: GitHubPages | GitHubFailure, buildsPayload: GitHubPagesBuild | GitHubFailure): GitHubPagesInfo | undefined {
+  if (isFailure(pagesPayload)) {
+    return pagesPayload.error.startsWith("404") ? { configured: false } : undefined;
+  }
+  const lastBuildStatus = !isFailure(buildsPayload) && buildsPayload.status
+    ? (buildsPayload.status as GitHubPagesInfo["lastBuildStatus"])
+    : undefined;
+  return {
+    configured: true,
+    url: pagesPayload.html_url || pagesPayload.url,
+    lastBuildStatus,
+    hasLiveSite: pagesPayload.html_url ? true : undefined,
+    error: !isFailure(buildsPayload) && buildsPayload.error?.message ? buildsPayload.error.message : undefined,
+  };
+}
+
 function mapRelease(release: GitHubRelease) {
   return {
     id: release.id,
@@ -358,6 +431,8 @@ function mapRelease(release: GitHubRelease) {
     draft: Boolean(release.draft),
     publishedAt: release.published_at || null,
     htmlUrl: release.html_url,
+    assetsCount: release.assets?.length ?? undefined,
+    body: release.body ?? undefined,
   };
 }
 
@@ -448,47 +523,6 @@ async function fetchPackageJsonViaRaw(owner: string, repo: string, defaultBranch
   }
 }
 
-function calculateHealth(repo: RepositoryRef, runs: WorkflowRun[], alerts: DependabotAlert[]) {
-  let score = 100;
-  const now = Date.now();
-  const lastPush = repo.lastPushAt ? new Date(repo.lastPushAt).getTime() : 0;
-  const stalenessDays = lastPush ? Math.floor((now - lastPush) / 86400000) : 999;
-  const recentRuns = runs.slice(0, 10);
-  const successRuns = recentRuns.filter((run) => run.conclusion === "success").length;
-  const failedRuns7d = runs.filter((run) => {
-    const started = new Date(run.startedAt).getTime();
-    return run.conclusion === "failure" && (now - started) < 7 * 86400000;
-  }).length;
-  const successRate = recentRuns.length ? successRuns / recentRuns.length : null;
-  const criticalAlerts = alerts.filter((alert) => alert.severity === "critical").length;
-  const highAlerts = alerts.filter((alert) => alert.severity === "high").length;
-
-  if (successRate !== null && successRate < 0.5) score -= 20;
-  else if (successRate !== null && successRate < 0.8) score -= 10;
-  if (failedRuns7d > 3) score -= 10;
-  else if (failedRuns7d > 0) score -= 5;
-  if (criticalAlerts > 0) score -= 35;
-  if (highAlerts > 0) score -= 15;
-  if (alerts.length > 5) score -= 5;
-  if (stalenessDays > 90) score -= 15;
-  else if (stalenessDays > 30) score -= 10;
-  else if (stalenessDays > 14) score -= 5;
-  if (repo.openIssues > 50) score -= 5;
-
-  score = Math.max(0, Math.min(100, score));
-
-  return {
-    score,
-    status: score < 40 ? "critical" : score < 70 ? "warning" : "healthy",
-    lastCommitAt: repo.lastPushAt || null,
-    workflowSuccessRate: successRate !== null ? Math.round(successRate * 100) : null,
-    failedRuns7d,
-    dependabotOpenCount: alerts.length,
-    dependabotCriticalCount: criticalAlerts,
-    stalenessDays,
-  } as RepoSnapshotDetail["health"];
-}
-
 function buildLiveStatus() {
   return {
     generatedAt: new Date().toISOString(),
@@ -528,15 +562,19 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
   const contributors = !isFailure(contributorsPayload) ? contributorsPayload.map(mapContributor) : [];
   const alerts = !isFailure(dependabotPayload) ? dependabotPayload.map(mapDependabot) : [];
   const pullRequests = !isFailure(pullRequestsPayload) ? pullRequestsPayload.map(mapPullRequest) : [];
-  const health = calculateHealth(mappedRepo, workflowRuns, alerts);
 
   const dependencies = await fetchPackageJsonViaApi(owner, repo, token);
-  const [releasesPayload, issuesPayload, labelsPayload, branchPayload, readme] = await Promise.all([
+  const [releasesPayload, issuesPayload, labelsPayload, branchPayload, readme, codeScanningPayload, rootTreePayload, pagesPayload, pagesBuildsPayload, protectionPayload] = await Promise.all([
     githubOptional<GitHubRelease[]>(`${repoPath}/releases?per_page=5`, token),
     githubOptional<GitHubIssue[]>(`${repoPath}/issues?state=open&per_page=12`, token),
     githubOptional<GitHubLabel[]>(`${repoPath}/labels?per_page=20`, token),
     githubOptional<GitHubBranch>(`${repoPath}/branches/${encodeURIComponent(mappedRepo.defaultBranch)}`, token),
     fetchReadme(owner, repo, token),
+    githubOptional<GitHubCodeScanningAlert[]>(`${repoPath}/code-scanning/alerts?state=open&per_page=20`, token),
+    githubOptional<GitHubContentEntry[]>(`${repoPath}/contents?per_page=100`, token),
+    githubOptional<GitHubPages>(`${repoPath}/pages`, token),
+    githubOptional<GitHubPagesBuild>(`${repoPath}/pages/builds/latest`, token),
+    githubOptional<GitHubBranchProtection>(`${repoPath}/branches/${encodeURIComponent(mappedRepo.defaultBranch)}/protection`, token),
   ]);
 
   const availability = {
@@ -561,6 +599,41 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
       : createAvailability(true, "authenticated-api"),
   };
 
+  const releases = !isFailure(releasesPayload) ? releasesPayload.map(mapRelease) : [];
+  const branchProtection = isFailure(branchPayload)
+    ? { available: false, protected: false, reason: classifyGitHubError(branchPayload.error) }
+    : {
+        available: true,
+        protected: Boolean(branchPayload.protected),
+        ...(!isFailure(protectionPayload)
+          ? {
+              requiredStatusChecks: Boolean(
+                protectionPayload.required_status_checks &&
+                ((protectionPayload.required_status_checks.contexts?.length ?? 0) > 0 ||
+                  (protectionPayload.required_status_checks.checks?.length ?? 0) > 0),
+              ),
+              codeOwnerReviews: Boolean(protectionPayload.required_pull_request_reviews?.require_code_owner_reviews),
+            }
+          : {}),
+      };
+  const rootTree = !isFailure(rootTreePayload) ? rootTreePayload.map((entry) => entry.name) : undefined;
+  const codeScanning = mapCodeScanning(codeScanningPayload);
+  const pages = mapPages(pagesPayload, pagesBuildsPayload);
+  const security = mapSecurityAnalysis(repoPayload.security_and_analysis);
+
+  const health = calculateHealth(mappedRepo, workflowRuns, alerts, {
+    availability,
+    dependencies: dependencies || undefined,
+    releases,
+    branchProtection,
+    rootTree,
+    codeScanning,
+    pages,
+    security,
+    readmeAvailable: Boolean(readme),
+    dataMode: "authenticated",
+  });
+
   return {
     status: buildLiveStatus(),
     featured: false,
@@ -576,12 +649,14 @@ async function buildLiveRepoSnapshot(owner: string, repo: string, token: string)
     dependencies: dependencies || undefined,
     extended: {
       readme,
-      releases: !isFailure(releasesPayload) ? releasesPayload.map(mapRelease) : [],
+      releases,
       issues: !isFailure(issuesPayload) ? issuesPayload.filter((issue) => !issue.pull_request).map(mapIssue) : [],
       labels: !isFailure(labelsPayload) ? labelsPayload.map(mapLabel) : [],
-      branchProtection: isFailure(branchPayload)
-        ? { available: false, protected: false, reason: classifyGitHubError(branchPayload.error) }
-        : { available: true, protected: Boolean(branchPayload.protected) },
+      branchProtection,
+      rootTree,
+      codeScanning,
+      pages,
+      security,
     },
   };
 }

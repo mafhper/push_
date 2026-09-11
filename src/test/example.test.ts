@@ -54,6 +54,7 @@ describe("Health Calculation", () => {
     ];
     
     const health = calculateHealth(mockRepo, runs, alerts);
-    expect(health.status).toBe("warning"); // Depends on exact threshold, but should be lower
+    expect(health.dependabotCriticalCount).toBe(1);
+    expect(health.score).toBeLessThan(100); // Unknown checks are excluded; confidence surfaces the sparse verification
   });
 });
