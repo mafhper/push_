@@ -205,6 +205,8 @@ export interface ReleaseSummary {
   draft: boolean;
   publishedAt: string | null;
   htmlUrl: string;
+  assetsCount?: number;
+  body?: string | null;
 }
 
 export interface IssueSummary {
@@ -230,6 +232,16 @@ export interface BranchProtectionSummary {
   available: boolean;
   protected: boolean;
   reason?: string;
+  requiredStatusChecks?: boolean;
+  codeOwnerReviews?: boolean;
+}
+
+export interface GitHubPagesInfo {
+  configured: boolean;
+  url?: string;
+  lastBuildStatus?: 'built' | 'error' | 'building' | 'queued';
+  hasLiveSite?: boolean;
+  error?: string;
 }
 
 export interface RepoExtendedInfo {
@@ -241,6 +253,14 @@ export interface RepoExtendedInfo {
   issues?: IssueSummary[];
   labels?: RepoLabelSummary[];
   branchProtection?: BranchProtectionSummary;
+  pages?: GitHubPagesInfo;
+  rootTree?: string[];
+  codeScanning?: { openAlerts: number } | null;
+  security?: {
+    advancedSecurity?: boolean;
+    secretScanning?: boolean;
+    dependabotSecurityUpdates?: boolean;
+  };
 }
 
 export interface RepoSnapshotDetail {

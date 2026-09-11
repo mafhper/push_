@@ -2,3 +2,4 @@
 
 declare const __PUSH_RUNTIME_MODE__: "local" | "public";
 declare const __PUSH_TAURI_BUILD__: boolean;
+declare const __PUSH_APP_VERSION__: string;

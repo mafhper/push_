@@ -22,6 +22,9 @@ Muchos dashboards personales desperdician espacio con métricas de vanidad. push
 
 - Dashboard guiado por atención, ordenado por presión de problema y movimiento reciente
 - Página de detalle por repositorio con contexto de health, workflow, security y commits recientes
+- Puntuación de salud por repositorio con el contexto de alertas, workflows y actividad que la generan
+- Modos de visualización Balanced, Detailed y Full para controlar cuánto muestra una página de repositorio
+- Logos reales de repositorio con fallback a iniciales (sin tarjetas genéricas de preview de GitHub)
 - Inspección de perfil público sin token para repositorios públicos
 - Publicación por snapshot para un runtime seguro en Pages
 - Soporte de idioma para `en`, `pt-BR` y `es`
@@ -126,4 +129,26 @@ El workflow de GitHub Pages usa el mismo punto de entrada:
 
 ```bash
 npm run audit
+```
+
+## Releases
+
+Los releases se crean al enviar una tag `vX.Y.Z` y se ejecutan con el protocolo
+reutilizable de release de [`mafhper/release-core`](https://github.com/mafhper/release-core)
+(el caller está en `.github/workflows/release.yml`; el contrato, en
+`.github/release.config.json`).
+
+- Arte del release por línea: `docs/images/releases/release.webp` (una línea nueva `major.minor` exige una imagen nueva)
+- Notas editoriales: `.github/release-notes/` (en inglés, lenguaje directo)
+
+Sube las versiones de escritorio y añade la entrada del change log localmente:
+
+```bash
+npm run release -- minor
+```
+
+Después haz commit, crea la tag y envía para disparar el build del release:
+
+```bash
+git tag vX.Y.Z && git push origin main && git push origin vX.Y.Z
 ```

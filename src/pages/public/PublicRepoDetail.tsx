@@ -1,21 +1,27 @@
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { useParams } from "react-router";
 import { ExternalLink, History } from "lucide-react";
 import { RepositoryHero } from "@/components/repository/RepositoryHero";
+import { RepositoryHealthSection } from "@/components/repository/RepositoryHealthSection";
+import { ViewModeSelector } from "@/components/repository/ViewModeSelector";
 import { WorkflowPulsePanel } from "@/components/repository/WorkflowPulsePanel";
+import { WorkflowRunDetail } from "@/components/repository/WorkflowRunDetail";
+import { contextFromSnapshotDetail, evaluateRepositoryHealth } from "@/health";
 import { EmptyPanel, StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
 import { usePublicRuntime } from "@/contexts/usePublicRuntime";
 import { usePublicRepoSnapshot } from "@/hooks/useGitHubPublic";
 import { formatDate } from "@/i18n";
 import { resolveDependabotReason } from "@/lib/github-copy";
-import { LANGUAGE_COLORS } from "@/types";
+import { LANGUAGE_COLORS, type DataDetailMode } from "@/types";
 
 export default function PublicRepoDetail() {
-  const { settings, t } = useApp();
+  const { settings, updateSettings, t } = useApp();
   const { mode } = usePublicRuntime();
   const { owner = "", repo = "" } = useParams();
   const { data, isLoading, error } = usePublicRepoSnapshot(owner, repo);
+  const report = useMemo(() => (data ? evaluateRepositoryHealth(contextFromSnapshotDetail(data)) : null), [data]);
 
   if (isLoading) {
     return (
@@ -35,32 +41,51 @@ export default function PublicRepoDetail() {
     );
   }
 
+  const viewMode: DataDetailMode = settings.repoDetailModes?.[data.repo.fullName] ?? settings.dataDetailMode ?? "balanced";
+
+  const setViewMode = (nextMode: DataDetailMode) => {
+    updateSettings({ repoDetailModes: { ...(settings.repoDetailModes ?? {}), [data.repo.fullName]: nextMode } });
+  };
+
   const languageEntries = Object.entries(data.languages);
   const totalLanguageBytes = languageEntries.reduce((sum, [, value]) => sum + value, 0);
 
   return (
     <div className="h-full min-h-0 overflow-y-auto p-5 md:p-8 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="terminal-label">{t("dataDetailLevel")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {viewMode === "balanced" ? t("detailBalancedHint") : viewMode === "detailed" ? t("detailDetailedHint") : t("detailFullHint")}
+          </p>
+        </div>
+        <ViewModeSelector value={viewMode} onChange={setViewMode} />
+      </div>
+
       <RepositoryHero
         backLabel={t("back")}
         sourceLabel={mode === "public-profile" ? t("publicApiLabel") : t("snapshotLabel")}
         sourceTone="success"
-        healthLabel={data.health.status === "healthy" ? t("healthy") : data.health.status === "warning" ? t("watch") : t("criticalLabel")}
-        healthTone={data.health.status === "healthy" ? "success" : data.health.status === "warning" ? "warning" : "critical"}
+        healthLabel={report.status === "healthy" ? t("healthy") : report.status === "warning" ? t("watch") : t("criticalLabel")}
+        healthTone={report.status === "healthy" ? "success" : report.status === "warning" ? "warning" : "critical"}
         name={data.repo.name}
         description={data.repo.description || t("publicKeyHealthSignalsBody")}
         repoUrl={data.repo.htmlUrl}
         stars={data.repo.stars}
-        score={data.health.score}
-        workflowSuccessRate={data.health.workflowSuccessRate}
-        openAlerts={data.health.dependabotOpenCount}
+        score={report.score}
+        workflowSuccessRate={report.metrics.workflowSuccessRate}
+        openAlerts={report.metrics.dependabotOpenCount}
         openPullRequests={data.pullRequests?.length ?? 0}
-        criticalAlerts={data.health.dependabotCriticalCount}
-        failedRuns7d={data.health.failedRuns7d}
-        stalenessDays={data.health.stalenessDays}
+        criticalAlerts={report.metrics.dependabotCriticalCount}
+        failedRuns7d={report.metrics.failedRuns7d}
+        stalenessDays={report.metrics.stalenessDays}
         lastPushAt={data.repo.lastPushAt}
         runs={data.workflowRuns}
         pullRequests={data.pullRequests}
+        updatedAt={data.status?.generatedAt}
       />
+
+      <RepositoryHealthSection report={report} mode={viewMode} />
 
       <div className="grid gap-6 xl:grid-cols-[1.48fr_1fr] xl:items-start">
         <WorkflowPulsePanel
@@ -93,7 +118,7 @@ export default function PublicRepoDetail() {
 
             <div className="space-y-3">
               {data.alerts.length > 0 ? (
-                data.alerts.slice(0, 3).map((alert) => (
+                data.alerts.slice(0, viewMode === "balanced" ? 3 : data.alerts.length).map((alert) => (
                   <a key={alert.id} href={alert.htmlUrl} className="block rounded-[1.35rem] ops-surface-soft px-4 py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
@@ -120,6 +145,24 @@ export default function PublicRepoDetail() {
               <ExternalLink size={14} />
             </a>
           </section>
+
+          {viewMode !== "balanced" && data.contributors.length > 0 && (
+            <section className="rounded-[2rem] ops-surface p-6">
+              <p className="terminal-label">{t("contributors")}</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("contributors")}</h2>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {data.contributors.slice(0, viewMode === "full" ? data.contributors.length : 8).map((contributor) => (
+                  <div key={contributor.login} className="flex items-center gap-2 rounded-[1.15rem] ops-surface-soft px-3 py-2">
+                    {contributor.avatarUrl ? (
+                      <img src={contributor.avatarUrl} alt={contributor.login} className="h-6 w-6 rounded-full bg-white/8 object-cover" />
+                    ) : null}
+                    <span className="text-sm text-foreground">@{contributor.login}</span>
+                    <span className="font-mono text-xs text-muted-foreground">× {contributor.contributions}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="rounded-[2rem] ops-surface p-6">
             <p className="terminal-label">{t("repositoryFacts")}</p>
@@ -166,7 +209,7 @@ export default function PublicRepoDetail() {
                 })}
               </div>
               <div className="mt-5 space-y-3">
-                {languageEntries.map(([language, bytes]) => (
+                {languageEntries.slice(0, viewMode === "full" ? languageEntries.length : 6).map(([language, bytes]) => (
                   <div key={language} className="flex items-center justify-between text-sm">
                     <span className="inline-flex items-center gap-3">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: LANGUAGE_COLORS[language] ?? "#00FF41" }} />
@@ -180,6 +223,38 @@ export default function PublicRepoDetail() {
           </section>
         </div>
       </div>
+
+      {viewMode !== "balanced" && data.workflowRuns.length > 0 && (
+        <section className="rounded-[2rem] ops-surface p-6">
+          <div className="mb-6">
+            <p className="terminal-label">{t("workflows")}</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("workflows")}</h2>
+          </div>
+          <WorkflowRunDetail runs={data.workflowRuns} />
+        </section>
+      )}
+
+      {viewMode !== "balanced" && data.dependencies && data.dependencies.length > 0 && (
+        <section className="rounded-[2rem] ops-surface p-6">
+          <div className="mb-6">
+            <p className="terminal-label">{t("dependencies")}</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("dependencies")}</h2>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {data.dependencies.map((dep) => (
+              <div key={dep.name} className="flex items-center justify-between gap-4 rounded-[1.15rem] ops-surface-soft px-4 py-3">
+                <span className="min-w-0 truncate text-sm font-semibold text-foreground">{dep.name}</span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="font-mono text-xs text-muted-foreground">{dep.version}</span>
+                  <StatusPill tone={dep.type === "dependencies" ? "neutral" : "success"}>
+                    {dep.type === "dependencies" ? t("dependencies") : "dev"}
+                  </StatusPill>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-[2rem] ops-surface p-6">
         <div className="mb-6 flex items-start justify-between">
@@ -195,7 +270,7 @@ export default function PublicRepoDetail() {
 
         <div className="grid gap-3 xl:grid-cols-2">
           {data.commits.length > 0 ? (
-            data.commits.slice(0, 6).map((commit) => (
+            data.commits.slice(0, viewMode === "balanced" ? 6 : data.commits.length).map((commit) => (
               <a key={commit.sha} href={commit.htmlUrl} className="flex items-start gap-4 rounded-[1.35rem] ops-surface-soft px-4 py-4">
                 <div className="mt-1 h-10 w-10 overflow-hidden rounded-full bg-white/6">
                   {commit.authorAvatar ? <img src={commit.authorAvatar} alt={commit.authorLogin} className="h-full w-full object-cover" /> : null}

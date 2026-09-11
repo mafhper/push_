@@ -22,6 +22,9 @@ Most personal dashboards waste space on vanity metrics. push_ is built around op
 
 - Attention-first dashboard ordered by problem pressure and latest movement
 - Repository detail pages with health, workflow, security, and recent commit context
+- Per-repository health scoring with context on the alerts, workflows, and activity that drive it
+- Balanced, Detailed, and Full view modes to control how much a repository page shows
+- Real repository logos with an initials fallback (no generic GitHub preview cards)
 - Public profile inspection without a token for public repositories
 - Snapshot publishing for a Pages-safe public runtime
 - Locale support for `en`, `pt-BR`, and `es`
@@ -126,4 +129,26 @@ The GitHub Pages workflow uses the same audit entrypoint:
 
 ```bash
 npm run audit
+```
+
+## Releases
+
+Releases are cut by pushing a `vX.Y.Z` tag and run through the reusable Release Core
+protocol from [`mafhper/release-core`](https://github.com/mafhper/release-core)
+(the caller lives in `.github/workflows/release.yml`, the contract in
+`.github/release.config.json`).
+
+- Per-line release artwork: `docs/images/releases/release.webp` (new `major.minor` line requires a new image)
+- Editorial notes: `.github/release-notes/` (English, plain language)
+
+Bump the desktop versions and append the change log entry locally:
+
+```bash
+npm run release -- minor
+```
+
+Then commit, tag, and push to trigger the release build:
+
+```bash
+git tag vX.Y.Z && git push origin main && git push origin vX.Y.Z
 ```

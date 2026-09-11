@@ -3,7 +3,7 @@ import { LayoutDashboard, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScoredRepo } from '@/lib/attention';
 import { useApp } from '@/contexts/useApp';
-import { RepoLogo } from '@/components/repository/RepoLogo';
+import { RepositoryAvatar } from '@/components/repository/RepositoryAvatar';
 import { SeverityDot } from './SeverityDot';
 
 interface TriageQueueProps {
@@ -172,7 +172,7 @@ function TriageRow({ repo, selected, compact, onClick }: { repo: ScoredRepo; sel
       )}
     >
       <div className={cn("flex shrink-0 items-center gap-2", compact && "md:block")}>
-        <RepoLogo owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className={cn("h-8 w-8", compact && "md:h-9 md:w-9")} />
+        <RepositoryAvatar owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className={cn("h-8 w-8 rounded-md", compact && "md:h-9 md:w-9")} />
         <span className={cn(compact && "md:hidden")}>
           <SeverityDot severity={severity} label={severityLabel} />
         </span>

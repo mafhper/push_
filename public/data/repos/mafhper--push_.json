@@ -1,6 +1,6 @@
 {
   "status": {
-    "generatedAt": "2026-03-19T13:42:11.092Z",
+    "generatedAt": "2026-09-11T01:13:12.470Z",
     "generatedBy": "seed",
     "dataMode": "public"
   },
@@ -14,52 +14,278 @@
     "isPrivate": false,
     "archived": false,
     "htmlUrl": "https://github.com/mafhper/push_",
-    "description": "Promo site and secure GitHub Pages dashboard for published repositories.",
+    "description": null,
+    "license": null,
     "language": "TypeScript",
     "stars": 0,
     "forks": 0,
-    "openIssues": 0,
+    "openIssues": 1,
     "watchers": 0,
-    "lastPushAt": "2026-03-19T13:04:23Z",
-    "size": 132,
+    "lastPushAt": "2026-09-09T23:21:44Z",
+    "size": 1466,
     "topics": [
-      "vite",
-      "react",
-      "github-pages",
-      "dashboard"
+      "css",
+      "dashboard",
+      "github",
+      "html",
+      "javascript",
+      "typescript"
     ],
     "createdAt": "2026-03-19T13:04:23Z",
-    "updatedAt": "2026-03-19T13:04:23Z",
+    "updatedAt": "2026-09-08T16:36:31Z",
     "socialImageUrl": "https://opengraph.githubassets.com/1/mafhper/push_"
   },
   "health": {
     "score": 100,
     "status": "healthy",
-    "lastCommitAt": "2026-03-19T13:04:23Z",
-    "workflowSuccessRate": null,
+    "lastCommitAt": "2026-09-09T23:21:44Z",
+    "workflowSuccessRate": 100,
     "failedRuns7d": 0,
     "dependabotOpenCount": 0,
     "dependabotCriticalCount": 0,
-    "stalenessDays": 0
+    "stalenessDays": 1
   },
-  "commits": [],
-  "workflowRuns": [],
+  "commits": [
+    {
+      "sha": "fc5de8c0c7083beb2f2d75759c377cab0f96dd26",
+      "message": "fix(tauri): force base path to / on desktop builds to fix blank webview (#106)",
+      "authorLogin": "mafhper",
+      "authorAvatar": "https://avatars.githubusercontent.com/u/563991?v=4",
+      "date": "2026-09-08T16:36:24Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/fc5de8c0c7083beb2f2d75759c377cab0f96dd26"
+    },
+    {
+      "sha": "7ad398ca6c3632fa22272ffe02e577eec4d30c11",
+      "message": "fix(release): correct RPM asset link to push-<version>-1.x86_64.rpm (#105)",
+      "authorLogin": "mafhper",
+      "authorAvatar": "https://avatars.githubusercontent.com/u/563991?v=4",
+      "date": "2026-09-08T16:33:53Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/7ad398ca6c3632fa22272ffe02e577eec4d30c11"
+    },
+    {
+      "sha": "96bfadca4071d2dfc30c15c686f9d681fcc6d8ae",
+      "message": "chore: release v1.1.1 — brand casing, bundle naming, plain-language release notes (#104)",
+      "authorLogin": "mafhper",
+      "authorAvatar": "https://avatars.githubusercontent.com/u/563991?v=4",
+      "date": "2026-09-08T15:47:06Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/96bfadca4071d2dfc30c15c686f9d681fcc6d8ae"
+    },
+    {
+      "sha": "94fc6fb33c0911471b394c4ecb40c8c23e66cffa",
+      "message": "fix(branding): normalize brand casing to push_ across codebase (#103)",
+      "authorLogin": "mafhper",
+      "authorAvatar": "https://avatars.githubusercontent.com/u/563991?v=4",
+      "date": "2026-09-08T15:11:35Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/94fc6fb33c0911471b394c4ecb40c8c23e66cffa"
+    },
+    {
+      "sha": "cfcd2d9a263936da89caf8d43306d522e77461d5",
+      "message": "fix(branding): use push_ product name and simplify titlebar (#102)",
+      "authorLogin": "mafhper",
+      "authorAvatar": "https://avatars.githubusercontent.com/u/563991?v=4",
+      "date": "2026-09-08T14:13:14Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/cfcd2d9a263936da89caf8d43306d522e77461d5"
+    },
+    {
+      "sha": "12eef3325bf462a3425a5d88b2d0165aa7d7133e",
+      "message": "chore(deps): bump actions/deploy-pages from 5.0.0 to 5.0.1 (#101)",
+      "authorLogin": "dependabot[bot]",
+      "authorAvatar": "https://avatars.githubusercontent.com/in/29110?v=4",
+      "date": "2026-09-08T14:10:30Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/12eef3325bf462a3425a5d88b2d0165aa7d7133e"
+    },
+    {
+      "sha": "ac98068d073bc68e39ee9ef5e91e2171d1084d41",
+      "message": "chore(deps): bump sonner from 2.0.7 to 2.0.8 (#99)",
+      "authorLogin": "dependabot[bot]",
+      "authorAvatar": "https://avatars.githubusercontent.com/in/29110?v=4",
+      "date": "2026-09-08T14:07:31Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/ac98068d073bc68e39ee9ef5e91e2171d1084d41"
+    },
+    {
+      "sha": "3c79e7c4f0d9cd949d0762b2f4638a71a532172e",
+      "message": "chore(deps-dev): bump vite from 8.0.16 to 8.2.2 (#98)",
+      "authorLogin": "dependabot[bot]",
+      "authorAvatar": "https://avatars.githubusercontent.com/in/29110?v=4",
+      "date": "2026-09-08T14:05:36Z",
+      "htmlUrl": "https://github.com/mafhper/push_/commit/3c79e7c4f0d9cd949d0762b2f4638a71a532172e"
+    }
+  ],
+  "workflowRuns": [
+    {
+      "id": 34525620288,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "schedule",
+      "startedAt": "2026-09-10T20:18:50Z",
+      "updatedAt": "2026-09-10T20:20:11Z",
+      "durationMs": 81000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34525620288"
+    },
+    {
+      "id": 34497147104,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "schedule",
+      "startedAt": "2026-09-10T15:40:12Z",
+      "updatedAt": "2026-09-10T15:41:28Z",
+      "durationMs": 76000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34497147104"
+    },
+    {
+      "id": 34465838711,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "schedule",
+      "startedAt": "2026-09-10T10:23:51Z",
+      "updatedAt": "2026-09-10T10:25:16Z",
+      "durationMs": 85000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34465838711"
+    },
+    {
+      "id": 34430218053,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "schedule",
+      "startedAt": "2026-09-10T02:38:10Z",
+      "updatedAt": "2026-09-10T02:39:31Z",
+      "durationMs": 81000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34430218053"
+    },
+    {
+      "id": 34416590099,
+      "workflowName": "CodeQL",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "dependabot/npm_and_yarn/multi-d0c2d048a7",
+      "event": "pull_request",
+      "startedAt": "2026-09-09T23:21:49Z",
+      "updatedAt": "2026-09-09T23:22:55Z",
+      "durationMs": 66000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34416590099"
+    },
+    {
+      "id": 34416590085,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "dependabot/npm_and_yarn/multi-d0c2d048a7",
+      "event": "pull_request",
+      "startedAt": "2026-09-09T23:21:49Z",
+      "updatedAt": "2026-09-09T23:22:45Z",
+      "durationMs": 56000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34416590085"
+    },
+    {
+      "id": 34416590010,
+      "workflowName": "Dependency Guard",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "dependabot/npm_and_yarn/multi-d0c2d048a7",
+      "event": "pull_request",
+      "startedAt": "2026-09-09T23:21:49Z",
+      "updatedAt": "2026-09-09T23:22:36Z",
+      "durationMs": 47000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34416590010"
+    },
+    {
+      "id": 34416589997,
+      "workflowName": "CI",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "dependabot/npm_and_yarn/multi-d0c2d048a7",
+      "event": "pull_request",
+      "startedAt": "2026-09-09T23:21:49Z",
+      "updatedAt": "2026-09-09T23:22:42Z",
+      "durationMs": 53000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34416589997"
+    },
+    {
+      "id": 34416491080,
+      "workflowName": "npm_and_yarn in /. for @vitest/mocker - Update #1567186632",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "dynamic",
+      "startedAt": "2026-09-09T23:20:30Z",
+      "updatedAt": "2026-09-09T23:21:48Z",
+      "durationMs": 78000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34416491080"
+    },
+    {
+      "id": 34400095967,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "schedule",
+      "startedAt": "2026-09-09T20:17:02Z",
+      "updatedAt": "2026-09-09T20:18:28Z",
+      "durationMs": 86000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34400095967"
+    },
+    {
+      "id": 34372317538,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "schedule",
+      "startedAt": "2026-09-09T15:45:18Z",
+      "updatedAt": "2026-09-09T15:46:54Z",
+      "durationMs": 96000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34372317538"
+    },
+    {
+      "id": 34341079520,
+      "workflowName": "Deploy Pages",
+      "status": "completed",
+      "conclusion": "success",
+      "branch": "main",
+      "event": "schedule",
+      "startedAt": "2026-09-09T10:36:02Z",
+      "updatedAt": "2026-09-09T10:37:29Z",
+      "durationMs": 87000,
+      "htmlUrl": "https://github.com/mafhper/push_/actions/runs/34341079520"
+    }
+  ],
   "alerts": [],
   "languages": {
-    "TypeScript": 123000,
-    "CSS": 18000,
-    "HTML": 6000
+    "TypeScript": 762535,
+    "JavaScript": 30601,
+    "CSS": 16144,
+    "Rust": 1393,
+    "HTML": 1366,
+    "Shell": 43
   },
-  "contributors": [],
+  "contributors": [
+    {
+      "login": "mafhper",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/563991?v=4",
+      "contributions": 63
+    },
+    {
+      "login": "dependabot[bot]",
+      "avatarUrl": "https://avatars.githubusercontent.com/in/29110?v=4",
+      "contributions": 62
+    }
+  ],
   "availability": {
     "repository": {
       "available": true,
       "source": "public-api"
     },
     "commits": {
-      "available": false,
-      "source": "public-api",
-      "reason": "Git repository is still empty in the seed snapshot."
+      "available": true,
+      "source": "public-api"
     },
     "workflowRuns": {
       "available": true,

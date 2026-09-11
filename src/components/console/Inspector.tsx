@@ -10,7 +10,7 @@ import { SeverityDot } from './SeverityDot';
 import { useRepoSnapshot } from '@/hooks/useGitHub';
 import { usePublicRepoSnapshot } from '@/hooks/useGitHubPublic';
 import { useApp } from '@/contexts/useApp';
-import { RepoLogo } from '@/components/repository/RepoLogo';
+import { RepositoryAvatar } from '@/components/repository/RepositoryAvatar';
 import type { WorkflowRun, DependabotAlert, RepoSnapshotDetail } from '@/types';
 
 interface InspectorProps {
@@ -122,7 +122,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-2 min-w-0">
-            <RepoLogo owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className="h-10 w-10" />
+            <RepositoryAvatar owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className="h-10 w-10 rounded-md" />
             <SeverityDot severity={severity} label={severityLabel} showLabel />
             <div className="min-w-0">
               <h2 className="text-title font-semibold text-foreground truncate">{repo.repo.fullName}</h2>
@@ -261,7 +261,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 </div>
                 {detail?.alerts && detail.alerts.length > 0 ? (
                   <div className="space-y-2">
-                    {detail.alerts.slice(0, 3).map(alert => (
+                    {detail.alerts.slice(0, repoDetailMode === 'balanced' ? 3 : detail.alerts.length).map(alert => (
                       <a
                         key={alert.id}
                         href={alert.htmlUrl}
@@ -277,7 +277,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                         <span className="shrink-0 rounded bg-critical/10 px-1.5 py-0.5 text-micro font-mono text-critical">{alert.severity}</span>
                       </a>
                     ))}
-                    {detail.alerts.length > 3 && (
+                    {repoDetailMode === 'balanced' && detail.alerts.length > 3 && (
                       <p className="text-micro text-foreground-subtle">+{detail.alerts.length - 3} more in Activity</p>
                     )}
                   </div>
@@ -305,7 +305,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 <MiniStat icon={<Package size={15} />} label="Affected Packages" value={packageMap.size > 0 ? Array.from(packageMap.values()).reduce((sum, m) => sum + m.size, 0).toString() : '0'} description="Packages with alerts." />
               </section>
 
-              {branches.length > 0 && (
+              {branches.length > 0 && repoDetailMode !== 'balanced' && (
                 <section>
                   <h3 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle mb-3">Active Branches</h3>
                   <div className="flex flex-wrap gap-2">
@@ -328,7 +328,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 </section>
               )}
 
-              {detail?.languages && Object.keys(detail.languages).length > 0 && (
+              {detail?.languages && Object.keys(detail.languages).length > 0 && repoDetailMode === 'full' && (
                 <section>
                   <h3 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle mb-3">Languages</h3>
                   <div className="flex flex-wrap gap-2">
@@ -413,7 +413,8 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   <button onClick={() => setSelectedBranch(null)} className="text-micro text-foreground-subtle hover:text-foreground transition-colors">Clear filter</button>
                 </div>
               )}
-              {workflowGroups.length > 0 ? (
+              {repoDetailMode !== 'balanced' && (
+                workflowGroups.length > 0 ? (
                 <div className="space-y-3">
                   {workflowGroups.map(group => {
                     const latest = group.latest;
@@ -443,7 +444,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                         </button>
                         {isExpanded && (
                           <div className="border-t border-border/50">
-                            {group.runs.slice(0, 10).map(run => (
+                            {group.runs.slice(0, repoDetailMode === 'full' ? group.runs.length : 10).map(run => (
                               <div key={run.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-border/20 last:border-b-0 hover:bg-surface-2/60 transition-colors">
                                 <WorkflowDot conclusion={run.conclusion} />
                                 <div className="flex-1 min-w-0 flex items-center gap-3 text-sm">
@@ -457,7 +458,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                                 <a href={run.htmlUrl} target="_blank" rel="noopener noreferrer" className="text-micro font-medium text-primary/80 hover:text-primary transition-colors shrink-0">Details</a>
                               </div>
                             ))}
-                            {group.runs.length > 10 && <div className="px-4 py-2 text-center text-micro text-foreground-subtle italic">+{group.runs.length - 10} more runs</div>}
+                            {repoDetailMode !== 'full' && group.runs.length > 10 && <div className="px-4 py-2 text-center text-micro text-foreground-subtle italic">+{group.runs.length - 10} more runs</div>}
                           </div>
                         )}
                       </div>
@@ -469,7 +470,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   <Activity size={24} className="text-foreground-subtle opacity-20" />
                   <p className="mt-3 text-body text-foreground-subtle italic">{!detail ? 'Loading workflows...' : selectedBranch ? `No workflow runs on ${selectedBranch}` : 'No workflow data available'}</p>
                 </div>
-              )}
+              ))}
             </div>
           )}
 
@@ -484,7 +485,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                     <span className="text-foreground-subtle font-normal normal-case">· {detail.dependencies.filter(d => d.type === 'dependencies').length} prod + {detail.dependencies.filter(d => d.type === 'devDependencies').length} dev</span>
                   </h3>
                   <div className="grid gap-1">
-                    {detail.dependencies.map(dep => {
+                    {detail.dependencies.slice(0, repoDetailMode === 'balanced' ? 10 : detail.dependencies.length).map(dep => {
                       const npmUrl = `https://www.npmjs.com/package/${dep.name}`;
                       return (
                         <div key={dep.name} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border/60 bg-surface-1 shadow-sm hover:shadow-md transition-shadow">
@@ -499,6 +500,9 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                       );
                     })}
                   </div>
+                  {repoDetailMode === 'balanced' && detail.dependencies.length > 10 && (
+                    <p className="mt-2 text-micro text-foreground-subtle italic">+{detail.dependencies.length - 10} more packages · switch to Detailed or Full to list them all</p>
+                  )}
                 </section>
               ) : detail?.dependencies && detail.dependencies.length === 0 ? (
                 <section>
@@ -509,7 +513,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   </div>
                 </section>
               ) : null}
-              {detail?.extended && (
+              {repoDetailMode === 'full' && detail?.extended && (
                 <section>
                   <h3 className="mb-3 flex items-center gap-2 text-micro font-bold uppercase tracking-wider text-foreground-subtle">
                     <InfoIcon />Repository context
@@ -552,7 +556,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 </h3>
                 {detail && detail.alerts.length > 0 ? (
                   <div className="grid gap-2">
-                    {detail.alerts.map(alert => {
+                    {detail.alerts.slice(0, repoDetailMode === 'balanced' ? 5 : detail.alerts.length).map(alert => {
                       const npmUrl = `https://www.npmjs.com/package/${alert.packageName}`;
                       return (
                         <div key={alert.id} className="flex items-start gap-3 rounded-xl border border-border/60 bg-surface-1 px-4 py-3 shadow-sm">
@@ -602,7 +606,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 </h3>
                 {detail?.pullRequests && detail.pullRequests.length > 0 ? (
                   <div className="max-w-3xl grid gap-2">
-                    {detail.pullRequests.map(pr => (
+                    {detail.pullRequests.slice(0, repoDetailMode === 'balanced' ? 5 : detail.pullRequests.length).map(pr => (
                       <div key={pr.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/60 bg-surface-1 shadow-sm">
                         <GitPullRequest size={15} className={cn("shrink-0", pr.draft ? "text-foreground-subtle" : pr.state === 'open' ? 'text-success' : 'text-primary')} />
                         <div className="flex-1 min-w-0">
@@ -627,7 +631,8 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   </div>
                 )}
               </section>
-              <section>
+              {repoDetailMode === 'full' && (
+                <section>
                 <h3 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle mb-3 flex items-center gap-2">
                   <Activity size={14} />PR Conversations
                 </h3>
@@ -635,6 +640,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   Pull request review comments and discussion threads are not part of the current repository snapshot yet. This is the right place for them once the detail fetcher adds that data.
                 </div>
               </section>
+              )}
               <section>
                 <h3 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle mb-3 flex items-center gap-2">
                   <Activity size={14} />Recent Commits
@@ -642,7 +648,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 </h3>
                 {detail?.commits && detail.commits.length > 0 ? (
                   <div className="max-w-3xl grid gap-1">
-                    {detail.commits.map(commit => (
+                    {detail.commits.slice(0, repoDetailMode === 'balanced' ? 5 : detail.commits.length).map(commit => (
                       <div key={commit.sha} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-1/80 transition-colors border border-transparent hover:border-border/30">
                         <div className="flex shrink-0 items-center justify-center h-7 w-7 rounded-full bg-surface-3 border border-border/30 overflow-hidden">
                           {commit.authorAvatar ? <img src={commit.authorAvatar} alt="" className="h-full w-full object-cover" /> : <User size={12} className="text-foreground-subtle" />}
@@ -665,6 +671,23 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   </div>
                 )}
               </section>
+            {repoDetailMode === 'full' && detail?.contributors && detail.contributors.length > 0 && (
+                <section>
+                  <h3 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle mb-3 flex items-center gap-2">
+                    <User size={14} />Contributors
+                    <span className="text-foreground-subtle font-normal normal-case">· {detail.contributors.length}</span>
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {detail.contributors.map(contributor => (
+                      <div key={contributor.login} className="flex items-center gap-2 rounded-xl border border-border/60 bg-surface-1 px-3 py-2 shadow-sm">
+                        {contributor.avatarUrl && <img src={contributor.avatarUrl} alt={contributor.login} className="h-6 w-6 rounded-full bg-surface-3 object-cover" />}
+                        <span className="text-micro font-medium text-foreground">@{contributor.login}</span>
+                        <span className="text-micro font-mono text-foreground-subtle">× {contributor.contributions}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </div>

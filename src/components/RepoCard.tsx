@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Star, GitFork, Clock, Shield, Activity, XCircle, ChevronRight, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '@/contexts/useApp';
-import { ProjectImage } from '@/components/ProjectImage';
+import { RepositoryAvatar } from '@/components/repository/RepositoryAvatar';
 import { formatRelativeTime } from '@/utils/health';
 import type { RepositoryRef, RepoHealth, LanguageBreakdown, WorkflowRun } from '@/types';
 import { useState } from 'react';
@@ -40,7 +40,7 @@ export function RepoCard({ repo, health, languages, runs, isPrimary }: RepoCardP
     >
       {/* Header Area */}
       <div className="p-5 flex gap-4 items-start flex-1 min-w-0">
-        <ProjectImage 
+        <RepositoryAvatar 
           owner={repo.owner}
           repo={repo.name}
           defaultBranch={repo.defaultBranch}

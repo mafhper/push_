@@ -19,6 +19,18 @@
   flex: 0 1 auto;
 }
 
+/* Windows: habilita o arraste por toque/caneta (recomendação do Tauri v2). */
+*[data-tauri-drag-region] {
+  app-region: drag;
+}
+
+*[data-tauri-drag-region] button,
+*[data-tauri-drag-region] a,
+*[data-tauri-drag-region] [role='button'],
+*[data-tauri-drag-region] input {
+  app-region: no-drag;
+}
+
 .appIcon {
   display: inline-flex;
   width: 16px;

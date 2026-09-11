@@ -11,7 +11,7 @@ import {
   RefreshCw,
   ShieldAlert,
 } from "lucide-react";
-import { ProjectImage } from "@/components/ProjectImage";
+import { RepositoryAvatar } from "@/components/repository/RepositoryAvatar";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -35,6 +35,7 @@ export interface ShowcaseItem {
   defaultBranch: string;
   language: string;
   imageLanguage?: string | null;
+  socialImageUrl?: string;
   lastActivityLabel: string;
   statusLabel: string;
   statusTone: ShowcaseTone;
@@ -130,7 +131,7 @@ export function RepositoryShowcase({
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)_11rem]">
-              <ProjectImage
+              <RepositoryAvatar
                 owner={activeItem.owner}
                 repo={activeItem.name}
                 defaultBranch={activeItem.defaultBranch}
