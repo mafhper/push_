@@ -60,9 +60,15 @@ describe("buildAvatarCandidates", () => {
 
   it("never falls back to the GitHub social preview card", () => {
     const candidates = buildAvatarCandidates("mafhper", "unknown-project", "main");
-    const joined = candidates.join(" ");
-    expect(joined).not.toMatch(/opengraph\.githubassets\.com/);
-    expect(joined).not.toMatch(/repository-images/);
+    const hosts = candidates.map((candidate) => {
+      try {
+        return new URL(candidate).host;
+      } catch {
+        return "";
+      }
+    });
+    expect(hosts).not.toContain("opengraph.githubassets.com");
+    expect(hosts).not.toContain("repository-images.githubusercontent.com");
   });
 });
 
