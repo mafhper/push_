@@ -3,14 +3,15 @@ name: Dependabot auto-merge
 # Habilita auto-merge apenas para bumps patch/minor do Dependabot.
 # Major (semver-major) fica de fora de propósito — exige revisão humana.
 #
-# Nota: workflows disparados por PR do Dependabot recebem GITHUB_TOKEN read-only
-# por padrão; o bloco `permissions` abaixo é o que eleva o escopo (conforme a
-# documentação oficial). Usamos `pull_request` (não `pull_request_target`) porque
-# este workflow não faz checkout nem executa código do PR.
+# Autenticação: o merge usa um token de GitHub App (APP_ID + APP_PRIVATE_KEY nos
+# Dependabot secrets) em vez do GITHUB_TOKEN. Motivo: merges feitos com o
+# GITHUB_TOKEN não disparam outros workflows no push para a `main` (proteção de
+# recursão do GitHub), deixando CodeQL e Deploy Pages sem rodar no commit novo.
+# Sem as credenciais do App, o workflow cai para o GITHUB_TOKEN e emite um aviso.
 #
-# Efeito colateral conhecido: merges feitos com GITHUB_TOKEN não disparam outros
-# workflows no push para a `main` (proteção de recursão do GitHub). O `CodeQL`
-# (cron semanal) e o `Deploy Pages` (cron a cada 6h) se recuperam no próximo ciclo.
+# Segurança: usamos `pull_request` (não `pull_request_target`) porque o job não
+# faz checkout nem executa código do PR, e o guard limita a execução a PRs do
+# Dependabot neste repositório.
 
 on:
   pull_request:
@@ -33,11 +34,37 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Enable auto-merge for patch and minor updates
+      - name: Resolve credentials (GitHub App, com fallback)
+        id: creds
         if: |
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
           steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "$APP_ID" ] && [ -n "$APP_PRIVATE_KEY" ]; then
+            echo "has_app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_app=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Credenciais do GitHub App ausentes::APP_ID e/ou APP_PRIVATE_KEY não estão nos Dependabot secrets. O merge usará GITHUB_TOKEN e NÃO disparará CodeQL/Deploy Pages no push para main."
+          fi
+
+      - name: Create GitHub App token
+        id: app-token
+        if: steps.creds.outputs.has_app == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mafhper
+          repositories: push_
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Enable auto-merge for patch and minor updates
+        if: steps.creds.outputs.has_app != ''
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
