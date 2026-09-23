@@ -1,7 +1,7 @@
 name: Dependabot auto-merge
 
-# Habilita auto-merge apenas para bumps patch/minor do Dependabot.
-# Major (semver-major) fica de fora de propósito — exige revisão humana.
+# Habilita auto-merge apenas para bumps patch do Dependabot.
+# Minor e major (semver-minor / semver-major) ficam de fora de propósito — exigem revisão humana.
 #
 # Autenticação: o merge usa um token de GitHub App (APP_ID + APP_PRIVATE_KEY nos
 # Dependabot secrets) em vez do GITHUB_TOKEN. Motivo: merges feitos com o
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   auto-merge:
-    name: Enable auto-merge (patch/minor)
+    name: Enable auto-merge (patch)
     runs-on: ubuntu-latest
     if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'mafhper/push_'
     steps:
@@ -36,9 +36,7 @@ jobs:
 
       - name: Resolve credentials (GitHub App, com fallback)
         id: creds
-        if: |
-          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
         env:
           APP_ID: ${{ secrets.APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
@@ -62,7 +60,7 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
-      - name: Enable auto-merge for patch and minor updates
+      - name: Enable auto-merge for patch updates
         if: steps.creds.outputs.has_app != ''
         run: gh pr merge --auto --squash "$PR_URL"
         env:
