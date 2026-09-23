@@ -1,0 +1,43 @@
+name: Dependabot auto-merge
+
+# Habilita auto-merge apenas para bumps patch/minor do Dependabot.
+# Major (semver-major) fica de fora de propósito — exige revisão humana.
+#
+# Nota: workflows disparados por PR do Dependabot recebem GITHUB_TOKEN read-only
+# por padrão; o bloco `permissions` abaixo é o que eleva o escopo (conforme a
+# documentação oficial). Usamos `pull_request` (não `pull_request_target`) porque
+# este workflow não faz checkout nem executa código do PR.
+#
+# Efeito colateral conhecido: merges feitos com GITHUB_TOKEN não disparam outros
+# workflows no push para a `main` (proteção de recursão do GitHub). O `CodeQL`
+# (cron semanal) e o `Deploy Pages` (cron a cada 6h) se recuperam no próximo ciclo.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge (patch/minor)
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'mafhper/push_'
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Enable auto-merge for patch and minor updates
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
