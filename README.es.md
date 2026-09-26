@@ -5,9 +5,9 @@
 push_ es un dashboard de atención para repositorios en GitHub, construido para una tarea principal: mostrar primero lo que necesita acción.
 
 Funciona en tres modos:
-- `desktop` (Tauri): app nativa para Windows/macOS/Linux, con dashboard completo y token guardado en el llavero del sistema
-- `localhost`: modo local seguro, con token de GitHub solo en memoria para descubrir repositorios y obtener diagnósticos más ricos
-- `GitHub Pages`: modo público por snapshot, con datos estáticos y sin flujo de token en el navegador
+- `desktop` (Tauri): app nativa para Windows/macOS/Linux, con dashboard completo, token guardado en el llavero del sistema y acceso a tus repositorios privados
+- `localhost`: modo local seguro, con token de GitHub solo en memoria para descubrir repositorios y obtener diagnósticos más ricos, incluidos tus repositorios privados
+- `GitHub Pages`: modo público por snapshot, con datos estáticos, sin flujo de token en el navegador y sin ningún dato de repositorio privado
 
 ## Por qué existe
 
@@ -26,6 +26,7 @@ Muchos dashboards personales desperdician espacio con métricas de vanidad. push
 - Modos de visualización Balanced, Detailed y Full para controlar cuánto muestra una página de repositorio
 - Logos reales de repositorio con fallback a iniciales (sin tarjetas genéricas de preview de GitHub)
 - Inspección de perfil público sin token para repositorios públicos
+- Descubrimiento y seguimiento de repositorios privados solo en los runtimes `desktop` y `localhost`, por opt-in y nunca en el snapshot publicado
 - Publicación por snapshot para un runtime seguro en Pages
 - Soporte de idioma para `en`, `pt-BR` y `es`
 - Detección automática del idioma del navegador con override manual en settings
@@ -49,12 +50,15 @@ npm run tauri:build  # generar el instalador (NSIS en Windows)
 
 - Acepta token de GitHub solo en `localhost`
 - Mantiene el token solo en memoria de la pestaña activa
-- Permite descubrir repositorios públicos accesibles y elegir qué entra al dashboard
+- Permite descubrir cualquier repositorio accesible, público y privado, y elegir qué entra al dashboard
+- Agrupa la lista en Públicos, Privados, Forks y Otros, con acciones de seleccionar y limpiar por grupo
+- Informa cuántos repositorios están en el alcance del token conectado y cuántos son privados
 
 ### Modo público por snapshot
 
 - Sirve JSON estático generado por adelantado
 - Nunca acepta token en el navegador
+- Nunca lista, lee ni publica un repositorio privado: la generación de snapshot rechaza una entrada privada
 - Mantiene deep links e inspección de repositorio público de forma segura
 
 ## Instalación
@@ -103,6 +107,7 @@ npm run data:sync
 - Ningún token se persiste en `localStorage`, `sessionStorage`, cookies ni en el bundle estático
 - El modo local seguro mantiene credenciales solo en memoria
 - El modo escritorio guarda el token en el llavero del sistema operativo, no en archivos
+- El contenido de un repositorio privado nunca se escribe en la caché local ni en un snapshot publicado: en la caché local solo pueden aparecer nombres de repositorios públicos, y el resto se reconstruye desde el token
 - Las validaciones sensibles bloquean regresiones comunes antes del `push`
 
 ## Validación y gates de calidad

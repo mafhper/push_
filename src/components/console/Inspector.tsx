@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { useSearchParams } from 'react-router';
-import { ExternalLink, ShieldAlert, GitPullRequest, Activity, Clock, AlertTriangle, User, ChevronRight, ChevronDown, RefreshCw, Package, GitBranch, GitCommit, Boxes } from 'lucide-react';
+import { ExternalLink, ShieldAlert, GitPullRequest, Activity, Clock, AlertTriangle, User, ChevronRight, ChevronDown, RefreshCw, Package, GitBranch, GitCommit, Boxes, Lock, GitFork } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isZeroMetricValue } from '@/lib/metric-state';
 import { AttentionSignal, ScoredRepo } from '@/lib/attention';
@@ -125,7 +125,25 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
             <RepositoryAvatar owner={repo.repo.owner} repo={repo.repo.name} defaultBranch={repo.repo.defaultBranch} language={repo.repo.language} className="h-10 w-10 rounded-md" />
             <SeverityDot severity={severity} label={severityLabel} showLabel />
             <div className="min-w-0">
-              <h2 className="text-title font-semibold text-foreground truncate">{repo.repo.fullName}</h2>
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="text-title font-semibold text-foreground truncate">{repo.repo.fullName}</h2>
+                {/* Same origin signal as the Settings row: a private or forked
+                    repository must be recognizable without a tooltip. */}
+                {repo.repo.isPrivate && (
+                  <span title={t('privateBadge')} aria-label={t('privateBadge')} className="shrink-0 text-warning">
+                    <Lock size={13} />
+                  </span>
+                )}
+                {repo.repo.isFork && (
+                  <span
+                    title={repo.repo.forkOf ? t('forkOfLabel', { repo: repo.repo.forkOf.fullName }) : `${t('forkBadge')} · ${t('upstreamNotVisible')}`}
+                    aria-label={repo.repo.forkOf ? t('forkOfLabel', { repo: repo.repo.forkOf.fullName }) : t('forkBadge')}
+                    className="shrink-0 text-foreground-subtle"
+                  >
+                    <GitFork size={13} />
+                  </span>
+                )}
+              </div>
               {repo.repo.description && (
                 <p className="text-sm text-foreground-subtle truncate">{repo.repo.description}</p>
               )}

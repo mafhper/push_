@@ -4,6 +4,7 @@ import type {
   ContributorSummary,
   DependabotAlert,
   DependencyInfo,
+  ForkOrigin,
   LanguageBreakdown,
   RateLimitInfo,
   RepoSnapshotDetail,
@@ -28,6 +29,11 @@ type GitHubOwner = {
   login: string;
 };
 
+type GitHubForkOrigin = {
+  full_name?: string | null;
+  html_url?: string | null;
+};
+
 type GitHubRepo = {
   id: number;
   owner: GitHubOwner;
@@ -36,6 +42,15 @@ type GitHubRepo = {
   default_branch?: string;
   private?: boolean;
   archived?: boolean;
+  /**
+   * The public listing returns neither `parent` nor `source`; the public
+   * snapshot gets its upstream from `sync-snapshots.mjs`, which uses the
+   * individual endpoint. On this module's live paths the upstream stays `null`
+   * (unknown) on purpose — the public runtime spends no extra request (RNF-01).
+   */
+  fork?: boolean;
+  parent?: GitHubForkOrigin | null;
+  source?: GitHubForkOrigin | null;
   html_url: string;
   description: string | null;
   license?: {
@@ -159,6 +174,16 @@ function createAvailability(available: boolean, source: string, reason?: string)
   };
 }
 
+function mapForkOrigin(data: GitHubRepo): ForkOrigin | null {
+  const upstream = data.parent || data.source;
+  const fullName = upstream?.full_name;
+  if (!fullName) return null;
+  return {
+    fullName,
+    htmlUrl: upstream?.html_url || `https://github.com/${fullName}`,
+  };
+}
+
 function mapRepo(data: GitHubRepo): RepositoryRef {
   return {
     id: data.id,
@@ -168,6 +193,8 @@ function mapRepo(data: GitHubRepo): RepositoryRef {
     defaultBranch: data.default_branch || "main",
     isPrivate: Boolean(data.private),
     archived: Boolean(data.archived),
+    isFork: Boolean(data.fork),
+    forkOf: mapForkOrigin(data),
     htmlUrl: data.html_url,
     description: data.description,
     license: data.license?.spdx_id && data.license.spdx_id !== "NOASSERTION" ? data.license.spdx_id : data.license?.name || null,

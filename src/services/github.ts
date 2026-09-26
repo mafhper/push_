@@ -1,10 +1,11 @@
-import { SITE_BASE_URL } from "@/config/site";
+﻿import { SITE_BASE_URL } from "@/config/site";
 import { calculateHealth } from "@/utils/health";
 import type {
   CommitSummary,
   ContributorSummary,
   DependabotAlert,
   DependencyInfo,
+  ForkOrigin,
   GitHubPagesInfo,
   LanguageBreakdown,
   PullRequestSummary,
@@ -29,6 +30,17 @@ type GitHubOwner = {
   login: string;
 };
 
+/**
+ * Minimal slice of a fork's upstream. `parent` is the immediate ancestor (the
+ * repo that was copied) and `source` is the root of the fork network; for
+ * "which upstream does the user recognize", `parent` is the answer and `source`
+ * is the fallback.
+ */
+type GitHubForkOrigin = {
+  full_name?: string | null;
+  html_url?: string | null;
+};
+
 type GitHubRepo = {
   id: number;
   owner: GitHubOwner;
@@ -37,6 +49,15 @@ type GitHubRepo = {
   default_branch?: string;
   private?: boolean;
   archived?: boolean;
+  /**
+   * Only the individual endpoint (`GET /repos/{owner}/{repo}`) returns the
+   * upstream; the listing (`/user/repos`) returns the compact schema with
+   * neither `parent` nor `source`. Verified 2026-09-26 — that is why
+   * `resolveForkOrigins` exists.
+   */
+  fork?: boolean;
+  parent?: GitHubForkOrigin | null;
+  source?: GitHubForkOrigin | null;
   html_url: string;
   description: string | null;
   license?: {
@@ -298,6 +319,16 @@ function createAvailability(available: boolean, source: string, reason?: string)
   };
 }
 
+function mapForkOrigin(data: GitHubRepo): ForkOrigin | null {
+  const upstream = data.parent || data.source;
+  const fullName = upstream?.full_name;
+  if (!fullName) return null;
+  return {
+    fullName,
+    htmlUrl: upstream?.html_url || `https://github.com/${fullName}`,
+  };
+}
+
 function mapRepo(data: GitHubRepo): RepositoryRef {
   return {
     id: data.id,
@@ -307,6 +338,8 @@ function mapRepo(data: GitHubRepo): RepositoryRef {
     defaultBranch: data.default_branch || "main",
     isPrivate: Boolean(data.private),
     archived: Boolean(data.archived),
+    isFork: Boolean(data.fork),
+    forkOf: mapForkOrigin(data),
     htmlUrl: data.html_url,
     description: data.description,
     license: data.license?.spdx_id && data.license.spdx_id !== "NOASSERTION" ? data.license.spdx_id : data.license?.name || null,
@@ -739,13 +772,136 @@ export async function fetchRateLimit(): Promise<RateLimitInfo> {
   };
 }
 
-export async function fetchAccessibleRepos(token: string): Promise<RepositoryRef[]> {
-  const payload = await githubRequest<GitHubRepo[]>("/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member", token);
-  return payload.map(mapRepo).filter((repo) => !repo.isPrivate);
+/**
+ * Resolves the upstream (`forkOf`) of forks that do not have it yet.
+ *
+ * Why one call per fork: GitHub's repository listing returns the compact
+ * schema, without `parent`/`source` (verified 2026-09-26 against the live API —
+ * `/user/repos` returns 82 fields per item and none of them is the upstream).
+ * Only the individual `GET /repos/{owner}/{repo}` endpoint has it. Q4(b) — "only
+ * forks whose upstream is not accessible" — is undecidable without this.
+ *
+ * Cost: 1 call **per fork**, on discovery only, never on a detail refresh. The
+ * public runtime does no enrichment at all: its snapshot already carries the
+ * upstream because `sync-snapshots.mjs` reads the individual endpoint (RNF-01).
+ *
+ * Failure is contained to the **upstream**: a 404/403 leaves `forkOf: null`
+ * ("unknown") and discovery still succeeds. It never propagates — group
+ * classification treats `null` as unknown upstream, which is not the same as
+ * "upstream accessible".
+ */
+async function resolveForkOrigins(repos: RepositoryRef[], token: string): Promise<RepositoryRef[]> {
+  const pending = repos.filter((repo) => repo.isFork && !repo.forkOf);
+  if (pending.length === 0) return repos;
+
+  const resolved = await Promise.all(
+    pending.map((fork) => githubOptional<GitHubRepo>(
+      `/repos/${encodeURIComponent(fork.owner)}/${encodeURIComponent(fork.name)}`,
+      token,
+    )),
+  );
+
+  const origins = new Map<string, ForkOrigin>();
+  pending.forEach((fork, index) => {
+    const payload = resolved[index];
+    if (isFailure(payload)) return;
+    const origin = mapForkOrigin(payload);
+    if (origin) origins.set(fork.fullName, origin);
+  });
+
+  if (origins.size === 0) return repos;
+  return repos.map((repo) => {
+    const origin = origins.get(repo.fullName);
+    return origin ? { ...repo, forkOf: origin } : repo;
+  });
+}
+
+/** GitHub caps `per_page` at 100; `Link` is the only way to know there is more. */
+const REPOS_PER_PAGE = 100;
+const REPOS_MAX_PAGES = 10;
+
+function nextPageFromLinkHeader(link: string | null): string | null {
+  if (!link) return null;
+  for (const part of link.split(",")) {
+    if (!/rel="next"/.test(part)) continue;
+    const match = /[?&]page=(\d+)/.exec(part);
+    if (!match) return null;
+    return match[1];
+  }
+  return null;
+}
+
+async function listRepositoriesPage(
+  page: number,
+  visibility: "all" | "public",
+  token: string,
+): Promise<{ repos: GitHubRepo[]; nextPage: number | null }> {
+  const response = await fetch(`${GITHUB_API_BASE}/user/repos?per_page=${REPOS_PER_PAGE}&sort=full_name&direction=asc&affiliation=owner,collaborator,organization_member&visibility=${visibility}${page > 1 ? `&page=${page}` : ""}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`${response.status} /user/repos`);
+  }
+  const repos = (await response.json()) as GitHubRepo[];
+  const next = nextPageFromLinkHeader(response.headers.get("link"));
+  return { repos: Array.isArray(repos) ? repos : [], nextPage: next ? Number(next) : null };
+}
+
+/**
+ * Authenticated discovery, every visible repository.
+ *
+ * Two calls by design (ADR-001, decision 3):
+ * - `/user/repos?visibility=all` is the only endpoint that returns private
+ *   repositories, so it cannot be dropped in favour of the public snapshot.
+ * - The public endpoints (`/repos/{owner}/{repo}`, `/user/repos?visibility=public`)
+ *   reject them, so the private list is always a union with the public one.
+ *
+ * Pagination is opt-in per caller because they need different lists: a public
+ * caller must not pull private pages into memory. Both lists are deduplicated
+ * by `id`, keeping the first occurrence — the private call runs first, so a
+ * repository's privacy is decided by the same endpoint that discovered it.
+ */
+export async function fetchAccessibleRepos(token: string, options?: { includePrivate?: boolean }): Promise<RepositoryRef[]> {
+  const includePrivate = options?.includePrivate === true;
+  const calls: Array<{ visibility: "all" | "public" }> = [{ visibility: "all" }];
+  if (includePrivate) calls.push({ visibility: "public" });
+
+  const byId = new Map<number, RepositoryRef>();
+  for (const { visibility } of calls) {
+    let current: { repos: GitHubRepo[]; nextPage: number | null } | undefined;
+    try {
+      current = await listRepositoriesPage(1, visibility, token);
+    } catch {
+      // A public-only failure must not hide the private list, and vice versa.
+      continue;
+    }
+    // Pages are walked sequentially because the endpoint exposes no total count
+    // — only `Link` reveals that a next page exists.
+    for (let depth = 0; current && depth < REPOS_MAX_PAGES; depth += 1) {
+      for (const raw of current.repos) {
+        if (typeof raw?.id !== "number" || byId.has(raw.id)) continue;
+        byId.set(raw.id, mapRepo(raw));
+      }
+      // Checked before fetching, so the cap never costs one request too many.
+      if (depth === REPOS_MAX_PAGES - 1) break;
+      if (!current.nextPage || current.nextPage === 1) break;
+      try {
+        current = await listRepositoriesPage(current.nextPage, visibility, token);
+      } catch {
+        break;
+      }
+    }
+  }
+
+  return resolveForkOrigins([...byId.values()], token);
 }
 
 export async function fetchLiveDashboardSnapshot(token: string, selectedRepos: string[], featuredRepo: string | null): Promise<SnapshotOverview> {
-  const availableRepos = await fetchAccessibleRepos(token);
+  const availableRepos = await fetchAccessibleRepos(token, { includePrivate: true });
   const selectedSet = new Set(selectedRepos);
   const repoTargets = selectedSet.size > 0
     ? availableRepos.filter((repo) => selectedSet.has(repo.fullName))
@@ -795,14 +951,16 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
   try {
     await githubRequest<{ login: string }>("/user", trimmed);
     const rateLimit = await fetchLiveRateLimit(trimmed);
-    const repos = await fetchAccessibleRepos(trimmed);
+    const repos = await fetchAccessibleRepos(trimmed, { includePrivate: true });
+    const privateRepoCount = repos.filter((repo) => repo.isPrivate).length;
     const probeRepo = repos[0];
     if (!probeRepo) {
       return {
         token: "valid",
         rateLimit,
         accessibleRepoCount: 0,
-        dependabotProbe: { status: "skipped", message: "No accessible public repositories returned by this token." },
+        privateRepoCount,
+        dependabotProbe: { status: "skipped", message: "No repositories returned by this token." },
       };
     }
 
@@ -815,6 +973,7 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
           token: "valid",
           rateLimit,
           accessibleRepoCount: repos.length,
+          privateRepoCount,
           dependabotProbe: { status: "available", repoFullName: repo.fullName },
         };
       }
@@ -833,6 +992,7 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
       token: "valid",
       rateLimit,
       accessibleRepoCount: repos.length,
+      privateRepoCount,
       dependabotProbe: {
         status,
         repoFullName: representative.repo.fullName,

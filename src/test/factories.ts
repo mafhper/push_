@@ -15,6 +15,8 @@ export function createRepo(overrides: Partial<RepositoryRef> = {}): RepositoryRe
     defaultBranch: "main",
     isPrivate: false,
     archived: false,
+    isFork: false,
+    forkOf: null,
     htmlUrl: "https://github.com/mafhper/push_",
     description: "Public GitHub dashboard",
     license: "MIT",
