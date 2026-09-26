@@ -4,6 +4,15 @@ on:
   push:
     tags:
       - "v*"
+  # Re-roda o release de uma tag já publicada. Necessário porque o pin do Core
+  # vem do arquivo no commit da tag: um re-run de `gh run rerun` usaria o Core
+  # antigo. Aqui o workflow sai da branch padrão, então usa o pin atual.
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        required: true
+        description: "Tag a publicar (ex.: v1.3.0)"
 
 permissions:
   contents: write
@@ -16,6 +25,8 @@ jobs:
   release:
     uses: mafhper/release-core/.github/workflows/release.yml@v1.2.2
     with:
+      # Vazio no push de tag: o Core usa GITHUB_REF_NAME.
+      tag: ${{ inputs.tag }}
       matrix: |-
         [
           { "os": "macos-latest", "args": "--bundles app" },
