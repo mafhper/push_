@@ -46,6 +46,10 @@ export default function PublicDashboard() {
         defaultBranch: r.defaultBranch || 'main',
         isPrivate: r.isPrivate || false,
         archived: r.archived || false,
+        // Snapshots published before `isFork` still load: a missing value
+        // normalizes to "not a fork" / "upstream unknown" (RNF-06).
+        isFork: r.isFork || false,
+        forkOf: r.forkOf || null,
         htmlUrl: r.htmlUrl || '',
         description: r.description || '',
         license: r.license || null,

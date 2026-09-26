@@ -1,15 +1,43 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, Moon, Sun, UserRound, ChevronDown, ChevronRight, Lock, GitFork, Archive } from "lucide-react";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
-import { formatDateTime } from "@/i18n";
+import { formatDateTime, type DictKey } from "@/i18n";
 import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
 import { diagnoseToken, validateToken } from "@/services/github";
 import { saveGithubToken } from "@/services/secure-storage";
 import { saveIdentity } from "@/services/presentation-identity";
-import type { DataDetailMode, Theme } from "@/types";
+import type { DataDetailMode, RepositoryRef, Theme } from "@/types";
+
+/**
+ * Display order in the list: public first (usually the biggest group), then
+ * private, then the rest, and forks last. This is presentation only — which
+ * group a repository *belongs* to is decided by `repoGroupOf`, whose precedence
+ * is a separate, fixed rule.
+ */
+const REPO_GROUPS = ["public", "private", "other", "fork"] as const;
+type RepoGroupId = (typeof REPO_GROUPS)[number];
+
+/**
+ * Mutually exclusive classification with fixed precedence (Q4/Q5), which is
+ * independent of the display order above:
+ * 1. a fork whose upstream is **not** accessible → Forks;
+ * 2. private → Private;
+ * 3. archived → Others;
+ * 4. otherwise → Public.
+ *
+ * An unknown upstream (`forkOf === null`, e.g. the extra request failed) counts
+ * as "not accessible": the honest reading is "we could not prove otherwise".
+ */
+function repoGroupOf(repo: RepositoryRef, accessibleFullNames: Set<string>): RepoGroupId {
+  const upstreamAccessible = repo.forkOf ? accessibleFullNames.has(repo.forkOf.fullName) : false;
+  if (repo.isFork && !upstreamAccessible) return "fork";
+  if (repo.isPrivate) return "private";
+  if (repo.archived) return "other";
+  return "public";
+}
 
 export default function SettingsPage() {
   const { settings, updateSettings, session, setSession, logout, sessionStatus, primaryRepo, setPrimaryRepo, selectedRepos, setSelectedRepos, t } = useApp();
@@ -23,6 +51,7 @@ export default function SettingsPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [repoQuery, setRepoQuery] = useState("");
   const [repoFilter, setRepoFilter] = useState<"all" | "selected" | "unselected">("all");
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!localSecureMode || !session?.token || session.diagnostics) return;
@@ -39,6 +68,8 @@ export default function SettingsPage() {
 
   const selectedRepoCount = localSecureMode && session ? selectedRepos.length : (overview?.repos.length ?? 0);
   const featuredRepoLabel = localSecureMode ? (primaryRepo ?? "none") : (manifest?.featuredRepo ?? "none");
+
+  const accessibleFullNames = useMemo(() => new Set(repos.map((repo) => repo.fullName)), [repos]);
 
   const filteredRepos = useMemo(() => {
     const q = repoQuery.trim().toLowerCase();
@@ -58,6 +89,40 @@ export default function SettingsPage() {
         return aS !== bS ? bS - aS : a.fullName.localeCompare(b.fullName);
       });
   }, [primaryRepo, repoFilter, repoQuery, repos, selectedRepos]);
+
+  /**
+   * Total per group, before the search and the selected/unselected axis, so a
+   * group never disappears because a filter hid its items (RF-08) and its
+   * counter keeps reporting the real total.
+   */
+  const groups = useMemo(() => {
+    const totals: Record<RepoGroupId, number> = { fork: 0, private: 0, other: 0, public: 0 };
+    for (const repo of repos) {
+      totals[repoGroupOf(repo, accessibleFullNames)] += 1;
+    }
+    return REPO_GROUPS.map((id) => {
+      const visible = filteredRepos.filter((repo) => repoGroupOf(repo, accessibleFullNames) === id);
+      return {
+        id,
+        repos: visible,
+        total: totals[id],
+        selectedTotal: visible.filter((repo) => selectedRepos.includes(repo.fullName)).length,
+      };
+    });
+  }, [accessibleFullNames, filteredRepos, repos, selectedRepos]);
+
+  const groupLabels: Record<RepoGroupId, string> = {
+    public: t("repoGroupPublic"),
+    private: t("repoGroupPrivate"),
+    fork: t("repoGroupForks"),
+    other: t("repoGroupOthers"),
+  };
+  const groupEmptyLabels: Record<RepoGroupId, string> = {
+    public: t("repoGroupPublicEmpty"),
+    private: t("repoGroupPrivateEmpty"),
+    fork: t("repoGroupForksEmpty"),
+    other: t("repoGroupOthersEmpty"),
+  };
 
   if (!manifest) {
     return (
@@ -96,11 +161,51 @@ export default function SettingsPage() {
     setConnectError(null);
   }
 
-  function toggleRepo(fullName: string) {
-    const next = selectedRepos.includes(fullName) ? selectedRepos.filter(r => r !== fullName) : [...selectedRepos, fullName];
+  /** Single write path, so the featured repo always follows the selection. */
+  function applySelection(fullNames: string[]) {
+    const next = [...new Set(fullNames)];
     setSelectedRepos(next);
     if (!next.length) setPrimaryRepo(null);
     else if (!primaryRepo || !next.includes(primaryRepo)) setPrimaryRepo(next[0]);
+  }
+
+  function toggleRepo(fullName: string) {
+    applySelection(
+      selectedRepos.includes(fullName)
+        ? selectedRepos.filter((entry) => entry !== fullName)
+        : [...selectedRepos, fullName],
+    );
+  }
+
+  function fullNamesInGroup(groupId: RepoGroupId): string[] {
+    return repos
+      .filter((repo) => repoGroupOf(repo, accessibleFullNames) === groupId)
+      .map((repo) => repo.fullName);
+  }
+
+  function selectGroup(groupId: RepoGroupId) {
+    applySelection([...selectedRepos, ...fullNamesInGroup(groupId)]);
+  }
+
+  function clearGroup(groupId: RepoGroupId) {
+    const groupNames = new Set(fullNamesInGroup(groupId));
+    applySelection(selectedRepos.filter((entry) => !groupNames.has(entry)));
+  }
+
+  /**
+   * Private repositories are opt-in (Q2), so the global action never crosses
+   * into the private group: selecting them is a conscious act inside their own
+   * group, or through `diagnosticsPrivateScopeHint`. This is what CA-7 asserts.
+   */
+  function selectAllNonPrivate() {
+    applySelection([
+      ...selectedRepos,
+      ...repos.filter((repo) => !repo.isPrivate).map((repo) => repo.fullName),
+    ]);
+  }
+
+  function deselectAll() {
+    applySelection([]);
   }
 
   return (
@@ -292,8 +397,25 @@ export default function SettingsPage() {
               <StatusCard label={t("rateLimit")} value={session.diagnostics.rateLimit ? `${session.diagnostics.rateLimit.remaining}/${session.diagnostics.rateLimit.limit}` : t("unavailable")} good={Boolean(session.diagnostics.rateLimit)} />
               <StatusCard label="Dependabot" value={dependabotProbeLabel(session.diagnostics.dependabotProbe?.status, t)} good={session.diagnostics.dependabotProbe?.status === "available"} />
             </div>
+            {session.diagnostics.accessibleRepoCount !== undefined && (
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <StatusCard
+                  label={t("diagnosticsAccessibleRepos")}
+                  value={session.diagnostics.accessibleRepoCount}
+                  good
+                />
+                <StatusCard
+                  label={t("diagnosticsPrivateRepos")}
+                  value={session.diagnostics.privateRepoCount ?? 0}
+                  good={(session.diagnostics.privateRepoCount ?? 0) > 0}
+                />
+              </div>
+            )}
             {session.diagnostics.dependabotProbe?.message && (
               <p className="mt-3 text-sm text-foreground-subtle">{session.diagnostics.dependabotProbe.message}</p>
+            )}
+            {session.diagnostics.privateRepoCount === 0 && (
+              <p className="mt-2 text-sm text-foreground-subtle">{t("diagnosticsPrivateScopeHint")}</p>
             )}
           </section>
         )}
@@ -304,16 +426,16 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-title font-headline font-semibold text-foreground">{t("repositoryControl")}</h2>
-                <p className="text-sm text-foreground-subtle mt-0.5">
-                  {selectedRepos.length} of {repos.length} selected
+                <p className="text-sm text-foreground-subtle mt-0.5" aria-live="polite">
+                  {t("groupSelectedOfTotal", { selected: selectedRepos.length, total: repos.length })}
                 </p>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => { setSelectedRepos(repos.map(r => r.fullName)); setPrimaryRepo(repos[0]?.fullName ?? null); }} className="text-micro font-medium text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-md hover:bg-primary/10">
-                  Select all
+                <button onClick={selectAllNonPrivate} className="text-micro font-medium text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-md hover:bg-primary/10">
+                  {t("bulkSelectPublic")}
                 </button>
-                <button onClick={() => { setSelectedRepos([]); setPrimaryRepo(null); }} className="text-micro font-medium text-foreground-subtle hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-surface-2">
-                  Deselect all
+                <button onClick={deselectAll} className="text-micro font-medium text-foreground-subtle hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-surface-2">
+                  {t("bulkDeselectAll")}
                 </button>
               </div>
             </div>
@@ -322,7 +444,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
               <input
                 type="text" value={repoQuery} onChange={e => setRepoQuery(e.target.value)}
-                placeholder="Search repositories..."
+                placeholder={t("repoSearchPlaceholder")}
                 className="flex-1 h-9 rounded-lg border border-border/60 bg-surface-2 px-3 text-sm text-foreground outline-none placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
               />
               <div className="flex gap-1 overflow-x-auto">
@@ -332,44 +454,65 @@ export default function SettingsPage() {
                       "shrink-0 text-micro font-medium px-2.5 py-1.5 rounded-lg transition-colors",
                       repoFilter === f ? "bg-primary/10 text-primary" : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
                     )}>
-                    {f === "all" ? "All" : f === "selected" ? "Selected" : "Unselected"}
+                    {f === "all" ? t("all") : f === "selected" ? t("selected") : t("filterUnselected")}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Repo List */}
-            <div className="max-h-80 overflow-y-auto space-y-1 rounded-lg border border-border/30">
-              {filteredRepos.length > 0 ? filteredRepos.map(repo => {
-                const isSelected = selectedRepos.includes(repo.fullName);
-                const isFeatured = repo.fullName === primaryRepo;
-                return (
-                  <button key={repo.fullName} onClick={() => toggleRepo(repo.fullName)}
-                    className={cn(
-                      "flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-2/60",
-                      isSelected && !isFeatured && "bg-surface-2/40",
-                      isFeatured && "bg-primary/[0.04]"
-                    )}
-                  >
-                    <div className={cn(
-                      "h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                      isSelected ? "border-primary bg-primary" : "border-border"
-                    )}>
-                      {isSelected && <div className="h-2 w-2 rounded-sm bg-primary-foreground" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-body font-medium text-foreground truncate block">{repo.fullName}</span>
-                      {repo.description && <span className="text-micro text-foreground-subtle truncate block">{repo.description}</span>}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {repo.language && <span className="text-[10px] text-foreground-subtle">{repo.language}</span>}
-                      {isFeatured && <Star size={12} className="text-primary fill-primary" />}
-                    </div>
-                  </button>
-                );
-              }) : (
-                <div className="px-4 py-8 text-center text-sm text-foreground-subtle italic">No repositories match this filter</div>
+            {/* Repo List, grouped. The container scrolls; group headers stick so
+                a long group never loses its label, counter and actions. */}
+            <div className="max-h-96 overflow-y-auto space-y-2 rounded-lg border border-border/30 p-2">
+              {reposLoading && (
+                <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-foreground-subtle">
+                  <LoaderCircle size={14} className="animate-spin" />
+                  {t("resolvingAccessibleRepositories")}
+                </div>
               )}
+              {!reposLoading && groups.map(group => {
+                const collapsed = collapsedGroups[group.id] === true;
+                const headingId = `repo-group-${group.id}`;
+                return (
+                  <section key={group.id} role="group" aria-labelledby={headingId} className="space-y-1">
+                    <div className="sticky top-0 z-10 flex items-center gap-2 rounded-md bg-surface-1/95 px-1.5 py-1 backdrop-blur-sm">
+                      <button
+                        onClick={() => setCollapsedGroups(current => ({ ...current, [group.id]: !collapsed }))}
+                        aria-expanded={!collapsed}
+                        aria-label={collapsed ? t("repoGroupExpand") : t("repoGroupCollapse")}
+                        className="flex items-center gap-1 text-micro font-semibold uppercase tracking-wider text-foreground-subtle hover:text-foreground transition-colors rounded px-1 py-0.5"
+                      >
+                        {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                        <span id={headingId}>{groupLabels[group.id]}</span>
+                      </button>
+                      <span className="text-[10px] text-foreground-subtle/80 tabular-nums whitespace-nowrap" aria-live="polite">
+                        {t("groupSelectedOfTotal", { selected: group.selectedTotal, total: group.total })}
+                      </span>
+                      <div className="ml-auto flex gap-1 shrink-0">
+                        <button onClick={() => selectGroup(group.id)} disabled={group.total === 0} className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors px-1.5 py-0.5 rounded hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent">
+                          {t("groupSelectAll")}
+                        </button>
+                        <button onClick={() => clearGroup(group.id)} disabled={group.selectedTotal === 0} className="text-[10px] font-medium text-foreground-subtle hover:text-foreground transition-colors px-1.5 py-0.5 rounded hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent">
+                          {t("groupClear")}
+                        </button>
+                      </div>
+                    </div>
+                    {!collapsed && (group.repos.length > 0 ? group.repos.map(repo => (
+                      <RepoRow
+                        key={repo.fullName}
+                        repo={repo}
+                        isSelected={selectedRepos.includes(repo.fullName)}
+                        isFeatured={repo.fullName === primaryRepo}
+                        onToggle={() => toggleRepo(repo.fullName)}
+                        t={t}
+                      />
+                    )) : (
+                      <p className="px-3.5 py-2 text-micro text-foreground-subtle/80 italic">
+                        {group.repos.length === 0 && group.total > 0 ? t("noRepoMatchesInGroup") : groupEmptyLabels[group.id]}
+                      </p>
+                    ))}
+                  </section>
+                );
+              })}
             </div>
           </section>
         )}
@@ -377,6 +520,71 @@ export default function SettingsPage() {
         <div className="h-4" />
       </div>
     </div>
+  );
+}
+
+type Translate = (key: DictKey, values?: Record<string, string | number>) => string;
+
+type RepoRowProps = {
+  repo: RepositoryRef;
+  isSelected: boolean;
+  isFeatured: boolean;
+  onToggle: () => void;
+  t: Translate;
+};
+
+/**
+ * One selectable repository, with its origin always visible (C3). The badges
+ * answer "why is this row here" without expanding the group: private, fork
+ * (naming the upstream when it is accessible, saying so when it is not) and
+ * archived.
+ */
+function RepoRow({ repo, isSelected, isFeatured, onToggle, t }: RepoRowProps) {
+  const upstreamLabel = repo.isFork
+    ? (repo.forkOf ? t("forkOfLabel", { repo: repo.forkOf.fullName }) : `${t("forkBadge")} · ${t("upstreamNotVisible")}`)
+    : null;
+
+  return (
+    <button onClick={onToggle}
+      aria-pressed={isSelected}
+      className={cn(
+        "flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-2/60 rounded-md",
+        isSelected && !isFeatured && "bg-surface-2/40",
+        isFeatured && "bg-primary/[0.04]"
+      )}
+    >
+      <div className={cn(
+        "h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+        isSelected ? "border-primary bg-primary" : "border-border"
+      )}>
+        {isSelected && <div className="h-2 w-2 rounded-sm bg-primary-foreground" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-body font-medium text-foreground truncate block">{repo.fullName}</span>
+        <span className="flex items-center gap-2 flex-wrap">
+          {repo.isPrivate && (
+            <span className="text-[10px] font-medium text-warning inline-flex items-center gap-1">
+              <Lock size={10} />{t("privateBadge")}
+            </span>
+          )}
+          {upstreamLabel && (
+            <span className="text-[10px] font-medium text-foreground-subtle inline-flex items-center gap-1">
+              <GitFork size={10} />{upstreamLabel}
+            </span>
+          )}
+          {repo.archived && (
+            <span className="text-[10px] font-medium text-foreground-subtle inline-flex items-center gap-1">
+              <Archive size={10} />{t("archivedBadge")}
+            </span>
+          )}
+          {repo.description && <span className="text-micro text-foreground-subtle truncate">{repo.description}</span>}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {repo.language && <span className="text-[10px] text-foreground-subtle">{repo.language}</span>}
+        {isFeatured && <Star size={12} className="text-primary fill-primary" />}
+      </div>
+    </button>
   );
 }
 
@@ -413,7 +621,7 @@ function StatusLine({ label, value, highlight }: { label: string; value: string;
   );
 }
 
-function StatusCard({ label, value, good }: { label: string; value: string; good?: boolean }) {
+function StatusCard({ label, value, good }: { label: string; value: string | number; good?: boolean }) {
   return (
     <div className={cn("rounded-lg border bg-surface-2/70 p-3", good ? "border-success/30" : "border-border/60")}>
       <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{label}</p>

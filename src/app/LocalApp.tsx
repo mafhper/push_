@@ -49,7 +49,7 @@ function createPersistOptions() {
     return { persister: noopPersister, maxAge: QUERY_CACHE_MAX_AGE };
   }
   return {
-    persister: createQueryPersister(),
+    persister: createQueryPersister(queryClient),
     maxAge: QUERY_CACHE_MAX_AGE,
     buster: String(CACHE_VERSION),
     dehydrateOptions: {

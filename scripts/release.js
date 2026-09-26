@@ -50,8 +50,12 @@ async function updateCargoVersion(newVersion) {
 }
 
 async function updatePackageJson(type) {
+  // `npm` is a `.cmd` shim on Windows: spawning it by name fails (EINVAL since
+  // Node 18.20/20.12 hardening), and it needs a shell to run at all.
   try {
-    await execFileAsync("npm", ["version", type, "--no-git-tag-version"]);
+    await execFileAsync("npm", ["version", type, "--no-git-tag-version"], {
+      shell: process.platform === "win32",
+    });
     const pkgPath = path.join(__dirname, "..", "package.json");
     const pkgData = JSON.parse(await fs.readFile(pkgPath, "utf8"));
     return pkgData.version;

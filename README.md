@@ -5,9 +5,9 @@
 push_ is a GitHub repository attention dashboard built for one job: surface what needs action first.
 
 It ships in three runtime modes:
-- `desktop` (Tauri): native Windows/macOS/Linux app, full dashboard with the token saved in the system keyring
-- `localhost`: local secure mode, with memory-only GitHub token access for repository discovery and richer diagnostics
-- `GitHub Pages`: public snapshot mode, with static data only and no browser token flow
+- `desktop` (Tauri): native Windows/macOS/Linux app, full dashboard with the token saved in the system keyring, including your private repositories
+- `localhost`: local secure mode, with memory-only GitHub token access for repository discovery and richer diagnostics, including your private repositories
+- `GitHub Pages`: public snapshot mode, with static data only, no browser token flow, and no private repository data at all
 
 ## Why it exists
 
@@ -26,6 +26,7 @@ Most personal dashboards waste space on vanity metrics. push_ is built around op
 - Balanced, Detailed, and Full view modes to control how much a repository page shows
 - Real repository logos with an initials fallback (no generic GitHub preview cards)
 - Public profile inspection without a token for public repositories
+- Private repository discovery and tracking in the `desktop` and `localhost` runtimes only, opt-in and never included in the published snapshot
 - Snapshot publishing for a Pages-safe public runtime
 - Locale support for `en`, `pt-BR`, and `es`
 - Automatic browser-language detection with manual override in settings
@@ -49,12 +50,15 @@ npm run tauri:build  # build the installer (NSIS on Windows)
 
 - Accepts a GitHub token only on `localhost`
 - Keeps the token in memory for the active tab only
-- Lets you discover accessible public repositories and choose what enters the dashboard
+- Lets you discover every accessible repository, public and private, and choose what enters the dashboard
+- Groups the list into Public, Private, Forks and Others, with per-group select and clear actions
+- Reports how many repositories are in the scope of the connected token and how many of them are private
 
 ### Public snapshot mode
 
 - Serves static JSON generated ahead of time
 - Never accepts a browser token
+- Never lists, reads or publishes a private repository: snapshot generation refuses a private entry
 - Preserves deep links and public repository inspection safely
 
 ## Installation
@@ -103,6 +107,7 @@ npm run data:sync
 - No token is persisted to `localStorage`, `sessionStorage`, cookies, or the static bundle
 - Local secure mode keeps credentials in memory only
 - Desktop mode saves the token in the operating system keyring, not in files
+- Private repository content is never written to the local cache or to a published snapshot: only public repository names can appear in a local cache, everything else is rebuilt from the token
 - Sensitive validation checks block common regressions before `push`
 
 ## Validation and quality gates

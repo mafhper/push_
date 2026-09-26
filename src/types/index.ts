@@ -8,6 +8,12 @@ export interface UserSettings {
   lang: Language;
   dashboardDensity: 'balanced' | 'dense';
   sidebarMode?: SidebarMode;
+  /**
+   * Expanded width of the repository list, in pixels. Absent until the user
+   * drags the divider, so the default layout keeps its responsive widths.
+   * Values are clamped to the console layout limits before use.
+   */
+  sidebarWidth?: number;
   dataDetailMode?: DataDetailMode;
   repoDetailModes?: Record<string, DataDetailMode>;
   pollingInterval?: number;
@@ -27,12 +33,24 @@ export type SessionStatus = 'loading' | 'authenticated' | 'anonymous' | 'invalid
 export interface TokenDiagnostics {
   token: 'valid' | 'invalid' | 'rate_limited' | 'unknown';
   rateLimit?: RateLimitInfo;
+  /**
+   * How many repositories the token can see, public and private together. A
+   * classic personal access token returns both, so this is not a
+   * public-only count.
+   */
   accessibleRepoCount?: number;
+  /** How many of `accessibleRepoCount` are private. `0` means the scope sees no private repository. */
+  privateRepoCount?: number;
   dependabotProbe?: {
     status: 'available' | 'forbidden' | 'not_found' | 'unavailable' | 'skipped';
     repoFullName?: string;
     message?: string;
   };
+}
+
+export interface ForkOrigin {
+  fullName: string;
+  htmlUrl: string;
 }
 
 export interface RepositoryRef {
@@ -43,6 +61,27 @@ export interface RepositoryRef {
   defaultBranch: string;
   isPrivate: boolean;
   archived: boolean;
+/**
+ * The repository itself is a fork (`fork: true` in the API).
+ *
+ * Required on purpose: every construction site has to declare the "not a fork"
+ * case. Snapshots published before this field still load because reads normalize
+ * the absence (`isFork: Boolean(undefined) === false`) — this is the task's
+ * RNF-06 (backward compatibility of published snapshots).
+ */
+isFork: boolean;
+/**
+ * Upstream repository when known. `null` means "unknown", **not** "not a fork".
+ *
+ * GitHub's repository listing does not return `parent`/`source` (verified
+ * 2026-09-26: `GET /user/repos` returns 82 fields per item and none of them is
+ * the upstream); only the individual `GET /repos/{owner}/{repo}` endpoint does.
+ * That is why the local runtime spends one call **per fork** to resolve this,
+ * while the public snapshot gets it for free (the sync script already calls the
+ * individual endpoint). Q4 depends on it: a fork only lands in the "Forks" group
+ * by default when its upstream is **not** accessible.
+ */
+forkOf: ForkOrigin | null;
   htmlUrl: string;
   description: string | null;
   license: string | null;

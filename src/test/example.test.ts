@@ -11,6 +11,8 @@ describe("Health Calculation", () => {
     defaultBranch: "main",
     isPrivate: false,
     archived: false,
+    isFork: false,
+    forkOf: null,
     htmlUrl: "",
     description: "",
     license: null,

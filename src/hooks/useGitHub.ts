@@ -34,7 +34,10 @@ export function useRepos() {
 
   return useQuery({
     queryKey: ['repos', tokenKey],
-    queryFn: () => token ? fetchAccessibleRepos(token) : fetchUserRepos(),
+    // Private repositories are part of the catalog in the local runtimes; the
+    // public API path (`fetchUserRepos`) never returns one, so the public
+    // runtime is unaffected.
+    queryFn: () => token ? fetchAccessibleRepos(token, { includePrivate: true }) : fetchUserRepos(),
     staleTime: 5 * 60 * 1000,
   });
 }

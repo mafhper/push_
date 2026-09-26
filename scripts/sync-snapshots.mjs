@@ -4,8 +4,16 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const CONFIG_PATH = path.join(ROOT, "data", "repositories.json");
-const OUTPUT_ROOT = path.join(ROOT, process.env.SNAPSHOT_OUTPUT || "public/data");
+// `SNAPSHOT_CONFIG` and `GITHUB_API_BASE` exist so the privacy barrier below can
+// be exercised end to end by a test, against a stub API and a temporary output
+// directory, without touching the real tracking config or the published data.
+const CONFIG_PATH = process.env.SNAPSHOT_CONFIG
+  ? path.resolve(process.env.SNAPSHOT_CONFIG)
+  : path.join(ROOT, "data", "repositories.json");
+const API_BASE = (process.env.GITHUB_API_BASE || "https://api.github.com").replace(/\/+$/, "");
+// `path.resolve` (not `path.join`) so an absolute `SNAPSHOT_OUTPUT` is honoured
+// instead of being appended to the repository root.
+const OUTPUT_ROOT = path.resolve(ROOT, process.env.SNAPSHOT_OUTPUT || "public/data");
 const OUTPUT_REPOS = path.join(OUTPUT_ROOT, "repos");
 const GITHUB_OWNER_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 const GITHUB_REPOSITORY_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;
@@ -86,6 +94,20 @@ function createAvailability(available, source, reason) {
   };
 }
 
+function mapForkOrigin(data) {
+  // `parent` is the immediate ancestor, `source` the root of the fork network.
+  // This script reads the individual per-repository endpoint (see `repoPath`),
+  // so the upstream comes for free — unlike local discovery, which uses the
+  // listing and needs one request per fork.
+  const upstream = data.parent || data.source;
+  const fullName = upstream?.full_name;
+  if (!fullName) return null;
+  return {
+    fullName,
+    htmlUrl: upstream?.html_url || `https://github.com/${fullName}`,
+  };
+}
+
 function mapRepo(data) {
   return {
     id: data.id,
@@ -95,6 +117,8 @@ function mapRepo(data) {
     defaultBranch: data.default_branch || "main",
     isPrivate: Boolean(data.private),
     archived: Boolean(data.archived),
+    isFork: Boolean(data.fork),
+    forkOf: mapForkOrigin(data),
     htmlUrl: data.html_url,
     description: data.description,
     license: data.license?.spdx_id && data.license.spdx_id !== "NOASSERTION" ? data.license.spdx_id : data.license?.name || null,
@@ -223,7 +247,7 @@ function calculateHealth(repo, runs, alerts) {
 }
 
 async function fetchGitHub(pathname, token) {
-  const response = await fetch(`https://api.github.com${pathname}`, {
+  const response = await fetch(`${API_BASE}${pathname}`, {
     headers: {
       Accept: "application/vnd.github+json",
       "User-Agent": "push_-snapshot-sync",
@@ -264,6 +288,7 @@ async function main() {
   const dataMode = inferMode(token);
   const repoFiles = {};
   const overviewRepos = [];
+  const skippedPrivateRepos = [];
   let resolvedFeaturedRepo = "";
 
   for (const configuredEntry of config.repositories) {
@@ -277,7 +302,14 @@ async function main() {
 
     const repo = mapRepo(repoPayload);
     if (repo.isPrivate) {
-      console.log(`Skipping private repository ${repo.fullName}`);
+      // Absolute barrier: a private repository never reaches the snapshot. The
+      // run still publishes the safe data, so it is announced on stderr and
+      // summarized at the end instead of failing the whole pipeline.
+      console.error(
+        `PRIVACY BARRIER: refusing to publish private repository ${repo.fullName}. ` +
+        `Remove it from the snapshot configuration.`,
+      );
+      skippedPrivateRepos.push(repo.fullName);
       continue;
     }
 
@@ -392,6 +424,13 @@ async function main() {
 
   await writeJsonSnapshot(resolveSnapshotPath(OUTPUT_ROOT, "manifest.json"), manifest);
   await writeJsonSnapshot(resolveSnapshotPath(OUTPUT_ROOT, "overview.json"), overview);
+
+  if (skippedPrivateRepos.length > 0) {
+    console.error(
+      `PRIVACY BARRIER: ${skippedPrivateRepos.length} private repository/repositories were configured ` +
+      `and refused: ${skippedPrivateRepos.join(", ")}. The published snapshot is public-only.`,
+    );
+  }
 
   console.log(`Snapshots written to ${OUTPUT_ROOT}`);
 }
