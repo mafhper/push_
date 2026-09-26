@@ -18,6 +18,18 @@ import { fetchPublicProfileRepos, fetchUserRepos } from "./github-public";
 
 type FetchCall = { url: string; init: RequestInit | undefined };
 
+/**
+ * Host of a fetched URL, or `null` when it cannot be parsed. A base is supplied
+ * so the relative paths of the snapshot service resolve instead of throwing.
+ */
+function hostOf(url: string): string | null {
+  try {
+    return new URL(url, "https://localhost").host;
+  } catch {
+    return null;
+  }
+}
+
 describe("public GitHub service", () => {
   let calls: FetchCall[];
   let payloadFor: (url: string) => unknown;
@@ -100,7 +112,9 @@ describe("public GitHub service", () => {
     const repos = await fetchUserRepos();
 
     expect(repos.map((repo) => repo.fullName)).toEqual(["dev/open-project"]);
-    // The snapshot is static data: no api.github.com call is involved.
-    expect(calls.every((call) => !call.url.includes("api.github.com"))).toBe(true);
+    // The snapshot is static data: the GitHub API host is never contacted.
+    // Comparing the parsed host instead of a substring keeps the assertion
+    // honest, since a substring also matches lookalike hosts.
+    expect(calls.filter((call) => hostOf(call.url) === "api.github.com")).toEqual([]);
   });
 });
