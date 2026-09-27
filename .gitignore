@@ -54,5 +54,3 @@ _dev/
 *.njsproj
 *.sln
 *.sw?
-bun.lock
-bun.lockb
