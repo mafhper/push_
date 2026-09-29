@@ -31,7 +31,7 @@
     "release": "node scripts/release.js"
   },
   "dependencies": {
-    "@fontsource/manrope": "^5.2.8",
+    "@fontsource/manrope": "^5.3.0",
     "@fontsource/space-grotesk": "^5.2.10",
     "@hookform/resolvers": "^5.9.1",
     "@radix-ui/react-accordion": "^1.2.14",
