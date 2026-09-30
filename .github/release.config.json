@@ -4,9 +4,12 @@
     "tagline": "A GitHub repository attention dashboard. Desktop, private, no cloud.",
     "language": "en",
     "image": {
-      "path": "docs/images/releases/release.webp",
+      "path": "docs/images/releases",
       "required": true,
-      "granularity": "minor"
+      "granularity": "minor",
+      "changes": [
+        { "from": "v1.3.1", "file": "release-v1.3.webp" }
+      ]
     },
     "notes": {
       "granularity": "minor"
