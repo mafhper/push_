@@ -1,4 +1,4 @@
-// sonda-porta.mjs — a fonte unica da sonda de porta da frota.
+// sonda-porta.ts — a fonte unica da sonda de porta da frota.
 //
 // ============================================================================
 // POR QUE ESTE ARQUIVO EXISTE
@@ -59,7 +59,7 @@
 // ============================================================================
 //
 //   // vite.config.js  (top-level await, dentro de defineConfig async)
-//   import { findSafePort, formatPortFallback } from './scripts/sonda-porta.mjs';
+//   import { findSafePort, formatPortFallback } from './scripts/sonda-porta.ts';
 //
 //   export default defineConfig(async () => {
 //     const preferida = Number(process.env.PORT) || 5173;

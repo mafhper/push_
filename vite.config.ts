@@ -1,9 +1,9 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import crypto from "node:crypto";
 import { readFileSync } from "node:fs";
-import { assertPortFree } from "./scripts/sonda-porta";
+import { assertPortFree } from "./scripts/sonda-porta.ts";
 
 const appPackage = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8")) as { version: string };
 
@@ -24,7 +24,7 @@ function resolveBasePath(env: Record<string, string>) {
   return "/";
 }
 
-function createPagesFallbackPlugin(basePath: string) {
+function createPagesFallbackPlugin(basePath: string): Plugin {
   const normalizedBase = basePath.endsWith("/") ? basePath : `${basePath}/`;
   const redirectScript = [
     "(function () {",
