@@ -134,7 +134,7 @@ export default function RepoDetail() {
         />
 
         <div className="space-y-6">
-          <section className="rounded-[2rem] border border-secondary/18 bg-[linear-gradient(135deg,rgba(175,141,17,0.1),rgba(10,10,10,0.96)_36%,rgba(244,122,97,0.08))] p-6">
+          <section className="rounded-4xl border border-secondary/18 bg-[linear-gradient(135deg,rgba(175,141,17,0.1),rgba(10,10,10,0.96)_36%,rgba(244,122,97,0.08))] p-6">
             <div className="mb-6">
               <p className="terminal-label text-secondary/80">{t("attentionBannerLabel")}</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("repoActionBoardTitle")}</h2>
@@ -171,7 +171,7 @@ export default function RepoDetail() {
                 {data.pullRequests.slice(0, viewMode === "balanced" ? 4 : data.pullRequests.length).map((pullRequest) => (
                   <a key={pullRequest.id} href={pullRequest.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.25rem] bg-black/20 px-4 py-4 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.15)]">
                     <div className="min-w-0">
-                      <p className="line-clamp-2 break-words text-sm font-semibold text-foreground">#{pullRequest.number} {pullRequest.title}</p>
+                      <p className="line-clamp-2 wrap-break-word text-sm font-semibold text-foreground">#{pullRequest.number} {pullRequest.title}</p>
                       <p className="mt-2 text-xs text-foreground/55">@{pullRequest.authorLogin}</p>
                     </div>
                     <StatusPill tone={pullRequest.draft ? "neutral" : "warning"}>
@@ -187,7 +187,7 @@ export default function RepoDetail() {
             )}
           </section>
 
-          <section className="rounded-[2rem] ops-surface p-6">
+          <section className="rounded-4xl ops-surface p-6">
             <div className="mb-6">
               <p className="terminal-label">{t("alertsTitle")}</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("openAlertsTitle")}</h2>
@@ -227,7 +227,7 @@ export default function RepoDetail() {
           </section>
 
           {viewMode !== "balanced" && data.contributors.length > 0 && (
-            <section className="rounded-[2rem] ops-surface p-6">
+            <section className="rounded-4xl ops-surface p-6">
               <p className="terminal-label">{t("contributors")}</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("contributors")}</h2>
               <div className="mt-5 flex flex-wrap gap-3">
@@ -247,7 +247,7 @@ export default function RepoDetail() {
       </div>
 
       {viewMode !== "balanced" && data.workflowRuns.length > 0 && (
-        <section className="rounded-[2rem] ops-surface p-6">
+        <section className="rounded-4xl ops-surface p-6">
           <div className="mb-6">
             <p className="terminal-label">{t("workflows")}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("workflows")}</h2>
@@ -260,7 +260,7 @@ export default function RepoDetail() {
       )}
 
       {viewMode !== "balanced" && data.dependencies && data.dependencies.length > 0 && (
-        <section className="rounded-[2rem] ops-surface p-6">
+        <section className="rounded-4xl ops-surface p-6">
           <div className="mb-6">
             <p className="terminal-label">{t("dependencies")}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("dependencies")}</h2>
@@ -281,7 +281,7 @@ export default function RepoDetail() {
         </section>
       )}
 
-      <section className="rounded-[2rem] ops-surface p-6">
+      <section className="rounded-4xl ops-surface p-6">
         <p className="terminal-label">{t("repositoryFacts")}</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("repositoryFacts")}</h2>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -364,7 +364,7 @@ export default function RepoDetail() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] ops-surface p-6">
+      <section className="rounded-4xl ops-surface p-6">
         <div className="mb-6 flex items-start justify-between">
           <div>
             <p className="terminal-label">{t("recentCommitsTitle")}</p>
@@ -415,7 +415,7 @@ function DetailRow({
 }) {
   return (
     <div className={cn(
-      "flex items-center justify-between gap-4 rounded-[1rem] bg-white/[0.02] px-4 py-3",
+      "flex items-center justify-between gap-4 rounded-2xl bg-white/2 px-4 py-3",
       tone === "warning" && "shadow-[inset_0_0_0_1px_rgba(175,141,17,0.14)]",
       tone === "critical" && "shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)]",
     )}>
@@ -455,14 +455,14 @@ function PriorityShortcut({
         "flex items-start justify-between gap-4 rounded-[1.25rem] px-4 py-4 transition-colors",
         primary && tone === "critical" && "bg-[linear-gradient(135deg,rgba(244,122,97,0.16),rgba(18,18,18,0.96))] shadow-[inset_0_0_0_1px_rgba(244,122,97,0.24)] hover:bg-[linear-gradient(135deg,rgba(244,122,97,0.2),rgba(18,18,18,0.98))]",
         primary && tone === "warning" && "bg-[linear-gradient(135deg,rgba(175,141,17,0.16),rgba(18,18,18,0.96))] shadow-[inset_0_0_0_1px_rgba(175,141,17,0.24)] hover:bg-[linear-gradient(135deg,rgba(175,141,17,0.2),rgba(18,18,18,0.98))]",
-        !primary && tone === "critical" && "bg-destructive/[0.08] shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)] hover:bg-destructive/[0.11]",
-        !primary && tone === "warning" && "bg-secondary/[0.08] shadow-[inset_0_0_0_1px_rgba(175,141,17,0.18)] hover:bg-secondary/[0.11]",
+        !primary && tone === "critical" && "bg-destructive/8 shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)] hover:bg-destructive/11",
+        !primary && tone === "warning" && "bg-secondary/8 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.18)] hover:bg-secondary/11",
       )}
     >
       <div className="min-w-0">
         <p className="terminal-label">{kicker}</p>
-        <p className={cn("mt-2 break-words text-sm font-semibold text-foreground", primary && "text-base")}>{title}</p>
-        <p className="mt-2 break-words text-xs text-foreground/60">{body}</p>
+        <p className={cn("mt-2 wrap-break-word text-sm font-semibold text-foreground", primary && "text-base")}>{title}</p>
+        <p className="mt-2 wrap-break-word text-xs text-foreground/60">{body}</p>
       </div>
       <StatusPill tone={tone}>{badgeLabel}</StatusPill>
     </a>

@@ -19,7 +19,7 @@ export default function FAQPage() {
   return (
     <div className="space-y-24">
       <section className="grid gap-8 xl:grid-cols-[0.22fr_0.78fr_0.82fr] xl:items-start">
-        <aside className="rounded-[2rem] ops-surface p-5">
+        <aside className="rounded-4xl ops-surface p-5">
           <p className="terminal-label">{t("faq")}</p>
           <div className="mt-6 space-y-3">
             {[t("promoFaqSectionGeneral"), t("promoFaqSectionLimits"), t("security")].map((item, index) => (
@@ -41,7 +41,7 @@ export default function FAQPage() {
           body={t("promoFaqBody")}
         />
 
-        <div className="rounded-[2rem] ops-surface p-6">
+        <div className="rounded-4xl ops-surface p-6">
           <p className="terminal-label">{t("promoFaqAtGlance")}</p>
           <div className="mt-5 grid gap-3">
             {[

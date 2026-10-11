@@ -44,7 +44,7 @@ export function WorkflowPulsePanel({
         : t("workflowRecentRunsPassStory", { rate: successRate });
 
   return (
-    <section className="rounded-[2rem] ops-surface p-6 md:p-7">
+    <section className="rounded-4xl ops-surface p-6 md:p-7">
       <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <SectionHeading title={title} body={body} />
         <div className="flex flex-wrap gap-2">
@@ -57,7 +57,7 @@ export function WorkflowPulsePanel({
       {recentRuns.length > 0 ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.32fr)_18.5rem]">
           <div className="space-y-5">
-            <div className="overflow-hidden rounded-[1.5rem] ops-surface-soft">
+            <div className="overflow-hidden rounded-3xl ops-surface-soft">
               <div className="grid divide-y divide-white/6 md:grid-cols-3 md:divide-x md:divide-y-0">
                 <InsightCard
                   icon={Activity}
@@ -106,10 +106,10 @@ export function WorkflowPulsePanel({
                       className={cn(
                         "group block rounded-[1.35rem] px-4 py-4 transition-colors",
                         status.tone === "success"
-                          ? "ops-surface-soft hover:bg-primary/[0.05]"
+                          ? "ops-surface-soft hover:bg-primary/5"
                           : status.tone === "critical"
-                            ? "ops-surface-soft hover:bg-destructive/[0.05]"
-                            : "ops-surface-soft hover:bg-secondary/[0.05]",
+                            ? "ops-surface-soft hover:bg-destructive/5"
+                            : "ops-surface-soft hover:bg-secondary/5",
                       )}
                     >
                       <div className="flex items-start gap-4">
@@ -168,7 +168,7 @@ export function WorkflowPulsePanel({
 
                   <a
                     href={latestRun.htmlUrl}
-                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/[0.08] px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/[0.12]"
+                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary/8 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/12"
                   >
                     {t("workflowOpenLatestRun")}
                     <ExternalLink size={14} />
@@ -237,7 +237,7 @@ function InsightCard({
         <p className="terminal-label">{label}</p>
       </div>
       <p className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-foreground">{value}</p>
-      <p className="mt-2 break-words text-sm text-muted-foreground">{note}</p>
+      <p className="mt-2 wrap-break-word text-sm text-muted-foreground">{note}</p>
     </div>
   );
 }
@@ -304,7 +304,7 @@ function formatDuration(durationMs: number) {
 function WorkflowEmptyState({ message, compact = false }: { message: string; compact?: boolean }) {
   const { t } = useApp();
   return (
-    <div className={cn("rounded-[1.5rem] ops-surface-soft", compact ? "p-4" : "p-5")}>
+    <div className={cn("rounded-3xl ops-surface-soft", compact ? "p-4" : "p-5")}>
       <p className="terminal-label">{t("workflowUnavailableTitle")}</p>
       <h3 className="mt-3 text-lg font-semibold tracking-[-0.03em] text-foreground">{t("workflowNoRunsTitle")}</h3>
       <p className="mt-3 text-sm leading-7 text-muted-foreground">{message}</p>

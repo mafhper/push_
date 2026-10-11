@@ -252,7 +252,7 @@ export default function SettingsPage() {
         <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
 
           {/* GitHub Access */}
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-title font-headline font-semibold text-foreground">{t("githubAccess")}</h2>
@@ -304,7 +304,7 @@ export default function SettingsPage() {
                           value={tokenInput}
                           onChange={e => setTokenInput(e.target.value)}
                           placeholder={session ? t("pasteNewToken") : t("pastePersonalToken")}
-                          className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
+                          className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
                         />
                       </div>
                       <button type="submit" disabled={isConnecting} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
@@ -329,7 +329,7 @@ export default function SettingsPage() {
           </section>
 
           {/* Runtime Status */}
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
             <div>
               <h2 className="text-title font-headline font-semibold text-foreground">{t("currentMode")}</h2>
             </div>
@@ -345,7 +345,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Preferences */}
-        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
           <div>
             <h2 className="text-title font-headline font-semibold text-foreground">{t("preferences")}</h2>
             <p className="text-sm text-foreground-subtle mt-0.5">{t("interfaceSettings")}</p>
@@ -390,7 +390,7 @@ export default function SettingsPage() {
         </section>
 
         {localSecureMode && session?.diagnostics && (
-          <section className="rounded-xl border border-border/60 bg-surface-1 p-5 shadow-sm">
+          <section className="rounded-xl border border-border/60 bg-surface-1 p-5 shadow-xs">
             <h2 className="text-title font-headline font-semibold text-foreground">{t("tokenDiagnostics")}</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <StatusCard label={t("githubToken")} value={session.diagnostics.token === "valid" ? t("tokenValid") : t("tokenInvalid")} good={session.diagnostics.token === "valid"} />
@@ -422,7 +422,7 @@ export default function SettingsPage() {
 
         {/* Repository Selection (only in local mode) */}
         {localSecureMode && session && (
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-title font-headline font-semibold text-foreground">{t("repositoryControl")}</h2>
@@ -445,7 +445,7 @@ export default function SettingsPage() {
               <input
                 type="text" value={repoQuery} onChange={e => setRepoQuery(e.target.value)}
                 placeholder={t("repoSearchPlaceholder")}
-                className="flex-1 h-9 rounded-lg border border-border/60 bg-surface-2 px-3 text-sm text-foreground outline-none placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
+                className="flex-1 h-9 rounded-lg border border-border/60 bg-surface-2 px-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
               />
               <div className="flex gap-1 overflow-x-auto">
                 {(["all", "selected", "unselected"] as const).map(f => (
@@ -474,7 +474,7 @@ export default function SettingsPage() {
                 const headingId = `repo-group-${group.id}`;
                 return (
                   <section key={group.id} role="group" aria-labelledby={headingId} className="space-y-1">
-                    <div className="sticky top-0 z-10 flex items-center gap-2 rounded-md bg-surface-1/95 px-1.5 py-1 backdrop-blur-sm">
+                    <div className="sticky top-0 z-10 flex items-center gap-2 rounded-md bg-surface-1/95 px-1.5 py-1 backdrop-blur-xs">
                       <button
                         onClick={() => setCollapsedGroups(current => ({ ...current, [group.id]: !collapsed }))}
                         aria-expanded={!collapsed}
@@ -550,7 +550,7 @@ function RepoRow({ repo, isSelected, isFeatured, onToggle, t }: RepoRowProps) {
       className={cn(
         "flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-2/60 rounded-md",
         isSelected && !isFeatured && "bg-surface-2/40",
-        isFeatured && "bg-primary/[0.04]"
+        isFeatured && "bg-primary/4"
       )}
     >
       <div className={cn(
@@ -592,7 +592,7 @@ function MetricCard({ label, value, hint, highlight }: { label: string; value: s
   const isZero = isZeroMetricValue(value);
   return (
     <div className={cn(
-      "rounded-xl border bg-surface-1 shadow-sm px-4 py-3",
+      "rounded-xl border bg-surface-1 shadow-xs px-4 py-3",
       highlight ? "border-primary/30" : "border-border/60",
       isZero && "border-border/35 bg-surface-1/45 shadow-none"
     )}>
@@ -650,7 +650,7 @@ function PreferenceToggle({ label, current, options, onSelect }: {
             className={cn(
               "relative flex min-h-10 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 py-2 text-sm font-medium transition-all",
               current === opt.value
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "border border-border/60 bg-surface-2 text-foreground-subtle hover:border-foreground-subtle/30 hover:text-foreground"
             )}
           >

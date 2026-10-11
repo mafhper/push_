@@ -108,7 +108,7 @@ export function RepositoryShowcase({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
                 <StatusPill tone={activeItem.statusTone}>{activeItem.statusLabel}</StatusPill>
-                <span className="rounded-full bg-white/[0.04] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/52">
+                <span className="rounded-full bg-white/4 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/52">
                   {t("spotlightSlot", {
                     current: String((activeIndex === -1 ? 0 : activeIndex) + 1).padStart(2, "0"),
                     total: String(items.length).padStart(2, "0"),
@@ -123,7 +123,7 @@ export function RepositoryShowcase({
                 type="button"
                 onClick={() => setRotationPaused((value) => !value)}
                 aria-pressed={rotationPaused}
-                className="inline-flex items-center gap-2 rounded-full bg-black/22 px-3 py-2 text-[11px] font-semibold text-foreground/72 transition-colors hover:bg-white/[0.05] hover:text-primary"
+                className="inline-flex items-center gap-2 rounded-full bg-black/22 px-3 py-2 text-[11px] font-semibold text-foreground/72 transition-colors hover:bg-white/5 hover:text-primary"
               >
                 {rotationPaused ? <Play size={13} /> : <Pause size={13} />}
                 {rotationPaused ? t("resumeRotation") : t("pauseRotation")}
@@ -159,7 +159,7 @@ export function RepositoryShowcase({
                 <p className="mt-2 text-4xl font-black tracking-tight text-primary">{activeItem.scoreValue}</p>
                 <Link
                   to={activeItem.route}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/[0.1] px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/[0.16]"
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/16"
                 >
                   {t("openDetail")}
                   <ArrowRight size={15} />
@@ -209,8 +209,8 @@ export function RepositoryShowcase({
                   className={cn(
                     "w-full rounded-[1.35rem] px-4 py-3.5 text-left transition-all",
                     item.id === activeItem.id
-                      ? "bg-primary/[0.09] shadow-[inset_0_0_0_1px_rgba(0,255,65,0.14)]"
-                      : "bg-white/[0.025] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] hover:bg-white/[0.04]",
+                      ? "bg-primary/9 shadow-[inset_0_0_0_1px_rgba(0,255,65,0.14)]"
+                      : "bg-white/2.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] hover:bg-white/4",
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -249,62 +249,62 @@ export function RepositoryShowcase({
 
 export function RepositoryShowcaseSkeleton() {
   return (
-    <article className="overflow-hidden rounded-[2rem] border border-white/8 bg-[linear-gradient(135deg,rgba(10,10,10,0.96),rgba(18,18,18,0.92))] shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
+    <article className="overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(135deg,rgba(10,10,10,0.96),rgba(18,18,18,0.92))] shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
       <div className="grid gap-8 p-6 xl:grid-cols-[minmax(0,1.3fr)_22rem] lg:p-8">
         <div className="space-y-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div className="flex min-w-0 gap-4">
-              <div className="h-20 w-20 rounded-[1.6rem] border border-white/10 bg-white/[0.05] md:h-24 md:w-24" />
+              <div className="h-20 w-20 rounded-[1.6rem] border border-white/10 bg-white/5 md:h-24 md:w-24" />
               <div className="min-w-0 flex-1 space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="h-7 w-28 rounded-full bg-white/[0.06]" />
-                  <div className="h-7 w-24 rounded-full bg-white/[0.04]" />
+                  <div className="h-7 w-28 rounded-full bg-white/6" />
+                  <div className="h-7 w-24 rounded-full bg-white/4" />
                 </div>
                 <div className="space-y-2">
                   <div className="h-10 w-56 rounded-2xl bg-white/[0.07]" />
-                  <div className="h-3 w-32 rounded-full bg-white/[0.05]" />
+                  <div className="h-3 w-32 rounded-full bg-white/5" />
                 </div>
                 <div className="space-y-2">
-                  <div className="h-4 w-full rounded-full bg-white/[0.04]" />
-                  <div className="h-4 w-4/5 rounded-full bg-white/[0.04]" />
+                  <div className="h-4 w-full rounded-full bg-white/4" />
+                  <div className="h-4 w-4/5 rounded-full bg-white/4" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[1.6rem] border border-primary/14 bg-primary/[0.04] px-5 py-4 md:min-w-[10rem]">
-              <div className="ml-auto h-3 w-20 rounded-full bg-white/[0.05]" />
+            <div className="rounded-[1.6rem] border border-primary/14 bg-primary/4 px-5 py-4 md:min-w-40">
+              <div className="ml-auto h-3 w-20 rounded-full bg-white/5" />
               <div className="mt-4 ml-auto h-10 w-24 rounded-2xl bg-white/[0.07]" />
-              <div className="mt-4 ml-auto h-8 w-32 rounded-full bg-white/[0.05]" />
+              <div className="mt-4 ml-auto h-8 w-32 rounded-full bg-white/5" />
             </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="rounded-[1.25rem] border border-white/6 bg-white/[0.04] p-4">
-                <div className="h-3 w-20 rounded-full bg-white/[0.06]" />
-                <div className="mt-4 h-6 w-24 rounded-full bg-white/[0.08]" />
+              <div key={index} className="rounded-[1.25rem] border border-white/6 bg-white/4 p-4">
+                <div className="h-3 w-20 rounded-full bg-white/6" />
+                <div className="mt-4 h-6 w-24 rounded-full bg-white/8" />
               </div>
             ))}
           </div>
 
-          <div className="rounded-[1.6rem] border border-white/6 bg-white/[0.025] p-5">
+          <div className="rounded-[1.6rem] border border-white/6 bg-white/2.5 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-2">
-                <div className="h-3 w-32 rounded-full bg-white/[0.05]" />
-                <div className="h-4 w-[28rem] max-w-full rounded-full bg-white/[0.04]" />
+                <div className="h-3 w-32 rounded-full bg-white/5" />
+                <div className="h-4 w-md max-w-full rounded-full bg-white/4" />
               </div>
-              <div className="h-10 w-32 rounded-full bg-white/[0.06]" />
+              <div className="h-10 w-32 rounded-full bg-white/6" />
             </div>
           </div>
         </div>
 
-        <aside className="hidden rounded-[1.8rem] border border-white/6 bg-white/[0.025] p-5 xl:block">
+        <aside className="hidden rounded-[1.8rem] border border-white/6 bg-white/2.5 p-5 xl:block">
           <div className="flex items-center justify-between gap-3">
             <div className="space-y-2">
-              <div className="h-3 w-24 rounded-full bg-white/[0.05]" />
-              <div className="h-4 w-40 rounded-full bg-white/[0.04]" />
+              <div className="h-3 w-24 rounded-full bg-white/5" />
+              <div className="h-4 w-40 rounded-full bg-white/4" />
             </div>
-            <div className="h-4 w-4 rounded-full bg-white/[0.06]" />
+            <div className="h-4 w-4 rounded-full bg-white/6" />
           </div>
 
           <div className="mt-4 h-12 rounded-[1.2rem] border border-white/6 bg-black/18" />
@@ -314,12 +314,12 @@ export function RepositoryShowcaseSkeleton() {
               <div key={index} className="rounded-[1.35rem] border border-white/6 bg-black/16 px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-2">
-                    <div className="h-3 w-24 rounded-full bg-white/[0.05]" />
-                    <div className="h-4 w-32 rounded-full bg-white/[0.06]" />
-                    <div className="h-3 w-24 rounded-full bg-white/[0.04]" />
+                    <div className="h-3 w-24 rounded-full bg-white/5" />
+                    <div className="h-4 w-32 rounded-full bg-white/6" />
+                    <div className="h-3 w-24 rounded-full bg-white/4" />
                   </div>
                   <div className="space-y-2">
-                    <div className="ml-auto h-3 w-12 rounded-full bg-white/[0.05]" />
+                    <div className="ml-auto h-3 w-12 rounded-full bg-white/5" />
                     <div className="ml-auto h-5 w-14 rounded-full bg-white/[0.07]" />
                   </div>
                 </div>
@@ -367,7 +367,7 @@ function MetricSurface({ metric }: { metric: ShowcaseMetric }) {
 
 function MetaToken({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full bg-white/[0.04] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/48">
+    <span className="rounded-full bg-white/4 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/48">
       {children}
     </span>
   );

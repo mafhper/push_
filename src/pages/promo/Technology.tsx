@@ -42,8 +42,8 @@ export default function TechnologyPage() {
       </section>
 
       <section className="grid gap-10 xl:grid-cols-[0.92fr_1.08fr] xl:items-center">
-        <div className="rounded-[2rem] ops-surface-deep p-6">
-          <div className="rounded-[1.5rem] ops-surface-soft p-6">
+        <div className="rounded-4xl ops-surface-deep p-6">
+          <div className="rounded-3xl ops-surface-soft p-6">
             <div className="mb-6 flex gap-2">
               <span className="h-2 w-2 rounded-full bg-primary" />
               <span className="h-2 w-2 rounded-full bg-secondary" />

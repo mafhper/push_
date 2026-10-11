@@ -218,7 +218,7 @@ export function ConsoleLayout({ repos, runtime = 'local' }: ConsoleLayoutProps) 
             className={cn(
               "group absolute inset-y-0 -right-1 z-20 w-2 cursor-col-resize touch-none",
               // Same indicator the rest of the console uses, not a thinner one.
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             )}
           >
             {/* The hairline is the affordance: it is always there, and it widens
@@ -240,7 +240,7 @@ export function ConsoleLayout({ repos, runtime = 'local' }: ConsoleLayoutProps) 
       </section>
 
       <Sheet open={!canShowWorkspace && Boolean(selectedRepo)} onOpenChange={(open) => { if (!open) clearSelectedRepo(); }}>
-        <SheetContent side="right" className="flex w-full max-w-none flex-col overflow-hidden border-border bg-surface-2 p-0 sm:max-w-[34rem] md:hidden">
+        <SheetContent side="right" className="flex w-full max-w-none flex-col overflow-hidden border-border bg-surface-2 p-0 sm:max-w-136 md:hidden">
           <SheetTitle className="sr-only">{t('inspectorSheetTitle')}</SheetTitle>
           <SheetDescription className="sr-only">{t('inspectorSheetDescription')}</SheetDescription>
           <Inspector repo={selectedRepo} runtime={runtime} />

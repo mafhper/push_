@@ -14,7 +14,7 @@ export default function AuthPage() {
       />
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[2rem] surface-panel p-6">
+        <div className="rounded-4xl surface-panel p-6">
           <p className="terminal-label">{t("authBoundaryTitle")}</p>
           <div className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground">
             <p>{t("authBoundaryBody1")}</p>
@@ -22,7 +22,7 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] surface-panel-deep p-6">
+        <div className="rounded-4xl surface-panel-deep p-6">
           <p className="terminal-label">{t("authPolicyTitle")}</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <StatusPill tone="success">{t("authPolicyLocal")}</StatusPill>

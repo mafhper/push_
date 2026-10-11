@@ -69,7 +69,7 @@ export function RepositoryHero({
   const visiblePullRequests = (pullRequests ?? []).slice(0, 3);
 
   return (
-    <section className="relative overflow-hidden rounded-[2rem] ops-surface px-6 py-6 md:px-8 md:py-8">
+    <section className="relative overflow-hidden rounded-4xl ops-surface px-6 py-6 md:px-8 md:py-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,255,65,0.12),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(175,141,17,0.08),transparent_24%)]" />
       <div className="relative space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -130,7 +130,7 @@ export function RepositoryHero({
                 </div>
 
                 {visiblePullRequests.length > 0 ? (
-                  <div className="mt-5 rounded-[1.4rem] bg-secondary/[0.08] p-4 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.18)]">
+                  <div className="mt-5 rounded-[1.4rem] bg-secondary/8 p-4 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.18)]">
                     <div className="flex items-center justify-between gap-3">
                       <p className="terminal-label text-secondary/80">{t("openPullRequests")}</p>
                       <StatusPill tone="warning">{t("review")}</StatusPill>
@@ -140,7 +140,7 @@ export function RepositoryHero({
                         <a
                           key={pullRequest.id}
                           href={pullRequest.htmlUrl}
-                          className="flex items-start justify-between gap-4 rounded-[1rem] bg-black/18 px-4 py-3 transition-colors hover:bg-black/24"
+                          className="flex items-start justify-between gap-4 rounded-2xl bg-black/18 px-4 py-3 transition-colors hover:bg-black/24"
                         >
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-foreground">#{pullRequest.number} {pullRequest.title}</p>
@@ -181,7 +181,7 @@ export function RepositoryHero({
 
                         return (
                           <a key={run.id} href={run.htmlUrl} className="group min-w-0 flex-1">
-                            <div className="flex h-28 items-end rounded-[1.1rem] bg-black/22 p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] transition-colors group-hover:bg-white/[0.05]">
+                            <div className="flex h-28 items-end rounded-[1.1rem] bg-black/22 p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] transition-colors group-hover:bg-white/5">
                               <div
                                 className={cn(
                                   "w-full rounded-full transition-transform group-hover:scale-y-[1.03]",
@@ -224,7 +224,7 @@ export function RepositoryHero({
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[1.5rem] ops-surface-soft">
+            <div className="overflow-hidden rounded-3xl ops-surface-soft">
               <div className="grid divide-y divide-white/6 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
                 <HeroMetric label={t("health")} value={`${score}%`} hint={t("repoCurrentRepositoryScore")} />
                 <HeroMetric label={t("workflow")} value={workflowSuccessRate !== null ? `${workflowSuccessRate}%` : "N/A"} hint={t("repoRecentSuccessRate")} />

@@ -6,7 +6,7 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 function Tile() {
   return (
-    <div className="flex min-h-[6.75rem] w-full flex-col justify-between rounded-xl border border-border/50 bg-surface-1/60 px-4 py-3.5 shadow-none">
+    <div className="flex min-h-27 w-full flex-col justify-between rounded-xl border border-border/50 bg-surface-1/60 px-4 py-3.5 shadow-none">
       <div className="flex items-start justify-between gap-3">
         <SkeletonBlock className="h-3 w-24" />
         <SkeletonBlock className="h-8 w-8 rounded-lg" />

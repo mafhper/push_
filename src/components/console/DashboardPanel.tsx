@@ -79,7 +79,7 @@ export function DashboardPanel({ repos }: DashboardPanelProps) {
         </div>
 
         {showScoreInfo && (
-          <div className="mx-auto mt-4 w-full max-w-5xl rounded-xl border border-border/60 bg-surface-1/80 p-4 text-sm text-foreground-muted shadow-sm backdrop-blur-sm animate-fade-in space-y-1.5">
+          <div className="mx-auto mt-4 w-full max-w-5xl rounded-xl border border-border/60 bg-surface-1/80 p-4 text-sm text-foreground-muted shadow-xs backdrop-blur-xs animate-fade-in space-y-1.5">
             <p className="font-semibold text-foreground">How attention score works</p>
             <p className="text-foreground-subtle">Each repository gets a score based on these weighted factors:</p>
             <ul className="list-disc list-inside space-y-0.5 text-foreground-subtle">
@@ -207,7 +207,7 @@ function AttentionSourceRow({ repo, signal, onClick }: { repo: ScoredRepo; signa
     <button
       onClick={onClick}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-xl border bg-surface-1 px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:bg-surface-2 hover:shadow-md",
+        "group flex w-full items-center gap-3 rounded-xl border bg-surface-1 px-4 py-3 text-left shadow-xs transition-all hover:-translate-y-0.5 hover:bg-surface-2 hover:shadow-md",
         signal.severity === 'critical' && "border-critical/30",
         signal.severity === 'high' && "border-warning/30",
         signal.severity === 'warning' && "border-warning/25",
@@ -268,10 +268,10 @@ function MetricTile({ icon, label, value, description, severity, onClick }: {
     <Comp
       onClick={onClick}
       className={cn(
-        "flex min-h-[6.75rem] w-full flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-4 py-3.5 text-left shadow-sm transition-all duration-200",
+        "flex min-h-27 w-full flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-4 py-3.5 text-left shadow-xs transition-all duration-200",
         isZero && "border-border/35 bg-surface-1/45 shadow-none",
         onClick && "cursor-pointer hover:shadow-md hover:bg-surface-2 hover:border-foreground-subtle/20",
-        onClick && isZero && "hover:shadow-sm hover:bg-surface-1/70"
+        onClick && isZero && "hover:shadow-xs hover:bg-surface-1/70"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -309,7 +309,7 @@ function MetricTile({ icon, label, value, description, severity, onClick }: {
 
 function CriticalRepoRow({ repo, onClick }: { repo: ScoredRepo; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-critical/30 bg-critical/[0.03] hover:bg-critical/[0.07] hover:shadow-sm transition-all duration-200 text-left w-full group">
+    <button onClick={onClick} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-critical/30 bg-critical/3 hover:bg-critical/[0.07] hover:shadow-xs transition-all duration-200 text-left w-full group">
       <div className="h-2 w-2 rounded-full bg-critical shrink-0 animate-pulse-critical" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

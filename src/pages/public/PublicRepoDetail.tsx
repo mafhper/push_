@@ -105,7 +105,7 @@ export default function PublicRepoDetail() {
         />
 
         <div className="space-y-6">
-          <section className="rounded-[2rem] ops-surface p-6">
+          <section className="rounded-4xl ops-surface p-6">
             <div className="mb-6">
               <p className="terminal-label">{t("alertsTitle")}</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("openAlertsTitle")}</h2>
@@ -147,7 +147,7 @@ export default function PublicRepoDetail() {
           </section>
 
           {viewMode !== "balanced" && data.contributors.length > 0 && (
-            <section className="rounded-[2rem] ops-surface p-6">
+            <section className="rounded-4xl ops-surface p-6">
               <p className="terminal-label">{t("contributors")}</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("contributors")}</h2>
               <div className="mt-5 flex flex-wrap gap-3">
@@ -164,7 +164,7 @@ export default function PublicRepoDetail() {
             </section>
           )}
 
-          <section className="rounded-[2rem] ops-surface p-6">
+          <section className="rounded-4xl ops-surface p-6">
             <p className="terminal-label">{t("repositoryFacts")}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("repositoryFacts")}</h2>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -225,7 +225,7 @@ export default function PublicRepoDetail() {
       </div>
 
       {viewMode !== "balanced" && data.workflowRuns.length > 0 && (
-        <section className="rounded-[2rem] ops-surface p-6">
+        <section className="rounded-4xl ops-surface p-6">
           <div className="mb-6">
             <p className="terminal-label">{t("workflows")}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("workflows")}</h2>
@@ -235,7 +235,7 @@ export default function PublicRepoDetail() {
       )}
 
       {viewMode !== "balanced" && data.dependencies && data.dependencies.length > 0 && (
-        <section className="rounded-[2rem] ops-surface p-6">
+        <section className="rounded-4xl ops-surface p-6">
           <div className="mb-6">
             <p className="terminal-label">{t("dependencies")}</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-foreground">{t("dependencies")}</h2>
@@ -256,7 +256,7 @@ export default function PublicRepoDetail() {
         </section>
       )}
 
-      <section className="rounded-[2rem] ops-surface p-6">
+      <section className="rounded-4xl ops-surface p-6">
         <div className="mb-6 flex items-start justify-between">
           <div>
             <p className="terminal-label">{t("recentCommitsTitle")}</p>
@@ -306,7 +306,7 @@ function DetailRow({
   highlighted?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-[1rem] bg-white/[0.02] px-4 py-3">
+    <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/2 px-4 py-3">
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className={highlighted ? "rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary" : "text-sm font-semibold text-foreground"}>{value}</span>
     </div>

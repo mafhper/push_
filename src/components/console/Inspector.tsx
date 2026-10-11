@@ -118,7 +118,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-surface-2">
-      <header className="border-b border-border/50 bg-surface-2/80 px-4 py-5 backdrop-blur-sm md:px-8">
+      <header className="border-b border-border/50 bg-surface-2/80 px-4 py-5 backdrop-blur-xs md:px-8">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-2 min-w-0">
@@ -212,9 +212,9 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {activeTab === 'overview' && (
-            <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 outline-none md:px-8">
+            <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 outline-hidden md:px-8">
               {focusedSignals.length > 0 && (
-                <section className="rounded-xl border border-warning/30 bg-warning/[0.04] p-4 shadow-sm">
+                <section className="rounded-xl border border-warning/30 bg-warning/4 p-4 shadow-xs">
                   <div className="flex items-start gap-3">
                     <AlertTriangle size={17} className="mt-0.5 shrink-0 text-warning" />
                     <div className="min-w-0">
@@ -247,8 +247,8 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                     const isFocused = signalMatchesFilter(sig, activeFilter);
                     return (
                     <div key={sig.label} className={cn(
-                      "flex items-center gap-3 rounded-xl border px-3 py-2.5 shadow-sm transition-colors",
-                      isFocused ? "border-warning/40 bg-warning/[0.05]" : "border-border/60 bg-surface-1"
+                      "flex items-center gap-3 rounded-xl border px-3 py-2.5 shadow-xs transition-colors",
+                      isFocused ? "border-warning/40 bg-warning/5" : "border-border/60 bg-surface-1"
                     )}>
                       <SignalIcon kind={sig.kind} severity={sig.severity} />
                       <div className="flex-1 min-w-0">
@@ -266,7 +266,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 </div>
               </section>
 
-              <section className="rounded-xl border border-border/60 bg-surface-1 p-4 shadow-sm">
+              <section className="rounded-xl border border-border/60 bg-surface-1 p-4 shadow-xs">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-micro font-bold uppercase tracking-wider text-foreground-subtle">Alerts in overview</h3>
                   <button
@@ -285,7 +285,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                         href={alert.htmlUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-start gap-3 rounded-lg border border-critical/20 bg-critical/[0.03] px-3 py-2.5 transition-colors hover:bg-critical/[0.06]"
+                        className="flex items-start gap-3 rounded-lg border border-critical/20 bg-critical/3 px-3 py-2.5 transition-colors hover:bg-critical/6"
                       >
                         <ShieldAlert size={15} className="mt-0.5 shrink-0 text-critical" />
                         <span className="min-w-0 flex-1">
@@ -334,7 +334,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                       return (
                         <button key={branch} onClick={() => handleBranchClick(branch)}
                           className={cn("inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-micro font-medium transition-all duration-150 text-left",
-                            selectedBranch === branch ? "border-primary/40 bg-primary/10 text-primary shadow-sm" : "border-border/60 bg-surface-1/80 text-foreground-muted hover:border-foreground-subtle/30 hover:bg-surface-1 hover:text-foreground hover:shadow-sm")}>
+                            selectedBranch === branch ? "border-primary/40 bg-primary/10 text-primary shadow-xs" : "border-border/60 bg-surface-1/80 text-foreground-muted hover:border-foreground-subtle/30 hover:bg-surface-1 hover:text-foreground hover:shadow-xs")}>
                           <GitBranch size={12} />
                           {branch}
                           {failCount > 0 && <span className="text-critical font-mono">({failCount} failed)</span>}
@@ -355,7 +355,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                       const pct = total > 0 ? ((bytes / total) * 100).toFixed(0) : '0';
                       const color = LANGUAGE_COLORS[lang] || '#888';
                       return (
-                        <span key={lang} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-surface-1/80 px-3 py-1.5 text-micro text-foreground-muted shadow-sm">
+                        <span key={lang} className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-surface-1/80 px-3 py-1.5 text-micro text-foreground-muted shadow-xs">
                           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
                           {lang} {pct}%
                         </span>
@@ -368,7 +368,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
           )}
 
           {activeTab === 'workflows' && (
-            <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 outline-none md:px-8">
+            <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 outline-hidden md:px-8">
               <section className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                 <MiniStat icon={<Boxes size={15} />} label="Actions" value={workflowGroups.length.toString()} description="Unique workflow names in recent runs." />
                 <MiniStat icon={<Activity size={15} />} label="Runs" value={(workflowRuns?.length ?? 0).toString()} description="Tracked workflow executions." />
@@ -390,7 +390,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                           key={group.name}
                           type="button"
                           onClick={() => toggleWorkflow(group.name)}
-                          className="rounded-xl border border-border/60 bg-surface-1 p-3 text-left shadow-sm transition-colors hover:bg-surface-2"
+                          className="rounded-xl border border-border/60 bg-surface-1 p-3 text-left shadow-xs transition-colors hover:bg-surface-2"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -442,7 +442,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                     const failRuns = group.runs.filter(r => r.conclusion === 'failure').length;
                     const latestConclusion = latest.conclusion;
                     return (
-                      <div key={group.name} className="rounded-xl border border-border/60 bg-surface-1 shadow-sm overflow-hidden">
+                      <div key={group.name} className="rounded-xl border border-border/60 bg-surface-1 shadow-xs overflow-hidden">
                         <button onClick={() => toggleWorkflow(group.name)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2/80 transition-colors">
                           <WorkflowDot conclusion={latestConclusion} />
                           <div className="flex-1 min-w-0">
@@ -493,7 +493,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
           )}
 
           {activeTab === 'dependencies' && (
-            <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-5 outline-none md:px-8">
+            <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-5 outline-hidden md:px-8">
               <DependencyRiskSummary detail={detail} />
 
               {detail?.dependencies && detail.dependencies.length > 0 ? (
@@ -506,7 +506,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                     {detail.dependencies.slice(0, repoDetailMode === 'balanced' ? 10 : detail.dependencies.length).map(dep => {
                       const npmUrl = `https://www.npmjs.com/package/${dep.name}`;
                       return (
-                        <div key={dep.name} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border/60 bg-surface-1 shadow-sm hover:shadow-md transition-shadow">
+                        <div key={dep.name} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border/60 bg-surface-1 shadow-xs hover:shadow-md transition-shadow">
                           <Package size={14} className="text-foreground-subtle shrink-0" />
                           <div className="flex-1 min-w-0 flex items-center gap-3">
                             <span className="text-body font-medium text-foreground truncate">{dep.name}</span>
@@ -559,7 +559,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
           )}
 
           {activeTab === 'activity' && (
-            <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-5 outline-none md:px-8">
+            <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-5 outline-hidden md:px-8">
               <section className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                 <MiniStat icon={<ShieldAlert size={15} />} label="Alerts" value={(detail?.alerts.length ?? 0).toString()} severity={(detail?.alerts.length ?? 0) > 0 ? 'warning' : undefined} description="Dependabot/security items visible in this runtime." />
                 <MiniStat icon={<GitPullRequest size={15} />} label="PRs" value={(detail?.pullRequests?.length ?? 0).toString()} description="Open pull requests currently tracked." />
@@ -577,7 +577,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                     {detail.alerts.slice(0, repoDetailMode === 'balanced' ? 5 : detail.alerts.length).map(alert => {
                       const npmUrl = `https://www.npmjs.com/package/${alert.packageName}`;
                       return (
-                        <div key={alert.id} className="flex items-start gap-3 rounded-xl border border-border/60 bg-surface-1 px-4 py-3 shadow-sm">
+                        <div key={alert.id} className="flex items-start gap-3 rounded-xl border border-border/60 bg-surface-1 px-4 py-3 shadow-xs">
                           <ShieldAlert size={16} className={cn("mt-0.5 shrink-0", alert.severity === 'critical' && "text-critical", alert.severity === 'high' && "text-warning", alert.severity === 'medium' && "text-info", "text-foreground-subtle")} />
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
@@ -625,7 +625,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                 {detail?.pullRequests && detail.pullRequests.length > 0 ? (
                   <div className="max-w-3xl grid gap-2">
                     {detail.pullRequests.slice(0, repoDetailMode === 'balanced' ? 5 : detail.pullRequests.length).map(pr => (
-                      <div key={pr.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/60 bg-surface-1 shadow-sm">
+                      <div key={pr.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/60 bg-surface-1 shadow-xs">
                         <GitPullRequest size={15} className={cn("shrink-0", pr.draft ? "text-foreground-subtle" : pr.state === 'open' ? 'text-success' : 'text-primary')} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -697,7 +697,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {detail.contributors.map(contributor => (
-                      <div key={contributor.login} className="flex items-center gap-2 rounded-xl border border-border/60 bg-surface-1 px-3 py-2 shadow-sm">
+                      <div key={contributor.login} className="flex items-center gap-2 rounded-xl border border-border/60 bg-surface-1 px-3 py-2 shadow-xs">
                         {contributor.avatarUrl && <img src={contributor.avatarUrl} alt={contributor.login} className="h-6 w-6 rounded-full bg-surface-3 object-cover" />}
                         <span className="text-micro font-medium text-foreground">@{contributor.login}</span>
                         <span className="text-micro font-mono text-foreground-subtle">× {contributor.contributions}</span>
@@ -719,7 +719,7 @@ function TabTrigger({ value, label, count }: { value: string; label: string; cou
     <Tabs.Trigger
       value={value}
       className={cn(
-        "relative flex h-9 items-center gap-1.5 px-2.5 text-micro font-medium transition-colors outline-none whitespace-nowrap sm:gap-2 sm:px-3",
+        "relative flex h-9 items-center gap-1.5 px-2.5 text-micro font-medium transition-colors outline-hidden whitespace-nowrap sm:gap-2 sm:px-3",
         "text-foreground-subtle hover:text-foreground",
         "data-[state=active]:text-primary data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:inset-x-3 data-[state=active]:after:h-[2px] data-[state=active]:after:bg-primary data-[state=active]:after:rounded-full"
       )}
@@ -812,8 +812,8 @@ function MiniStat({
   return (
     <div
       className={cn(
-        "relative flex min-h-[6.75rem] flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-3.5 py-3 shadow-sm transition-shadow hover:shadow-md",
-        isZero && "border-border/35 bg-surface-1/45 shadow-none hover:shadow-sm"
+        "relative flex min-h-27 flex-col justify-between rounded-xl border border-border/60 bg-surface-1 px-3.5 py-3 shadow-xs transition-shadow hover:shadow-md",
+        isZero && "border-border/35 bg-surface-1/45 shadow-none hover:shadow-xs"
       )}
       onMouseEnter={() => setShowTip(true)}
       onMouseLeave={() => setShowTip(false)}

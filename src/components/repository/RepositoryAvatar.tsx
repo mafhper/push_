@@ -115,7 +115,7 @@ export function RepositoryAvatar({ owner, repo, defaultBranch, language, classNa
         src={src}
         alt=""
         loading="lazy"
-        className="h-[72%] w-[72%] object-contain drop-shadow-sm transition-transform duration-500 group-hover:scale-110"
+        className="h-[72%] w-[72%] object-contain drop-shadow-xs transition-transform duration-500 group-hover:scale-110"
         onLoad={handleLoad}
         onError={handleError}
       />

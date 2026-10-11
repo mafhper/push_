@@ -101,7 +101,7 @@ function AlertCard({ owner, repo }: { owner: string; repo: string }) {
 
       <div className="mt-6 space-y-3">
         {data.alerts.length > 0 ? data.alerts.map((alert) => (
-          <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.2rem] bg-white/[0.03] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+          <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.2rem] bg-white/3 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
             <div>
               <p className="font-semibold">{alert.summary}</p>
               <p className="mt-2 text-sm text-muted-foreground">{alert.packageName} / {alert.ecosystem}</p>
@@ -109,7 +109,7 @@ function AlertCard({ owner, repo }: { owner: string; repo: string }) {
             <StatusPill tone={alert.severity === "critical" ? "critical" : "warning"}>{alert.severity}</StatusPill>
           </a>
         )) : (
-          <div className="rounded-[1.2rem] bg-white/[0.03] p-4 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+          <div className="rounded-[1.2rem] bg-white/3 p-4 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
             {resolveDependabotReason(data.availability.dependabotAlerts.reason, t, "dependabotReturnedNoIssues")}
           </div>
         )}

@@ -113,7 +113,7 @@ function StatusBarFrame({
   const totalAttentionItems = criticalCount + warningCount;
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-border/60 bg-surface-1/95 px-3 backdrop-blur-sm sm:px-5">
+    <header className="flex h-12 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-border/60 bg-surface-1/95 px-3 backdrop-blur-xs sm:px-5">
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <Link to="/app" className="shrink-0 font-headline text-base font-bold tracking-tighter text-primary">
           push<span className="text-foreground">_</span>

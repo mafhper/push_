@@ -45,25 +45,25 @@ function AppFooter({ modeLabel }: { modeLabel: string }) {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/faq"
-              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
+              className="rounded-full border border-white/8 bg-white/2 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
             >
               {t("privacy")}
             </Link>
             <Link
               to="/technology"
-              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
+              className="rounded-full border border-white/8 bg-white/2 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
             >
               {t("terms")}
             </Link>
             <Link
               to="/app/alerts"
-              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
+              className="rounded-full border border-white/8 bg-white/2 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
             >
               {t("security")}
             </Link>
             <Link
               to="/app"
-              className="rounded-full border border-white/8 bg-white/[0.02] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
+              className="rounded-full border border-white/8 bg-white/2 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/58 transition-colors hover:border-white/14 hover:text-primary"
             >
               {t("systemStatus")}
             </Link>
@@ -122,8 +122,8 @@ export function DashboardLayoutFrame({
                   className={({ isActive }) =>
                     cn(
                       "group relative flex items-center gap-3 rounded-[1.35rem] px-3 py-3 text-[14px] font-semibold text-foreground/46 transition-all duration-200",
-                      "hover:bg-white/[0.04] hover:text-foreground/82",
-                      isActive && "bg-primary/[0.08] text-primary shadow-[inset_0_0_0_1px_rgba(0,255,65,0.14)]",
+                      "hover:bg-white/4 hover:text-foreground/82",
+                      isActive && "bg-primary/8 text-primary shadow-[inset_0_0_0_1px_rgba(0,255,65,0.14)]",
                     )
                   }
                 >
@@ -131,8 +131,8 @@ export function DashboardLayoutFrame({
                     <>
                       <span
                         className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-[1rem] bg-white/[0.025] text-foreground/46 transition-all duration-200 group-hover:bg-white/[0.05] group-hover:text-foreground/78",
-                          isActive && "bg-primary/[0.12] text-primary",
+                          "flex h-10 w-10 items-center justify-center rounded-2xl bg-white/2.5 text-foreground/46 transition-all duration-200 group-hover:bg-white/5 group-hover:text-foreground/78",
+                          isActive && "bg-primary/12 text-primary",
                         )}
                       >
                         {route.labelKey === "dashboard" ? <SquareTerminal size={18} /> : route.labelKey === "alerts" ? <ShieldAlert size={18} /> : <Settings size={18} />}
@@ -156,7 +156,7 @@ export function DashboardLayoutFrame({
               <GitBranch size={14} />
               {t("manageRepos")}
             </Link>
-            <div className="mt-3 rounded-[1.2rem] bg-white/[0.03] px-3 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+            <div className="mt-3 rounded-[1.2rem] bg-white/3 px-3 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
               <p className="terminal-label">{t("runtime")}</p>
               <p className="mt-2 text-sm text-foreground/72">{modeLabel}</p>
             </div>
@@ -189,7 +189,7 @@ export function DashboardLayoutFrame({
               {identityLabel ? (
                 <Link
                   to="/app/settings"
-                  className="hidden rounded-full bg-primary/[0.1] px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/[0.14] md:inline-flex"
+                  className="hidden rounded-full bg-primary/10 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/[0.14] md:inline-flex"
                 >
                   {identityLabel}
                 </Link>
@@ -204,7 +204,7 @@ export function DashboardLayoutFrame({
             </div>
           </div>
 
-          <div className="border-t border-white/[0.04] px-4 py-3 lg:hidden">
+          <div className="border-t border-white/4 px-4 py-3 lg:hidden">
             <nav className="flex gap-2 overflow-x-auto pb-1">
               {APP_ROUTES.map((route) => (
                 <NavLink
@@ -214,7 +214,7 @@ export function DashboardLayoutFrame({
                   className={({ isActive }) =>
                     cn(
                       "flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-foreground/55 transition-colors",
-                      isActive ? "bg-primary/[0.1] text-primary" : "bg-white/[0.03] hover:bg-white/[0.05] hover:text-foreground/84",
+                      isActive ? "bg-primary/10 text-primary" : "bg-white/3 hover:bg-white/5 hover:text-foreground/84",
                     )
                   }
                 >

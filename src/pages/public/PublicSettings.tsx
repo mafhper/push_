@@ -54,7 +54,7 @@ export default function PublicSettingsPage() {
         <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
 
           {/* Public Source */}
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-title font-headline font-semibold text-foreground">{t("publicSourceTitle")}</h2>
@@ -79,7 +79,7 @@ export default function PublicSettingsPage() {
                       value={usernameInput}
                       onChange={e => setUsernameInput(e.target.value)}
                       placeholder="@mafhper"
-                      className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
+                      className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
                     />
                   </div>
                   <button type="submit" className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
@@ -103,7 +103,7 @@ export default function PublicSettingsPage() {
           </section>
 
           {/* Runtime Status */}
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
             <div>
               <h2 className="text-title font-headline font-semibold text-foreground">{t("runtimeStatusTitle")}</h2>
             </div>
@@ -119,7 +119,7 @@ export default function PublicSettingsPage() {
         </div>
 
         {/* Preferences */}
-        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
           <div>
             <h2 className="text-title font-headline font-semibold text-foreground">{t("preferences")}</h2>
             <p className="text-sm text-foreground-subtle mt-0.5">{t("interfaceSettings")}</p>
@@ -164,7 +164,7 @@ export default function PublicSettingsPage() {
         </section>
 
         {/* Repositories List */}
-        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-title font-headline font-semibold text-foreground">
@@ -223,7 +223,7 @@ export default function PublicSettingsPage() {
         </section>
 
         {/* Security */}
-        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-sm p-5 space-y-4">
+        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
           <h2 className="text-title font-headline font-semibold text-foreground">{t("securityBoundaryTitle")}</h2>
           <div className="space-y-2 text-sm text-foreground-subtle leading-relaxed">
             <div className="rounded-lg border border-border/30 bg-surface-2/50 p-3">
@@ -263,7 +263,7 @@ function PreferenceToggle({ label, current, options, onSelect }: {
             className={cn(
               "relative flex min-h-10 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 py-2 text-sm font-medium transition-all",
               current === opt.value
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "border border-border/60 bg-surface-2 text-foreground-subtle hover:border-foreground-subtle/30 hover:text-foreground"
             )}
           >
