@@ -1,56 +1,81 @@
+# Workspace privado
+.dev/
+_dev/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+QWEN.md
+KIMI.md
+.codex/
+.agents/
+.claude/
+.claude-code/
+.cursor/
+.gemini/
+.gemini-clipboard/
+.kimi/
+.qwen/
+.roo/
+.windsurf/
+
+# Sistema operacional
+desktop.ini
+Thumbs.db
+ehthumbs.db
+.DS_Store
+*.lnk
+
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+*.local
+
+# Temporarios
+*.tmp
+*.temp
+*.bak
+*.orig
+
 # Logs
-logs
+logs/
 *.log
+*.out
+*.err
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-output
-*.local
-*.tsbuildinfo
+# Ambiente
 .env
 .env.*
-!.env.example
+!*.example
 
-# Tauri build artifacts
-src-tauri/target
+# Editores
+.vscode/
+!/.vscode/
+/.vscode/*
+!/.vscode/extensions.json
+.idea/
+.cache/
+*.sw?
+*.sublime-project
+*.sublime-workspace
+output/
+src-tauri/target/
 src-tauri/gen/schemas
 src-tauri/gen/android
 src-tauri/gen/apple
 src-tauri/gen/templates
 
-# Private agent/operator workspace
-AGENTS.md
-GEMINI.md
-CLAUDE.md
-QWEN.md
-KIMI.md
-.codex/
-.dev/
-_dev/
-.agents/
-.gemini/
-.gemini-clipboard/
-.claude/
-.qwen/
-.kimi/
-.roo/
-.cursor/
-.windsurf/
-.claude-code/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Sondas
+/ports.ts
+/ports.mjs
