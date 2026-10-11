@@ -33,7 +33,7 @@ export function SignalFieldHero() {
             </Link>
             <a
               href={SITE_REPOSITORY_URL}
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-background/35 px-5 text-sm font-semibold text-foreground backdrop-blur transition-colors hover:bg-surface-1/80"
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-background/35 px-5 text-sm font-semibold text-foreground backdrop-blur-sm transition-colors hover:bg-surface-1/80"
             >
               View source
             </a>
@@ -41,7 +41,7 @@ export function SignalFieldHero() {
         </div>
 
         <div className="relative mx-auto w-full max-w-xl">
-          <div className="absolute -inset-x-6 -inset-y-8 rounded-[2rem] bg-background/45 blur-2xl" />
+          <div className="absolute -inset-x-6 -inset-y-8 rounded-4xl bg-background/45 blur-2xl" />
           <div className="relative overflow-hidden rounded-xl border border-border/80 bg-background/82 p-4 shadow-2xl shadow-background/45 backdrop-blur-md">
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <p className="font-headline text-title font-semibold text-foreground">Signal field</p>

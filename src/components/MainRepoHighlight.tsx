@@ -35,7 +35,7 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`relative overflow-hidden rounded-3xl border bg-card p-6 sm:p-8 transition-all shadow-sm ${
+      className={`relative overflow-hidden rounded-3xl border bg-card p-6 sm:p-8 transition-all shadow-xs ${
         isCritical ? 'border-critical/50 shadow-[0_0_20px_rgba(var(--critical),0.1)]' : 'border-primary/20'
       }`}
     >
@@ -54,7 +54,7 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
                 repo={repo.name}
                 defaultBranch={repo.defaultBranch}
                 language={repo.language}
-                className={`h-24 w-24 sm:h-32 sm:w-32 rounded-3xl border bg-card shadow-sm ${
+                className={`h-24 w-24 sm:h-32 sm:w-32 rounded-3xl border bg-card shadow-xs ${
                   isCritical ? 'border-critical/30' : 'border-border'
                 }`}
               />
@@ -71,7 +71,7 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
                     Action Required
                   </span>
                 ) : (
-                  <span className="rounded-full bg-primary px-4 py-1.5 text-xs font-black uppercase tracking-widest text-primary-foreground shadow-sm">
+                  <span className="rounded-full bg-primary px-4 py-1.5 text-xs font-black uppercase tracking-widest text-primary-foreground shadow-xs">
                     {t('activeDevelopment')}
                   </span>
                 )}
@@ -213,7 +213,7 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
             </div>
 
             {alerts && alerts.length > 0 && (
-              <div className="rounded-2xl border border-critical/30 bg-critical/5 p-5 space-y-4 shadow-sm">
+              <div className="rounded-2xl border border-critical/30 bg-critical/5 p-5 space-y-4 shadow-xs">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-critical">
                   <ShieldAlert size={18} />
                   {t('alerts')}

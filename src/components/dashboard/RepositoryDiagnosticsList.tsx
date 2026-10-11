@@ -65,7 +65,7 @@ export function RepositoryDiagnosticsList({
                 ? "ops-surface-deep shadow-[inset_0_0_0_1px_rgba(244,122,97,0.14)] hover:shadow-[inset_0_0_0_1px_rgba(244,122,97,0.22)]"
                 : item.statusTone === "warning"
                   ? "ops-surface-deep shadow-[inset_0_0_0_1px_rgba(175,141,17,0.14)] hover:shadow-[inset_0_0_0_1px_rgba(175,141,17,0.22)]"
-                  : "ops-surface-deep shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] hover:bg-white/[0.03]",
+                  : "ops-surface-deep shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] hover:bg-white/3",
             )}
           >
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,1fr)_9rem] xl:items-start">
@@ -155,11 +155,11 @@ function SignalPill({
     <div
       className={cn(
         "rounded-[1.15rem] px-3 py-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]",
-        prominent && "min-h-[5rem] px-4 py-3",
-        tone === "success" && "bg-primary/[0.08] text-primary",
-        tone === "warning" && "bg-secondary/[0.08] text-secondary",
-        tone === "critical" && "bg-destructive/[0.08] text-destructive",
-        tone === "neutral" && "bg-white/[0.03] text-foreground/72",
+        prominent && "min-h-20 px-4 py-3",
+        tone === "success" && "bg-primary/8 text-primary",
+        tone === "warning" && "bg-secondary/8 text-secondary",
+        tone === "critical" && "bg-destructive/8 text-destructive",
+        tone === "neutral" && "bg-white/3 text-foreground/72",
       )}
     >
       <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-current/65">{label}</p>

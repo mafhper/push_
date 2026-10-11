@@ -114,7 +114,7 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
               className={cn(
                 "px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all duration-150 whitespace-nowrap",
                 filter === key
-                  ? "bg-primary/10 text-primary shadow-sm"
+                  ? "bg-primary/10 text-primary shadow-xs"
                   : "text-foreground-subtle hover:bg-surface-1 hover:text-foreground"
               )}
             >
@@ -131,8 +131,8 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
           onClick={showOverview}
           title={t('dashboardOverview')}
           className={cn(
-            "group flex w-full items-center gap-2.5 border-l-[3px] px-5 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            !selectedRepoId ? "border-l-primary bg-surface-2 shadow-sm" : "border-l-transparent hover:bg-surface-1/60",
+            "group flex w-full items-center gap-2.5 border-l-[3px] px-5 py-3 text-left transition-all duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            !selectedRepoId ? "border-l-primary bg-surface-2 shadow-xs" : "border-l-transparent hover:bg-surface-1/60",
             compact && "md:flex-col md:items-center md:gap-1.5 md:px-2 md:py-3 md:text-center"
           )}
         >
@@ -182,10 +182,10 @@ function TriageRow({ repo, selected, compact, labelOpacity, railOpacity, onClick
       onClick={onClick}
       title={tooltip}
       className={cn(
-        "group flex w-full items-center gap-2.5 px-5 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "group flex w-full items-center gap-2.5 px-5 py-3 text-left transition-all duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         compact && "md:flex-col md:items-center md:gap-1.5 md:px-2 md:py-3 md:text-center",
         selected
-          ? "bg-surface-2 shadow-sm border-l-[3px] border-l-primary"
+          ? "bg-surface-2 shadow-xs border-l-[3px] border-l-primary"
           : "hover:bg-surface-1/60 border-l-[3px] border-l-transparent"
       )}
     >

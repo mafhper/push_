@@ -183,7 +183,7 @@ function AlertCard({
             <StatusPill tone="warning">{t("review")}</StatusPill>
           </div>
           {pullRequests.slice(0, 4).map((pullRequest) => (
-            <a key={pullRequest.id} href={pullRequest.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.2rem] bg-secondary/[0.08] p-4 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.18)]">
+            <a key={pullRequest.id} href={pullRequest.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.2rem] bg-secondary/8 p-4 shadow-[inset_0_0_0_1px_rgba(175,141,17,0.18)]">
               <div>
                 <p className="font-semibold text-foreground">#{pullRequest.number} {pullRequest.title}</p>
                 <p className="mt-2 text-sm text-foreground/62">@{pullRequest.authorLogin}</p>
@@ -198,7 +198,7 @@ function AlertCard({
 
       <div className="mt-6 space-y-3">
         {data.alerts.length > 0 ? data.alerts.map((alert) => (
-          <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.2rem] bg-destructive/[0.08] p-4 shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)]">
+          <a key={alert.id} href={alert.htmlUrl} className="flex items-start justify-between gap-4 rounded-[1.2rem] bg-destructive/8 p-4 shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)]">
             <div>
               <p className="font-semibold">{alert.summary}</p>
               <p className="mt-2 text-sm text-muted-foreground">{alert.packageName} / {alert.ecosystem}</p>
@@ -206,7 +206,7 @@ function AlertCard({
             <StatusPill tone={alert.severity === "critical" ? "critical" : "warning"}>{alert.severity}</StatusPill>
           </a>
         )) : (
-          <div className="rounded-[1.2rem] bg-white/[0.03] p-4 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
+          <div className="rounded-[1.2rem] bg-white/3 p-4 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
             {resolveDependabotReason(data.availability.dependabotAlerts.reason, t, "dependabotReturnedNoIssues")}
           </div>
         )}
@@ -227,7 +227,7 @@ function AlertMetric({
   const isZero = isZeroMetricValue(value);
   return (
     <div className={cn(
-      "rounded-[1.5rem] ops-surface-soft px-5 py-4",
+      "rounded-3xl ops-surface-soft px-5 py-4",
       tone === "critical" && "shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)]",
       tone === "warning" && "shadow-[inset_0_0_0_1px_rgba(175,141,17,0.16)]",
       isZero && "opacity-60 saturate-50 shadow-none"
@@ -260,7 +260,7 @@ function AlertMini({
   const isZero = isZeroMetricValue(value);
   return (
     <div className={cn(
-      "rounded-[1.2rem] bg-white/[0.03] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]",
+      "rounded-[1.2rem] bg-white/3 px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]",
       isZero && "opacity-60 saturate-50 shadow-none"
     )}>
       <p className="terminal-label">{label}</p>
@@ -293,7 +293,7 @@ function AttentionPill({
         "rounded-full px-3 py-2 font-mono text-[11px] uppercase tracking-[0.2em]",
         tone === "critical" && "bg-destructive/[0.14] text-destructive shadow-[inset_0_0_0_1px_rgba(244,122,97,0.2)]",
         tone === "warning" && "bg-secondary/[0.14] text-secondary shadow-[inset_0_0_0_1px_rgba(175,141,17,0.2)]",
-        tone === "neutral" && "bg-white/[0.05] text-foreground/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]",
+        tone === "neutral" && "bg-white/5 text-foreground/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]",
       )}
     >
       {label}: {value}

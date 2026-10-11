@@ -29,7 +29,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] ops-surface-deep p-6">
+        <div className="rounded-4xl ops-surface-deep p-6">
           <div className="rounded-[1.75rem] ops-surface-soft p-6">
             <p className="terminal-label">{t("summary")}</p>
             <div className="mt-6 space-y-5">

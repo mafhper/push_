@@ -98,7 +98,7 @@ export function RepositoryHealthSection({ report, mode }: { report: HealthReport
   };
 
   return (
-    <section className="rounded-[2rem] ops-surface p-6">
+    <section className="rounded-4xl ops-surface p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="terminal-label">{t("healthTitle")}</p>
@@ -225,7 +225,7 @@ function CountPill({ label, tone }: { label: string; tone: "success" | "warning"
         "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold",
         tone === "success" && "bg-primary/10 text-primary",
         tone === "warning" && "bg-secondary/12 text-secondary",
-        tone === "neutral" && "bg-white/[0.04] text-muted-foreground",
+        tone === "neutral" && "bg-white/4 text-muted-foreground",
       )}
     >
       {label}
@@ -235,7 +235,7 @@ function CountPill({ label, tone }: { label: string; tone: "success" | "warning"
 
 function AttentionRow({ check, t }: { check: HealthCheck; t: TFunction }) {
   return (
-    <div className="flex items-start gap-3 rounded-[1rem] bg-black/18 px-3 py-3">
+    <div className="flex items-start gap-3 rounded-2xl bg-black/18 px-3 py-3">
       <StatusGlyph status={check.status} className={cn("mt-0.5 shrink-0", statusIconTone(check.status))} />
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground">{check.label}</p>
@@ -248,7 +248,7 @@ function AttentionRow({ check, t }: { check: HealthCheck; t: TFunction }) {
 function CategoryChip({ category, t }: { category: HealthCategoryResult; t: TFunction }) {
   const pct = category.maxScore > 0 ? (category.score / category.maxScore) * 100 : 0;
   return (
-    <div className="rounded-[1rem] bg-black/18 px-3 py-2.5">
+    <div className="rounded-2xl bg-black/18 px-3 py-2.5">
       <div className="flex items-center justify-between gap-3">
         <span className="truncate text-sm font-medium text-foreground">{t(CATEGORY_LABEL_KEYS[category.category] ?? "healthTitle")}</span>
         <span className="shrink-0 font-mono text-xs text-muted-foreground">{fmtScore(category.score)}/{category.maxScore > 0 ? fmtScore(category.maxScore) : "–"}</span>
@@ -269,7 +269,7 @@ function CheckRow({ check, t }: { check: HealthCheck; t: TFunction }) {
     : t(STATUS_TEXT_KEYS[check.status as Exclude<HealthCheckStatus, "not_applicable">]);
 
   return (
-    <div className="flex items-start justify-between gap-4 rounded-[1rem] bg-black/18 px-3 py-3">
+    <div className="flex items-start justify-between gap-4 rounded-2xl bg-black/18 px-3 py-3">
       <div className="flex min-w-0 items-start gap-3">
         <StatusGlyph status={check.status} className={cn("mt-0.5 shrink-0", statusIconTone(check.status))} />
         <div className="min-w-0">

@@ -152,7 +152,7 @@ function SummaryCard({ title, icon: Icon, mainValue, subValue, footer, onClick, 
   const glowClass = 
     variant === 'critical' ? 'shadow-[0_0_15px_rgba(var(--critical),0.15)] border-critical/30' :
     variant === 'warning' ? 'shadow-[0_0_15px_rgba(var(--warning),0.10)] border-warning/30' :
-    'shadow-sm border-border';
+    'shadow-xs border-border';
 
   return (
     <div 

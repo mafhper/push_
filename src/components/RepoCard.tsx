@@ -34,7 +34,7 @@ export function RepoCard({ repo, health, languages, runs, isPrimary }: RepoCardP
           ? 'border-primary/40 ring-1 ring-primary/10 shadow-md' 
           : lastRunFailed
             ? 'border-critical/50 shadow-[0_0_15px_rgba(var(--critical),0.1)]' 
-            : 'border-border hover:border-primary/20 shadow-sm'
+            : 'border-border hover:border-primary/20 shadow-xs'
       }`}
       onClick={() => navigate(`/repo/${repo.owner}/${repo.name}`)}
     >
