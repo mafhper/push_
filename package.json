@@ -19,7 +19,7 @@
     "test": "vitest run",
     "test:ci": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.scripts.json",
+    "type-check": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.scripts.json && tsc --noEmit -p tsconfig.node.json",
     "validate:i18n": "node scripts/quality/i18n.mjs",
     "validate:docs": "node scripts/quality/docs.mjs",
     "validate:security": "node scripts/quality/security.mjs",
