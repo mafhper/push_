@@ -30,8 +30,22 @@ export interface UserSession {
 
 export type SessionStatus = 'loading' | 'authenticated' | 'anonymous' | 'invalid';
 
+/** Detected from the token prefix: `ghp_` is classic, `github_pat_` is fine-grained. */
+export type TokenKind = 'classic' | 'fine-grained' | 'unknown';
+
+/** The read capabilities the dashboard needs from the token. */
+export type TokenPermissionId = 'metadata' | 'contents' | 'actions' | 'dependabot';
+
+export type TokenPermissionStatus = 'granted' | 'denied' | 'unknown';
+
+export interface TokenPermissionProbe {
+  id: TokenPermissionId;
+  status: TokenPermissionStatus;
+}
+
 export interface TokenDiagnostics {
   token: 'valid' | 'invalid' | 'rate_limited' | 'unknown';
+  kind?: TokenKind;
   rateLimit?: RateLimitInfo;
   /**
    * How many repositories the token can see, public and private together. A
@@ -41,6 +55,8 @@ export interface TokenDiagnostics {
   accessibleRepoCount?: number;
   /** How many of `accessibleRepoCount` are private. `0` means the scope sees no private repository. */
   privateRepoCount?: number;
+  /** One entry per required read permission, probed against an accessible repository. */
+  permissions?: TokenPermissionProbe[];
   dependabotProbe?: {
     status: 'available' | 'forbidden' | 'not_found' | 'unavailable' | 'skipped';
     repoFullName?: string;

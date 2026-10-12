@@ -15,6 +15,9 @@ import type {
   SnapshotManifest,
   SnapshotOverview,
   TokenDiagnostics,
+  TokenKind,
+  TokenPermissionProbe,
+  TokenPermissionStatus,
   WorkflowRun,
 } from "@/types";
 
@@ -309,6 +312,36 @@ function classifyDependabotError(error: string) {
 
 function isFailure<T>(payload: T | GitHubFailure): payload is GitHubFailure {
   return typeof payload === "object" && payload !== null && "error" in payload;
+}
+
+function tokenKindOf(token: string): TokenKind {
+  if (token.startsWith("github_pat_")) return "fine-grained";
+  if (token.startsWith("ghp_")) return "classic";
+  return "unknown";
+}
+
+/** A 403 means the permission is missing; anything else stays inconclusive. */
+function permissionStatusFromProbe(probe: unknown): TokenPermissionStatus {
+  if (!isFailure(probe)) return "granted";
+  return probe.error.startsWith("403") ? "denied" : "unknown";
+}
+
+/**
+ * The dashboard's required read capabilities, in display order. Metadata read
+ * is implied by every successfully authenticated request, so it is granted by
+ * definition on this path.
+ */
+function buildTokenPermissions(
+  contents: TokenPermissionStatus,
+  actions: TokenPermissionStatus,
+  dependabot: TokenPermissionStatus,
+): TokenPermissionProbe[] {
+  return [
+    { id: "metadata", status: "granted" },
+    { id: "contents", status: contents },
+    { id: "actions", status: actions },
+    { id: "dependabot", status: dependabot },
+  ];
 }
 
 function createAvailability(available: boolean, source: string, reason?: string) {
@@ -948,6 +981,8 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
   const trimmed = token.trim();
   if (!trimmed) return { token: "invalid" };
 
+  const kind = tokenKindOf(trimmed);
+
   try {
     await githubRequest<{ login: string }>("/user", trimmed);
     const rateLimit = await fetchLiveRateLimit(trimmed);
@@ -957,12 +992,25 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
     if (!probeRepo) {
       return {
         token: "valid",
+        kind,
         rateLimit,
         accessibleRepoCount: 0,
         privateRepoCount,
+        permissions: buildTokenPermissions("unknown", "unknown", "unknown"),
         dependabotProbe: { status: "skipped", message: "No repositories returned by this token." },
       };
     }
+
+    // One cheap read per capability on an accessible repository is the honest
+    // answer for both token kinds: fine-grained tokens do not expose their
+    // permissions through any endpoint, and classic scopes say nothing about
+    // repository access.
+    const [contentsProbe, actionsProbe] = await Promise.all([
+      githubOptional<unknown[]>(`/repos/${probeRepo.owner}/${probeRepo.name}/contents?per_page=1`, trimmed),
+      githubOptional<unknown>(`/repos/${probeRepo.owner}/${probeRepo.name}/actions/runs?per_page=1`, trimmed),
+    ]);
+    const contentsStatus = permissionStatusFromProbe(contentsProbe);
+    const actionsStatus = permissionStatusFromProbe(actionsProbe);
 
     const probeRepos = repos.slice(0, 8);
     const failures: Array<{ repo: RepositoryRef; error: string }> = [];
@@ -971,9 +1019,11 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
       if (!isFailure(probe)) {
         return {
           token: "valid",
+          kind,
           rateLimit,
           accessibleRepoCount: repos.length,
           privateRepoCount,
+          permissions: buildTokenPermissions(contentsStatus, actionsStatus, "granted"),
           dependabotProbe: { status: "available", repoFullName: repo.fullName },
         };
       }
@@ -990,9 +1040,11 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
         : "unavailable";
     return {
       token: "valid",
+      kind,
       rateLimit,
       accessibleRepoCount: repos.length,
       privateRepoCount,
+      permissions: buildTokenPermissions(contentsStatus, actionsStatus, status === "forbidden" ? "denied" : "unknown"),
       dependabotProbe: {
         status,
         repoFullName: representative.repo.fullName,
@@ -1003,6 +1055,7 @@ export async function diagnoseToken(token: string): Promise<TokenDiagnostics> {
     const message = error instanceof Error ? error.message : String(error);
     return {
       token: message.includes("403") || message.includes("429") ? "rate_limited" : "invalid",
+      kind,
       dependabotProbe: { status: "skipped", message: classifyGitHubError(message) },
     };
   }
