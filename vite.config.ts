@@ -3,9 +3,12 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import crypto from "node:crypto";
 import { readFileSync } from "node:fs";
+// `import.meta.dirname` (Node >= 20.11) e o diretorio deste arquivo no ESM.
+// O loader nativo do Vite (aviso `configLoader: 'native'`) nao define a global
+// homonima do CommonJS, e ele vira o default em majors futuras.
 import { assertPortFree } from "./scripts/sonda-porta.ts";
 
-const appPackage = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8")) as { version: string };
+const appPackage = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "package.json"), "utf-8")) as { version: string };
 
 // Contrato em tres arquivos: `src-tauri/tauri.conf.json` (`devUrl`),
 // `playwright.config.ts` (`baseURL`) e este `vite.config.ts`. Mover uma sem as
@@ -64,13 +67,13 @@ function createPagesFallbackPlugin(basePath: string): Plugin {
 }
 
 export default defineConfig(async ({ command, mode, isPreview }) => {
-  const env = loadEnv(mode, __dirname, "");
+  const env = loadEnv(mode, import.meta.dirname, "");
   const isTauriBuild = Boolean(env.TAURI_ENV_PLATFORM);
   const isLocalRuntime = command === "serve" || mode === "development" || isTauriBuild;
   const basePath = isTauriBuild ? "/" : resolveBasePath(env);
   const runtimeAppPath = isLocalRuntime
-    ? path.resolve(__dirname, "./src/app/LocalApp.tsx")
-    : path.resolve(__dirname, "./src/app/PublicApp.tsx");
+    ? path.resolve(import.meta.dirname, "./src/app/LocalApp.tsx")
+    : path.resolve(import.meta.dirname, "./src/app/PublicApp.tsx");
 
   // A porta 5300 e CONTRATO, nao preferencia: o `devUrl` do tauri.conf.json e o
   // `baseURL` do Playwright apontam para ela. Por isso o host `::` nao pode
@@ -122,7 +125,7 @@ export default defineConfig(async ({ command, mode, isPreview }) => {
     plugins: [react(), createPagesFallbackPlugin(basePath)],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        "@": path.resolve(import.meta.dirname, "./src"),
         "@runtime-app": runtimeAppPath,
       },
     },

@@ -3,7 +3,9 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import { readFileSync } from "node:fs";
 
-const appPackage = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8")) as { version: string };
+// Mesmo motivo do `vite.config.ts`: o loader nativo do Vite nao define a global
+// de diretorio do CommonJS, e `import.meta.dirname` e a forma ESM equivalente.
+const appPackage = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "package.json"), "utf-8")) as { version: string };
 
 export default defineConfig({
   plugins: [react()],
@@ -22,8 +24,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@runtime-app": path.resolve(__dirname, "./src/app/LocalApp.tsx"),
+      "@": path.resolve(import.meta.dirname, "./src"),
+      "@runtime-app": path.resolve(import.meta.dirname, "./src/app/LocalApp.tsx"),
     },
   },
 });
