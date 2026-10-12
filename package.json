@@ -106,7 +106,7 @@
     "autoprefixer": "^10.6.0",
     "browserslist": "^4.28.7",
     "caniuse-lite": "^1.0.30001781",
-    "eslint": "^10.1.0",
+    "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.5.0",
