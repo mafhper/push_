@@ -3,6 +3,7 @@ import { diagnoseToken, fetchAccessibleRepos, validateToken } from "./github";
 
 const fakeClassicToken = `${["ghp", "_"].join("")}${"a".repeat(36)}`;
 const fakeShortToken = `${["ghp", "_"].join("")}test`;
+const fakeFineGrainedToken = `github_pat_${"a".repeat(82)}`;
 
 /** Mock response with the `headers.get("link")` that the paged listing reads. */
 function jsonResponse(body: unknown, headers: Record<string, string> = {}): Response {
@@ -343,6 +344,73 @@ describe("diagnoseToken", () => {
       accessibleRepoCount: 2,
       dependabotProbe: { status: "available", repoFullName: "mafhper/push_" },
     });
+  });
+
+  it("probes the required read permissions and flags the missing ones", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/user")) {
+        return jsonResponse({ login: "mafhper" });
+      }
+      if (url.endsWith("/rate_limit")) {
+        return jsonResponse({ resources: { core: { remaining: 42, limit: 5000, reset: 1780000000 } } });
+      }
+      if (url.includes("/user/repos")) {
+        return jsonResponse([repoPayload()]);
+      }
+      // Contents is refused (missing permission); Actions and Dependabot answer.
+      if (url.includes("/contents")) {
+        return { ok: false, status: 403 } as Response;
+      }
+      if (url.includes("/actions/runs")) {
+        return jsonResponse({ total_count: 3 });
+      }
+      if (url.includes("/dependabot/alerts")) {
+        return jsonResponse([]);
+      }
+      return { ok: false, status: 404 } as Response;
+    });
+
+    await expect(diagnoseToken(fakeClassicToken)).resolves.toMatchObject({
+      kind: "classic",
+      permissions: [
+        { id: "metadata", status: "granted" },
+        { id: "contents", status: "denied" },
+        { id: "actions", status: "granted" },
+        { id: "dependabot", status: "granted" },
+      ],
+    });
+  });
+
+  it("keeps permissions inconclusive when the probes cannot tell, and reads the fine-grained kind", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/user")) {
+        return jsonResponse({ login: "mafhper" });
+      }
+      if (url.endsWith("/rate_limit")) {
+        return jsonResponse({ resources: { core: { remaining: 42, limit: 5000, reset: 1780000000 } } });
+      }
+      if (url.includes("/user/repos")) {
+        return jsonResponse([repoPayload()]);
+      }
+      if (url.includes("/dependabot/alerts")) {
+        return jsonResponse([]);
+      }
+      // Contents and Actions both answer 404: the feature is off for this
+      // repository, so the probe cannot prove anything about the token.
+      return { ok: false, status: 404 } as Response;
+    });
+
+    const diagnostics = await diagnoseToken(fakeFineGrainedToken);
+
+    expect(diagnostics.kind).toBe("fine-grained");
+    expect(diagnostics.permissions).toEqual([
+      { id: "metadata", status: "granted" },
+      { id: "contents", status: "unknown" },
+      { id: "actions", status: "unknown" },
+      { id: "dependabot", status: "granted" },
+    ]);
   });
 });
 

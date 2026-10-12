@@ -1,5 +1,5 @@
-import { Link } from 'react-router';
-import { RefreshCw, Settings, Search, User, ShieldAlert, CircleCheck, GitBranch } from 'lucide-react';
+import { Link, useLocation } from 'react-router';
+import { ArrowLeft, RefreshCw, Settings, Search, User, ShieldAlert, CircleCheck, GitBranch } from 'lucide-react';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/contexts/useApp';
 import { useDashboardSnapshot, useRateLimit } from '@/hooks/useGitHub';
@@ -112,6 +112,12 @@ function StatusBarFrame({
   const warningCount = repos.filter((r) => (r.health.dependabotOpenCount > 0 && r.health.dependabotCriticalCount === 0) || r.health.status === 'warning').length;
   const totalAttentionItems = criticalCount + warningCount;
 
+  // On the settings screen the bar drops its own shortcuts — search, refresh
+  // and the settings gear — and keeps only the way back home: those controls
+  // either do nothing useful there or already live inside the screen.
+  const { pathname } = useLocation();
+  const onSettingsRoute = pathname.startsWith('/app/settings');
+
   return (
     <header className="flex h-12 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-border/60 bg-surface-1/95 px-3 backdrop-blur-xs sm:px-5">
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
@@ -152,17 +158,30 @@ function StatusBarFrame({
             {rightMeta}
           </span>
         ) : null}
-        <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-surface-3/80 text-micro text-foreground-subtle transition-all hover:border-foreground-subtle/20 hover:text-foreground sm:w-auto sm:px-2.5">
-          <Search size={14} />
-          <span className="hidden sm:ml-2 sm:inline">Search...</span>
-          <kbd className="hidden font-mono text-[8px] opacity-30 sm:ml-1 sm:inline">⌘K</kbd>
-        </button>
+        {onSettingsRoute ? (
+          <Link
+            to="/app"
+            aria-label={t('home')}
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-border/60 bg-surface-3/80 px-2.5 text-micro font-medium text-foreground-subtle transition-colors hover:border-foreground-subtle/20 hover:text-foreground"
+          >
+            <ArrowLeft size={14} />
+            <span className="hidden sm:inline">{t('home')}</span>
+          </Link>
+        ) : (
+          <>
+            <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-surface-3/80 text-micro text-foreground-subtle transition-all hover:border-foreground-subtle/20 hover:text-foreground sm:w-auto sm:px-2.5">
+              <Search size={14} />
+              <span className="hidden sm:ml-2 sm:inline">Search...</span>
+              <kbd className="hidden font-mono text-[8px] opacity-30 sm:ml-1 sm:inline">⌘K</kbd>
+            </button>
 
-        <RefreshButton />
+            <RefreshButton />
 
-        <Link to="/app/settings" className="flex h-8 w-8 items-center justify-center text-foreground-subtle transition-colors hover:text-primary">
-          <Settings size={18} />
-        </Link>
+            <Link to="/app/settings" aria-label={t('settings')} className="flex h-8 w-8 items-center justify-center text-foreground-subtle transition-colors hover:text-primary">
+              <Settings size={18} />
+            </Link>
+          </>
+        )}
 
         {username && (
            <div className="hidden items-center gap-2 border-l border-border pl-4 md:flex">

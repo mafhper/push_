@@ -1,24 +1,76 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, Moon, Sun, UserRound, ChevronDown, ChevronRight, Lock, GitFork, Archive } from "lucide-react";
-import { isLocalSecureRuntime } from "@/config/site";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, UserRound, ChevronDown, ChevronRight, Lock, GitFork, Archive, ExternalLink, Check, X, CircleQuestionMark, Activity, SlidersHorizontal, ListTree } from "lucide-react";
+import { APP_VERSION, SITE_REPOSITORY_URL, isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
-import { formatDateTime, type DictKey } from "@/i18n";
-import { isZeroMetricValue } from "@/lib/metric-state";
+import { formatDateTime, type DictKey, type Language } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { diagnoseToken, validateToken } from "@/services/github";
 import { saveGithubToken } from "@/services/secure-storage";
+import { openExternal } from "@/services/open-external";
 import { saveIdentity } from "@/services/presentation-identity";
-import type { DataDetailMode, RepositoryRef, Theme } from "@/types";
+import type { DataDetailMode, RepositoryRef, Theme, TokenPermissionId } from "@/types";
 
 /**
- * Display order in the list: public first (usually the biggest group), then
- * private, then the rest, and forks last. This is presentation only — which
- * group a repository *belongs* to is decided by `repoGroupOf`, whose precedence
- * is a separate, fixed rule.
+ * Fixed precedence for classification and for breaking size ties in the
+ * display order. The chevrons are ordered by group size (biggest first) and
+ * fall back to this order on ties; which group a repository *belongs* to is
+ * decided by `repoGroupOf`, whose precedence is the separate rule below.
  */
 const REPO_GROUPS = ["public", "private", "other", "fork"] as const;
 type RepoGroupId = (typeof REPO_GROUPS)[number];
+
+/** Order offered for the rows inside every group. */
+const REPO_SORTS = ["name", "updated", "created"] as const;
+type RepoSort = (typeof REPO_SORTS)[number];
+
+/** Where GitHub creates each token kind. */
+const FINE_GRAINED_TOKEN_URL = "https://github.com/settings/personal-access-tokens/new";
+const CLASSIC_TOKEN_URL = "https://github.com/settings/tokens/new";
+
+/** Required read capabilities, in the order they are presented. */
+const TOKEN_PERMISSION_IDS = ["metadata", "contents", "actions", "dependabot"] as const satisfies readonly TokenPermissionId[];
+
+/** The settings summary rail: one entry per chapter, in page order. */
+const SETTINGS_SECTIONS = [
+  { id: "settings-access", labelKey: "githubAccess", icon: KeyRound },
+  { id: "settings-state", labelKey: "currentMode", icon: Activity },
+  { id: "settings-preferences", labelKey: "preferences", icon: SlidersHorizontal },
+  { id: "settings-repos", labelKey: "repositoryControl", icon: ListTree },
+] as const satisfies readonly { id: string; labelKey: DictKey; icon: typeof KeyRound }[];
+
+/** Most recent first; missing or invalid dates sort last. */
+function compareDateDesc(a: string | undefined, b: string | undefined): number {
+  const aTime = a ? Date.parse(a) : Number.NaN;
+  const bTime = b ? Date.parse(b) : Number.NaN;
+  const aValue = Number.isNaN(aTime) ? Number.NEGATIVE_INFINITY : aTime;
+  const bValue = Number.isNaN(bTime) ? Number.NEGATIVE_INFINITY : bTime;
+  return bValue - aValue;
+}
+
+/** Rows a capped group shows before the explicit "show all" affordance. */
+const REPO_GROUP_PAGE = 50;
+
+/**
+ * Accordion state per category. `partial` only exists while the visible list
+ * is longer than `REPO_GROUP_PAGE`, so the title click cycles
+ * closed → first page → everything → closed. The accordion is exclusive: at
+ * most one group leaves `closed` at a time.
+ */
+type RepoGroupState = "closed" | "partial" | "open";
+
+const CLOSED_GROUPS: Record<RepoGroupId, RepoGroupState> = {
+  public: "closed",
+  private: "closed",
+  other: "closed",
+  fork: "closed",
+};
+
+function nextGroupState(current: RepoGroupState, capped: boolean): RepoGroupState {
+  if (current === "open") return "closed";
+  if (current === "partial") return "open";
+  return capped ? "partial" : "open";
+}
 
 /**
  * Mutually exclusive classification with fixed precedence (Q4/Q5), which is
@@ -51,10 +103,48 @@ export default function SettingsPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [repoQuery, setRepoQuery] = useState("");
   const [repoFilter, setRepoFilter] = useState<"all" | "selected" | "unselected">("all");
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [repoSort, setRepoSort] = useState<RepoSort>("name");
+  const [groupState, setGroupState] = useState<Record<RepoGroupId, RepoGroupState>>(CLOSED_GROUPS);
+  const repoSearchActive = repoQuery.trim().length > 0;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState<string>(SETTINGS_SECTIONS[0].id);
+
+  /** The summary rail follows the page scroll, so the reader knows the chapter. */
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const syncActiveSection = () => {
+      const containerTop = container.getBoundingClientRect().top;
+      let current: string = SETTINGS_SECTIONS[0].id;
+      for (const section of SETTINGS_SECTIONS) {
+        const element = document.getElementById(section.id);
+        if (element && element.getBoundingClientRect().top - containerTop <= 120) current = section.id;
+      }
+      // A short page — every chevron closed — cannot scroll the last chapter to
+      // the top, so geometric matching alone never reaches it. Arriving at the
+      // end of the scroll means the reader is on the last chapter.
+      const scrollable = container.scrollHeight > container.clientHeight + 24;
+      if (scrollable && container.scrollTop + container.clientHeight >= container.scrollHeight - 24) {
+        const lastExisting = [...SETTINGS_SECTIONS].reverse().find((section) => document.getElementById(section.id));
+        if (lastExisting) current = lastExisting.id;
+      }
+      setActiveSection(current);
+    };
+    container.addEventListener("scroll", syncActiveSection, { passive: true });
+    syncActiveSection();
+    return () => container.removeEventListener("scroll", syncActiveSection);
+  }, [localSecureMode, session]);
+
+  function goToSection(id: string) {
+    document.getElementById(id)?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }
 
   useEffect(() => {
-    if (!localSecureMode || !session?.token || session.diagnostics) return;
+    if (!localSecureMode || !session?.token) return;
+    // A valid diagnostics without a permissions report comes from a session
+    // created before the report existed (e.g. a hot-reloaded dev session);
+    // refresh it so the permissions panel has data.
+    if (session.diagnostics && (session.diagnostics.token !== "valid" || session.diagnostics.permissions)) return;
     let cancelled = false;
     diagnoseToken(session.token).then((diagnostics) => {
       if (!cancelled) {
@@ -71,6 +161,13 @@ export default function SettingsPage() {
 
   const accessibleFullNames = useMemo(() => new Set(repos.map((repo) => repo.fullName)), [repos]);
 
+  /**
+   * Stable order inside every group, controlled by the sort selector. The
+   * default is alphabetical; featured and selected repositories keep their
+   * position in any mode, because toggling a row must never reorder the list
+   * or the row under the pointer would move mid-selection. The star and the
+   * checkbox carry the state instead of the position.
+   */
   const filteredRepos = useMemo(() => {
     const q = repoQuery.trim().toLowerCase();
     return repos
@@ -81,34 +178,35 @@ export default function SettingsPage() {
       })
       .filter(r => !q || `${r.fullName} ${r.description ?? ""} ${r.language ?? ""}`.toLowerCase().includes(q))
       .sort((a, b) => {
-        const aF = a.fullName === primaryRepo ? 1 : 0;
-        const bF = b.fullName === primaryRepo ? 1 : 0;
-        if (aF !== bF) return bF - aF;
-        const aS = selectedRepos.includes(a.fullName) ? 1 : 0;
-        const bS = selectedRepos.includes(b.fullName) ? 1 : 0;
-        return aS !== bS ? bS - aS : a.fullName.localeCompare(b.fullName);
+        if (repoSort === "updated") return compareDateDesc(a.updatedAt, b.updatedAt) || a.fullName.localeCompare(b.fullName);
+        if (repoSort === "created") return compareDateDesc(a.createdAt, b.createdAt) || a.fullName.localeCompare(b.fullName);
+        return a.fullName.localeCompare(b.fullName);
       });
-  }, [primaryRepo, repoFilter, repoQuery, repos, selectedRepos]);
+  }, [repoFilter, repoQuery, repoSort, repos, selectedRepos]);
 
   /**
    * Total per group, before the search and the selected/unselected axis, so a
    * group never disappears because a filter hid its items (RF-08) and its
-   * counter keeps reporting the real total.
+   * counter keeps reporting the real total. Chevrons are ordered by that
+   * total, biggest first; ties keep the fixed precedence so the order stays
+   * deterministic while the catalog loads.
    */
   const groups = useMemo(() => {
     const totals: Record<RepoGroupId, number> = { fork: 0, private: 0, other: 0, public: 0 };
     for (const repo of repos) {
       totals[repoGroupOf(repo, accessibleFullNames)] += 1;
     }
-    return REPO_GROUPS.map((id) => {
-      const visible = filteredRepos.filter((repo) => repoGroupOf(repo, accessibleFullNames) === id);
-      return {
-        id,
-        repos: visible,
-        total: totals[id],
-        selectedTotal: visible.filter((repo) => selectedRepos.includes(repo.fullName)).length,
-      };
-    });
+    return REPO_GROUPS
+      .map((id) => {
+        const visible = filteredRepos.filter((repo) => repoGroupOf(repo, accessibleFullNames) === id);
+        return {
+          id,
+          repos: visible,
+          total: totals[id],
+          selectedTotal: visible.filter((repo) => selectedRepos.includes(repo.fullName)).length,
+        };
+      })
+      .sort((a, b) => (b.total - a.total) || (REPO_GROUPS.indexOf(a.id) - REPO_GROUPS.indexOf(b.id)));
   }, [accessibleFullNames, filteredRepos, repos, selectedRepos]);
 
   const groupLabels: Record<RepoGroupId, string> = {
@@ -117,6 +215,26 @@ export default function SettingsPage() {
     fork: t("repoGroupForks"),
     other: t("repoGroupOthers"),
   };
+  const repoSortLabels: Record<RepoSort, string> = {
+    name: t("repoSortName"),
+    updated: t("repoSortModified"),
+    created: t("repoSortCreated"),
+  };
+  const permissionLabels: Record<TokenPermissionId, string> = {
+    metadata: t("permMetadata"),
+    contents: t("permContents"),
+    actions: t("permActions"),
+    dependabot: t("permDependabot"),
+  };
+  const themeOptions = [
+    { value: "dark", label: t("themeDark"), swatch: "linear-gradient(90deg,#050505,#262626,#4b5563)" },
+    { value: "light", label: t("themeLight"), swatch: "linear-gradient(90deg,#f8fafc,#dbeafe,#2563eb)" },
+    { value: "phosphor-green", label: t("themePhosphorGreen"), swatch: "linear-gradient(90deg,#03120a,#22ff4f,#a7ff83)" },
+    { value: "golden-matrix", label: t("themeGoldenMatrix"), swatch: "linear-gradient(90deg,#120c02,#f59e0b,#fde68a)" },
+    { value: "blue-calm", label: t("themeBlueCalm"), swatch: "linear-gradient(90deg,#061826,#38bdf8,#bfdbfe)" },
+    { value: "green-ish", label: t("themeGreenIsh"), swatch: "linear-gradient(90deg,#04130d,#34d399,#bbf7d0)" },
+    { value: "brown-earth", label: t("themeBrownEarth"), swatch: "linear-gradient(90deg,#120a05,#b45309,#fed7aa)" },
+  ] as const;
   const groupEmptyLabels: Record<RepoGroupId, string> = {
     public: t("repoGroupPublicEmpty"),
     private: t("repoGroupPrivateEmpty"),
@@ -209,54 +327,65 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-full min-h-0 w-full overflow-y-auto">
-      <div className="mx-auto max-w-5xl px-5 py-6 md:px-8 md:py-8 space-y-5">
+    <div ref={scrollRef} className="h-full min-h-0 w-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl px-5 py-6 md:px-8 md:py-8">
 
         {/* Header */}
-        <div>
+        <div className="max-w-3xl">
           <h1 className="text-display font-headline font-bold tracking-tight text-foreground">{t("repositoryControl")}</h1>
           <p className="text-body text-foreground-subtle mt-1">
             {localSecureMode ? t("connectLocalTokenBody") : t("snapshotOnlyBody")}
           </p>
         </div>
 
-        {/* Control Metrics Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MetricCard
-            label={t("visibleRepos")}
-            value={selectedRepoCount}
-            hint={t("currentDashboardSet")}
-            highlight={selectedRepoCount > 0}
-          />
-          <MetricCard
-            label={t("featuredRepo")}
-            value={featuredRepoLabel === "none" ? t("none") : t("featured")}
-            hint={featuredRepoLabel}
-            highlight={featuredRepoLabel !== "none"}
-          />
-          <MetricCard
-            label={t("mode")}
-            value={localSecureMode ? (session ? t("live") : t("local")) : t("snapshotLabel")}
-            hint={localSecureMode ? (session ? t("authenticatedSession") : t("awaitingToken")) : t("publishedSnapshot")}
-            highlight={!!session}
-          />
-          <MetricCard
-            label={t("rateLimit")}
-            value={rateLimit ? `${rateLimit.remaining}` : "--"}
-            hint={rateLimit ? `of ${rateLimit.limit}` : t("unavailable")}
-            highlight={!!session}
-          />
-        </div>
+        {/* Summary rail, horizontal on narrow screens */}
+        <nav aria-label={t("settings")} className="mt-5 flex gap-1 overflow-x-auto lg:hidden">
+          {SETTINGS_SECTIONS.map((section) => {
+            const Icon = section.icon;
+            const active = activeSection === section.id;
+            return (
+              <button key={section.id} type="button" onClick={() => goToSection(section.id)}
+                aria-current={active ? "true" : undefined}
+                className={cn(
+                  "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                  active ? "bg-surface-2 text-foreground" : "text-foreground-subtle hover:bg-surface-2/60 hover:text-foreground",
+                )}>
+                <Icon size={15} className="shrink-0" />
+                {t(section.labelKey)}
+              </button>
+            );
+          })}
+        </nav>
 
-        {/* GitHub Access + Runtime Status */}
-        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="mt-6 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 lg:mt-8">
 
-          {/* GitHub Access */}
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
+          {/* Summary rail, vertical on wide screens */}
+          <nav aria-label={t("settings")} className="hidden space-y-1 lg:sticky lg:top-6 lg:block lg:self-start">
+            {SETTINGS_SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const active = activeSection === section.id;
+              return (
+                <button key={section.id} type="button" onClick={() => goToSection(section.id)}
+                  aria-current={active ? "true" : undefined}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                    active ? "bg-surface-2 text-foreground" : "text-foreground-subtle hover:bg-surface-2/60 hover:text-foreground",
+                  )}>
+                  <Icon size={15} className="shrink-0" />
+                  {t(section.labelKey)}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="min-w-0 space-y-8">
+
+        {/* GitHub access */}
+        <section id="settings-access" className="scroll-mt-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-title font-headline font-semibold text-foreground">{t("githubAccess")}</h2>
-                <p className="text-sm text-foreground-subtle mt-0.5">
+                <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("githubAccess")}</h2>
+                <p className="text-[13px] text-foreground-subtle mt-0.5">
                   {localSecureMode ? t("tokenSessionOnlyBody") : t("publishedRuntimeNoBrowserTokenBody")}
                 </p>
               </div>
@@ -275,26 +404,28 @@ export default function SettingsPage() {
             </div>
 
             {localSecureMode ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 rounded-lg border border-border/30 bg-surface-2/50 p-3">
-                  {session?.avatarUrl ? (
-                    <img src={session.avatarUrl} alt="" className="h-10 w-10 rounded-full ring-1 ring-border" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-3 text-primary"><UserRound size={16} /></div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-micro text-foreground-subtle">{t("currentIdentity")}</p>
-                    <p className="text-body font-semibold text-foreground truncate">{session ? `@${session.username}` : t("noActiveSession")}</p>
+              <div className="space-y-3">
+                <SurfaceCard>
+                  {/* Identity row */}
+                  <div className="flex items-center gap-3 px-4 py-3.5">
+                    {session?.avatarUrl ? (
+                      <img src={session.avatarUrl} alt="" className="h-10 w-10 rounded-full ring-1 ring-border" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-3 text-primary"><UserRound size={16} /></div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-micro text-foreground-subtle">{t("currentIdentity")}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{session ? `@${session.username}` : t("noActiveSession")}</p>
+                    </div>
+                    {session && (
+                      <button onClick={handleDisconnect} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-3 text-[13px] font-medium text-foreground-subtle transition-colors hover:border-critical/40 hover:text-critical">
+                        <LogOut size={12} /> {t("disconnect")}
+                      </button>
+                    )}
                   </div>
-                  {session && (
-                    <button onClick={handleDisconnect} className="flex items-center gap-1 text-micro font-medium text-foreground-subtle hover:text-critical transition-colors">
-                      <LogOut size={12} /> {t("disconnect")}
-                    </button>
-                  )}
-                </div>
 
-                <form onSubmit={handleConnect} className="space-y-3">
-                  <div>
+                  {/* Token row */}
+                  <form onSubmit={handleConnect} className="px-4 py-3.5">
                     <label className="text-micro font-semibold text-foreground-subtle uppercase tracking-wider">{t("githubToken")}</label>
                     <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
                       <div className="relative flex-1">
@@ -312,157 +443,258 @@ export default function SettingsPage() {
                         {session ? t("updateToken") : t("connect")}
                       </button>
                     </div>
-                  </div>
+                    {connectError && <p className="mt-2 text-sm text-critical">{connectError}</p>}
+                  </form>
 
-                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/30 bg-surface-2/50 p-3">
-                    <p className="text-sm text-foreground-subtle">{t("tokenMemoryOnlyBody")}</p>
-                  </div>
+                  {/* Memory row */}
+                  <p className="px-4 py-3 text-[13px] text-foreground-subtle">{t("tokenMemoryOnlyBody")}</p>
+                </SurfaceCard>
 
-                  {connectError && <p className="text-sm text-critical">{connectError}</p>}
-                </form>
+                {/* What to create and where */}
+                <SurfaceCard>
+                  <div className="space-y-3 px-4 py-4">
+                    <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{t("permissionsNeeded")}</p>
+                    <ul className="grid gap-1.5 sm:grid-cols-2">
+                      {TOKEN_PERMISSION_IDS.map((id) => (
+                        <li key={id} className="flex items-center gap-1.5 text-sm text-foreground-subtle">
+                          <Check size={12} className="shrink-0 text-primary" />
+                          {permissionLabels[id]}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-[13px] leading-relaxed text-foreground-subtle">{t("tokenSetupHint")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        href={FINE_GRAINED_TOKEN_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-surface-3/50 px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                      >
+                        <ExternalLink size={11} />
+                        {t("tokenCreateFineGrained")}
+                      </a>
+                      <a
+                        href={CLASSIC_TOKEN_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-surface-3/50 px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                      >
+                        <ExternalLink size={11} />
+                        {t("tokenCreateClassic")}
+                      </a>
+                    </div>
+                  </div>
+                </SurfaceCard>
               </div>
             ) : (
-              <div className="rounded-lg border border-border/30 bg-surface-2/50 p-4 text-sm text-foreground-subtle leading-relaxed">
-                {t("publishedRuntimeNoBrowserTokenBody")}
-              </div>
+              <SurfaceCard>
+                <p className="px-4 py-3.5 text-[13px] text-foreground-subtle leading-relaxed">
+                  {t("publishedRuntimeNoBrowserTokenBody")}
+                </p>
+              </SurfaceCard>
             )}
           </section>
 
-          {/* Runtime Status */}
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
-            <div>
-              <h2 className="text-title font-headline font-semibold text-foreground">{t("currentMode")}</h2>
-            </div>
-            <div className="space-y-2.5">
-              <StatusLine label={t("publishedSnapshotLabel")} value={formatDateTime(manifest.status.generatedAt, settings.lang)} />
-              <StatusLine label={t("snapshotSource")} value={manifest.status.generatedBy} />
-              <StatusLine label={t("currentMode")} value={localSecureMode ? (session ? "local-authenticated" : "localhost-public") : "github-pages"} highlight={!!session} />
-              <StatusLine label={t("visibleRepos")} value={String(selectedRepoCount)} highlight={selectedRepoCount > 0} />
-              {rateLimit && <StatusLine label={t("rateLimit")} value={`${rateLimit.remaining}/${rateLimit.limit}`} highlight={!!session} />}
-              <StatusLine label={t("featuredRepo")} value={featuredRepoLabel} highlight={Boolean(primaryRepo)} />
+        {/* Current state: session, token permissions and scope, each in its surface. */}
+        <section id="settings-state" className="scroll-mt-4 space-y-3">
+            <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("currentMode")}</h2>
+            <div className="space-y-5 pt-1">
+              <div className="space-y-2">
+                <p className="text-[13px] font-semibold text-foreground-subtle">{t("sessionGroup")}</p>
+                <SurfaceCard>
+                  <StatusLine label={t("publishedSnapshotLabel")} value={formatDateTime(manifest.status.generatedAt, settings.lang)} />
+                  <StatusLine label={t("snapshotSource")} value={manifest.status.generatedBy} />
+                  <StatusLine label={t("currentMode")} value={localSecureMode ? (session ? "local-authenticated" : "localhost-public") : "github-pages"} />
+                  <StatusLine label={t("visibleRepos")} value={String(selectedRepoCount)} />
+                  {rateLimit && <StatusLine label={t("rateLimit")} value={`${rateLimit.remaining}/${rateLimit.limit}`} />}
+                  <StatusLine label={t("featuredRepo")} value={featuredRepoLabel} />
+                </SurfaceCard>
+              </div>
+
+              {localSecureMode && session?.diagnostics?.permissions && session.diagnostics.permissions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[13px] font-semibold text-foreground-subtle">{t("tokenPermissions")}</p>
+                    {session.diagnostics.kind && session.diagnostics.kind !== "unknown" && (
+                      <span className="rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] font-medium text-foreground-subtle">
+                        {session.diagnostics.kind === "classic" ? t("tokenKindClassic") : t("tokenKindFineGrained")}
+                      </span>
+                    )}
+                  </div>
+                  <SurfaceCard>
+                    {TOKEN_PERMISSION_IDS.map((id) => {
+                      const status = session.diagnostics?.permissions?.find((permission) => permission.id === id)?.status ?? "unknown";
+                      return (
+                        <div key={id} className="flex items-center justify-between gap-3 px-4 py-3">
+                          <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                            {status === "granted" ? <Check size={13} className="shrink-0 text-success" />
+                              : status === "denied" ? <X size={13} className="shrink-0 text-warning" />
+                              : <CircleQuestionMark size={13} className="shrink-0 text-foreground-subtle/70" />}
+                            <span className="truncate">{permissionLabels[id]}</span>
+                          </span>
+                          <span className={cn(
+                            "shrink-0 text-sm font-semibold",
+                            status === "granted" && "text-foreground",
+                            status === "denied" && "text-warning",
+                            status === "unknown" && "text-foreground-subtle/70",
+                          )}>
+                            {status === "granted" ? t("permGranted") : status === "denied" ? t("permDenied") : t("permUnknown")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </SurfaceCard>
+                </div>
+              )}
+
+              {session?.diagnostics && (session.diagnostics.accessibleRepoCount !== undefined || session.diagnostics.privateRepoCount !== undefined || session.diagnostics.dependabotProbe) && (
+                <div className="space-y-2">
+                  <p className="text-[13px] font-semibold text-foreground-subtle">{t("scopeGroup")}</p>
+                  <SurfaceCard>
+                    {session.diagnostics.accessibleRepoCount !== undefined && (
+                      <StatusLine label={t("diagnosticsAccessibleRepos")} value={String(session.diagnostics.accessibleRepoCount)} />
+                    )}
+                    {session.diagnostics.privateRepoCount !== undefined && (
+                      <div className="space-y-1 px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-foreground-subtle">{t("diagnosticsPrivateRepos")}</span>
+                          <span className="truncate text-sm font-semibold tabular-nums text-foreground">{session.diagnostics.privateRepoCount}</span>
+                        </div>
+                        {session.diagnostics.privateRepoCount === 0 && (
+                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{t("diagnosticsPrivateScopeHint")}</p>
+                        )}
+                      </div>
+                    )}
+                    {session.diagnostics.dependabotProbe && (
+                      <div className="space-y-1 px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-foreground-subtle">{t("settingsDependabotStatus")}</span>
+                          <span className="truncate text-sm font-semibold text-foreground">{dependabotProbeLabel(session.diagnostics.dependabotProbe.status, t)}</span>
+                        </div>
+                        {session.diagnostics.dependabotProbe.message && (
+                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{session.diagnostics.dependabotProbe.message}</p>
+                        )}
+                      </div>
+                    )}
+                  </SurfaceCard>
+                </div>
+              )}
             </div>
           </section>
-        </div>
 
         {/* Preferences */}
-        <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
-          <div>
-            <h2 className="text-title font-headline font-semibold text-foreground">{t("preferences")}</h2>
-            <p className="text-sm text-foreground-subtle mt-0.5">{t("interfaceSettings")}</p>
-          </div>
-            <div className="flex flex-wrap gap-4">
-            <PreferenceToggle
-              label={t("theme")}
-              current={settings.theme}
-              options={[
-                { value: "dark", label: t("themeDark"), icon: <Moon size={14} />, swatch: "linear-gradient(90deg,#050505,#262626,#4b5563)" },
-                { value: "light", label: t("themeLight"), icon: <Sun size={14} />, swatch: "linear-gradient(90deg,#f8fafc,#dbeafe,#2563eb)" },
-                { value: "phosphor-green", label: t("themePhosphorGreen"), swatch: "linear-gradient(90deg,#03120a,#22ff4f,#a7ff83)" },
-                { value: "golden-matrix", label: t("themeGoldenMatrix"), swatch: "linear-gradient(90deg,#120c02,#f59e0b,#fde68a)" },
-                { value: "blue-calm", label: t("themeBlueCalm"), swatch: "linear-gradient(90deg,#061826,#38bdf8,#bfdbfe)" },
-                { value: "green-ish", label: t("themeGreenIsh"), swatch: "linear-gradient(90deg,#04130d,#34d399,#bbf7d0)" },
-                { value: "brown-earth", label: t("themeBrownEarth"), swatch: "linear-gradient(90deg,#120a05,#b45309,#fed7aa)" },
-              ]}
-              onSelect={(value) => updateSettings({ theme: value as Theme })}
-            />
-            <PreferenceToggle
-              label={t("language")}
-              current={settings.lang}
-              options={[
-                { value: "en", label: "EN" },
-                { value: "pt-BR", label: "PT" },
-                { value: "es", label: "ES" },
-              ]}
-              onSelect={(value) => updateSettings({ lang: value as 'en' | 'pt-BR' | 'es' })}
-            />
-            <PreferenceToggle
-              label={t("dataDetailLevel")}
-              current={settings.dataDetailMode ?? "balanced"}
-              options={[
-                { value: "balanced", label: t("detailBalanced") },
-                { value: "detailed", label: t("detailDetailed") },
-                { value: "full", label: t("detailFull") },
-              ]}
-              onSelect={(value) => updateSettings({ dataDetailMode: value as DataDetailMode })}
-            />
-          </div>
-          <p className="text-sm text-foreground-subtle">{t("detailBalancedHint")}</p>
-        </section>
-
-        {localSecureMode && session?.diagnostics && (
-          <section className="rounded-xl border border-border/60 bg-surface-1 p-5 shadow-xs">
-            <h2 className="text-title font-headline font-semibold text-foreground">{t("tokenDiagnostics")}</h2>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <StatusCard label={t("githubToken")} value={session.diagnostics.token === "valid" ? t("tokenValid") : t("tokenInvalid")} good={session.diagnostics.token === "valid"} />
-              <StatusCard label={t("rateLimit")} value={session.diagnostics.rateLimit ? `${session.diagnostics.rateLimit.remaining}/${session.diagnostics.rateLimit.limit}` : t("unavailable")} good={Boolean(session.diagnostics.rateLimit)} />
-              <StatusCard label="Dependabot" value={dependabotProbeLabel(session.diagnostics.dependabotProbe?.status, t)} good={session.diagnostics.dependabotProbe?.status === "available"} />
+        <section id="settings-preferences" className="scroll-mt-4 space-y-3">
+          <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("preferences")}</h2>
+          <SurfaceCard>
+            {/* Theme: dropdown with the color dot beside each theme name. */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+              <p className="text-sm font-medium text-foreground">{t("theme")}</p>
+              <ThemeDropdown
+                label={t("theme")}
+                value={settings.theme}
+                options={themeOptions}
+                onChange={(value) => updateSettings({ theme: value as Theme })}
+              />
             </div>
-            {session.diagnostics.accessibleRepoCount !== undefined && (
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <StatusCard
-                  label={t("diagnosticsAccessibleRepos")}
-                  value={session.diagnostics.accessibleRepoCount}
-                  good
-                />
-                <StatusCard
-                  label={t("diagnosticsPrivateRepos")}
-                  value={session.diagnostics.privateRepoCount ?? 0}
-                  good={(session.diagnostics.privateRepoCount ?? 0) > 0}
-                />
+
+            {/* Language */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+              <p className="text-sm font-medium text-foreground">{t("language")}</p>
+              <select
+                aria-label={t("language")}
+                value={settings.lang}
+                onChange={(event) => updateSettings({ lang: event.target.value as Language })}
+                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
+              >
+                <option value="en">{t("english")}</option>
+                <option value="pt-BR">{t("portugueseBrazil")}</option>
+                <option value="es">{t("spanish")}</option>
+              </select>
+            </div>
+
+            {/* Detail level, with the active level's own hint. */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+              <div>
+                <p className="text-sm font-medium text-foreground">{t("dataDetailLevel")}</p>
+                <p className="mt-0.5 text-[13px] text-foreground-subtle">
+                  {(settings.dataDetailMode ?? "balanced") === "detailed" ? t("detailDetailedHint")
+                    : (settings.dataDetailMode ?? "balanced") === "full" ? t("detailFullHint")
+                    : t("detailBalancedHint")}
+                </p>
               </div>
-            )}
-            {session.diagnostics.dependabotProbe?.message && (
-              <p className="mt-3 text-sm text-foreground-subtle">{session.diagnostics.dependabotProbe.message}</p>
-            )}
-            {session.diagnostics.privateRepoCount === 0 && (
-              <p className="mt-2 text-sm text-foreground-subtle">{t("diagnosticsPrivateScopeHint")}</p>
-            )}
-          </section>
-        )}
+              <select
+                aria-label={t("dataDetailLevel")}
+                value={settings.dataDetailMode ?? "balanced"}
+                onChange={(event) => updateSettings({ dataDetailMode: event.target.value as DataDetailMode })}
+                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
+              >
+                <option value="balanced">{t("detailBalanced")}</option>
+                <option value="detailed">{t("detailDetailed")}</option>
+                <option value="full">{t("detailFull")}</option>
+              </select>
+            </div>
+          </SurfaceCard>
+        </section>
 
         {/* Repository Selection (only in local mode) */}
         {localSecureMode && session && (
-          <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
+          <section id="settings-repos" className="scroll-mt-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-title font-headline font-semibold text-foreground">{t("repositoryControl")}</h2>
-                <p className="text-sm text-foreground-subtle mt-0.5" aria-live="polite">
+                <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("repositoryControl")}</h2>
+                <p className="text-[13px] text-foreground-subtle mt-0.5" aria-live="polite">
                   {t("groupSelectedOfTotal", { selected: selectedRepos.length, total: repos.length })}
                 </p>
               </div>
-              <div className="flex gap-1">
-                <button onClick={selectAllNonPrivate} className="text-micro font-medium text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-md hover:bg-primary/10">
+              <div className="flex gap-2">
+                <button onClick={selectAllNonPrivate} className="inline-flex h-8 items-center rounded-lg border border-primary/30 bg-primary/10 px-3 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/15">
                   {t("bulkSelectPublic")}
                 </button>
-                <button onClick={deselectAll} className="text-micro font-medium text-foreground-subtle hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-surface-2">
+                <button onClick={deselectAll} className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-surface-2/70 px-3 text-[13px] font-medium text-foreground-subtle transition-colors hover:text-foreground">
                   {t("bulkDeselectAll")}
                 </button>
               </div>
             </div>
 
-            {/* Search + Filters */}
-            <div className="flex flex-col gap-2 md:flex-row md:items-center">
-              <input
-                type="text" value={repoQuery} onChange={e => setRepoQuery(e.target.value)}
-                placeholder={t("repoSearchPlaceholder")}
-                className="flex-1 h-9 rounded-lg border border-border/60 bg-surface-2 px-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
-              />
-              <div className="flex gap-1 overflow-x-auto">
-                {(["all", "selected", "unselected"] as const).map(f => (
-                  <button key={f} onClick={() => setRepoFilter(f)}
+            {/* Search + Filters + Sort */}
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                <input
+                  type="text" value={repoQuery} onChange={e => setRepoQuery(e.target.value)}
+                  placeholder={t("repoSearchPlaceholder")}
+                  className="flex-1 h-9 rounded-lg border border-border/60 bg-surface-2 px-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
+                />
+                <div className="flex gap-1 overflow-x-auto">
+                  {(["all", "selected", "unselected"] as const).map(f => (
+                    <button key={f} onClick={() => setRepoFilter(f)}
+                      className={cn(
+                        "shrink-0 text-[13px] font-medium px-2.5 py-1.5 rounded-lg transition-colors",
+                        repoFilter === f ? "bg-primary/10 text-primary" : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+                      )}>
+                      {f === "all" ? t("all") : f === "selected" ? t("selected") : t("filterUnselected")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle mr-0.5">{t("repoSortLabel")}</span>
+                {REPO_SORTS.map(sort => (
+                  <button key={sort} onClick={() => setRepoSort(sort)} aria-pressed={repoSort === sort}
                     className={cn(
-                      "shrink-0 text-micro font-medium px-2.5 py-1.5 rounded-lg transition-colors",
-                      repoFilter === f ? "bg-primary/10 text-primary" : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+                      "shrink-0 text-[13px] font-medium px-2.5 py-1.5 rounded-lg transition-colors",
+                      repoSort === sort ? "bg-primary/10 text-primary" : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
                     )}>
-                    {f === "all" ? t("all") : f === "selected" ? t("selected") : t("filterUnselected")}
+                    {repoSortLabels[sort]}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Repo List, grouped. The container scrolls; group headers stick so
-                a long group never loses its label, counter and actions. */}
-            <div className="max-h-96 overflow-y-auto space-y-2 rounded-lg border border-border/30 p-2">
+            {/* One accordion per category, biggest first, and exclusive:
+                opening a chevron closes the others. There is no inner scroll
+                container anymore: the page scrolls, so opening a group or
+                toggling a row never jumps the list back to its start. */}
+            <div className="space-y-2">
               {reposLoading && (
                 <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-foreground-subtle">
                   <LoaderCircle size={14} className="animate-spin" />
@@ -470,46 +702,82 @@ export default function SettingsPage() {
                 </div>
               )}
               {!reposLoading && groups.map(group => {
-                const collapsed = collapsedGroups[group.id] === true;
+                const state = groupState[group.id];
+                const capped = group.repos.length > REPO_GROUP_PAGE;
+                // A search reveals every match, uncapped and regardless of the
+                // accordion state: a query never hides a result behind a click.
+                const displayOpen = state !== "closed" || repoSearchActive;
+                const visibleRepos = !displayOpen
+                  ? []
+                  : repoSearchActive || state === "open"
+                    ? group.repos
+                    : group.repos.slice(0, REPO_GROUP_PAGE);
                 const headingId = `repo-group-${group.id}`;
                 return (
-                  <section key={group.id} role="group" aria-labelledby={headingId} className="space-y-1">
-                    <div className="sticky top-0 z-10 flex items-center gap-2 rounded-md bg-surface-1/95 px-1.5 py-1 backdrop-blur-xs">
+                  <section key={group.id} role="group" aria-labelledby={headingId} className="rounded-xl border border-border/60 bg-surface-1/50">
+                    <div className="sticky top-0 z-10 flex items-center gap-3 rounded-t-xl bg-surface-1/95 px-4 py-2.5 backdrop-blur-xs">
                       <button
-                        onClick={() => setCollapsedGroups(current => ({ ...current, [group.id]: !collapsed }))}
-                        aria-expanded={!collapsed}
-                        aria-label={collapsed ? t("repoGroupExpand") : t("repoGroupCollapse")}
-                        className="flex items-center gap-1 text-micro font-semibold uppercase tracking-wider text-foreground-subtle hover:text-foreground transition-colors rounded px-1 py-0.5"
+                        onClick={() => {
+                          if (repoSearchActive) return;
+                          // Exclusive accordion: opening a chevron closes every
+                          // other one. A group closed this way forgets its page
+                          // state, so reopening always starts at the first page.
+                          setGroupState(current => ({
+                            ...CLOSED_GROUPS,
+                            [group.id]: nextGroupState(current[group.id], capped),
+                          }));
+                        }}
+                        aria-disabled={repoSearchActive}
+                        aria-expanded={displayOpen}
+                        aria-label={state === "open" ? t("repoGroupCollapse") : t("repoGroupExpand")}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left text-foreground transition-colors hover:text-primary"
                       >
-                        {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-                        <span id={headingId}>{groupLabels[group.id]}</span>
+                        {displayOpen ? <ChevronDown size={15} className="shrink-0 text-foreground-subtle" /> : <ChevronRight size={15} className="shrink-0 text-foreground-subtle" />}
+                        <span id={headingId} className="truncate text-sm font-semibold">{groupLabels[group.id]}</span>
+                        <span className="truncate text-[13px] text-foreground-subtle tabular-nums" aria-live="polite">
+                          {t("groupSelectedOfTotal", { selected: group.selectedTotal, total: group.total })}
+                        </span>
                       </button>
-                      <span className="text-[10px] text-foreground-subtle/80 tabular-nums whitespace-nowrap" aria-live="polite">
-                        {t("groupSelectedOfTotal", { selected: group.selectedTotal, total: group.total })}
-                      </span>
-                      <div className="ml-auto flex gap-1 shrink-0">
-                        <button onClick={() => selectGroup(group.id)} disabled={group.total === 0} className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors px-1.5 py-0.5 rounded hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent">
+                      <div className="flex shrink-0 gap-2">
+                        <button onClick={() => selectGroup(group.id)} disabled={group.total === 0} className="inline-flex h-8 items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-40 disabled:hover:bg-primary/10">
                           {t("groupSelectAll")}
                         </button>
-                        <button onClick={() => clearGroup(group.id)} disabled={group.selectedTotal === 0} className="text-[10px] font-medium text-foreground-subtle hover:text-foreground transition-colors px-1.5 py-0.5 rounded hover:bg-surface-2 disabled:opacity-40 disabled:hover:bg-transparent">
+                        <button onClick={() => clearGroup(group.id)} disabled={group.selectedTotal === 0} className="inline-flex h-8 items-center rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[13px] font-medium text-foreground-subtle transition-colors hover:text-foreground disabled:opacity-40 disabled:hover:text-foreground-subtle">
                           {t("groupClear")}
                         </button>
                       </div>
                     </div>
-                    {!collapsed && (group.repos.length > 0 ? group.repos.map(repo => (
-                      <RepoRow
-                        key={repo.fullName}
-                        repo={repo}
-                        isSelected={selectedRepos.includes(repo.fullName)}
-                        isFeatured={repo.fullName === primaryRepo}
-                        onToggle={() => toggleRepo(repo.fullName)}
-                        t={t}
-                      />
-                    )) : (
-                      <p className="px-3.5 py-2 text-micro text-foreground-subtle/80 italic">
-                        {group.repos.length === 0 && group.total > 0 ? t("noRepoMatchesInGroup") : groupEmptyLabels[group.id]}
-                      </p>
-                    ))}
+                    {displayOpen && (
+                      <div className="space-y-0.5 px-1.5 pb-1.5">
+                        {visibleRepos.length > 0 ? visibleRepos.map(repo => (
+                          <RepoRow
+                            key={repo.fullName}
+                            repo={repo}
+                            isSelected={selectedRepos.includes(repo.fullName)}
+                            isFeatured={repo.fullName === primaryRepo}
+                            onToggle={() => toggleRepo(repo.fullName)}
+                            t={t}
+                          />
+                        )) : (
+                          <p className="px-3.5 py-2 text-[13px] text-foreground-subtle/80 italic">
+                            {group.total > 0 ? t("noRepoMatchesInGroup") : groupEmptyLabels[group.id]}
+                          </p>
+                        )}
+                        {!repoSearchActive && state === "partial" && capped && (
+                          <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1.5">
+                            <p className="text-[13px] text-foreground-subtle tabular-nums">
+                              {t("groupShowingFirst", { count: REPO_GROUP_PAGE, total: group.repos.length })}
+                            </p>
+                            <button
+                              onClick={() => setGroupState(current => ({ ...current, [group.id]: "open" }))}
+                              className="inline-flex h-8 items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/15"
+                            >
+                              {t("groupShowAll", { count: group.repos.length })}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </section>
                 );
               })}
@@ -517,7 +785,32 @@ export default function SettingsPage() {
           </section>
         )}
 
-        <div className="h-4" />
+        {/* Footer: the app version, and the room the summary rail needs to
+            reach the last chapter when every chevron is closed. */}
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pb-20 pt-6">
+          <p className="text-[13px] text-foreground-subtle">
+            push_ <span className="tabular-nums text-foreground-subtle/80">v{APP_VERSION}</span>
+          </p>
+          <a
+            href={SITE_REPOSITORY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(event) => {
+              // Always leave the app: the browser opens a new tab, the desktop
+              // shell hands the URL to the OS. Without preventDefault a click
+              // inside the webview could navigate the app itself to GitHub.
+              event.preventDefault();
+              void openExternal(SITE_REPOSITORY_URL);
+            }}
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground-subtle transition-colors hover:text-primary"
+          >
+            <ExternalLink size={12} />
+            {t("githubRepository")}
+          </a>
+        </footer>
+
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -563,69 +856,124 @@ function RepoRow({ repo, isSelected, isFeatured, onToggle, t }: RepoRowProps) {
         <span className="text-body font-medium text-foreground truncate block">{repo.fullName}</span>
         <span className="flex items-center gap-2 flex-wrap">
           {repo.isPrivate && (
-            <span className="text-[10px] font-medium text-warning inline-flex items-center gap-1">
+            <span className="text-[11px] font-medium text-warning inline-flex items-center gap-1">
               <Lock size={10} />{t("privateBadge")}
             </span>
           )}
           {upstreamLabel && (
-            <span className="text-[10px] font-medium text-foreground-subtle inline-flex items-center gap-1">
+            <span className="text-[11px] font-medium text-foreground-subtle inline-flex items-center gap-1">
               <GitFork size={10} />{upstreamLabel}
             </span>
           )}
           {repo.archived && (
-            <span className="text-[10px] font-medium text-foreground-subtle inline-flex items-center gap-1">
+            <span className="text-[11px] font-medium text-foreground-subtle inline-flex items-center gap-1">
               <Archive size={10} />{t("archivedBadge")}
             </span>
           )}
-          {repo.description && <span className="text-micro text-foreground-subtle truncate">{repo.description}</span>}
+          {repo.description && <span className="text-[12px] text-foreground-subtle truncate">{repo.description}</span>}
         </span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {repo.language && <span className="text-[10px] text-foreground-subtle">{repo.language}</span>}
+        {repo.language && <span className="text-[11px] text-foreground-subtle">{repo.language}</span>}
         {isFeatured && <Star size={12} className="text-primary fill-primary" />}
       </div>
     </button>
   );
 }
 
-function MetricCard({ label, value, hint, highlight }: { label: string; value: string | number; hint: string; highlight?: boolean }) {
-  const isZero = isZeroMetricValue(value);
+function StatusLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className={cn(
-      "rounded-xl border bg-surface-1 shadow-xs px-4 py-3",
-      highlight ? "border-primary/30" : "border-border/60",
-      isZero && "border-border/35 bg-surface-1/45 shadow-none"
-    )}>
-      <p className="text-micro font-semibold text-foreground-subtle uppercase tracking-wider">{label}</p>
-      <p className={cn(
-        "text-title font-headline font-bold mt-0.5 tracking-tight",
-        highlight && "text-primary",
-        isZero && "text-foreground-subtle/45"
-      )}>{value}</p>
-      <p className="text-[10px] text-foreground-subtle/70 mt-0.5 truncate">{hint}</p>
-    </div>
-  );
-}
-
-function StatusLine({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-3 px-4 py-3">
       <span className="text-sm text-foreground-subtle">{label}</span>
-      <span className={cn(
-        "text-sm font-semibold truncate",
-        highlight ? "text-primary" : "text-foreground"
-      )}>
-        {value}
-      </span>
+      <span className="truncate text-sm font-semibold tabular-nums text-foreground">{value}</span>
     </div>
   );
 }
 
-function StatusCard({ label, value, good }: { label: string; value: string | number; good?: boolean }) {
+/** One bordered surface holding a group of setting rows. */
+function SurfaceCard({ children }: { children: ReactNode }) {
+  return <div className="divide-y divide-border/40 rounded-xl border border-border/60 bg-surface-1/50">{children}</div>;
+}
+
+/**
+ * Theme picker as a dropdown whose color dot lives beside the theme name —
+ * in the closed trigger and in every option. A native `<select>` cannot show
+ * a color per option, so this keeps the listbox contract by hand: outside
+ * click and Escape close it, options are buttons with `role="option"`.
+ */
+function ThemeDropdown({ label, value, options, onChange }: {
+  label: string;
+  value: string;
+  options: readonly { value: string; label: string; swatch: string }[];
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   return (
-    <div className={cn("rounded-lg border bg-surface-2/70 p-3", good ? "border-success/30" : "border-border/60")}>
-      <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{label}</p>
-      <p className={cn("mt-1 text-sm font-semibold", good ? "text-success" : "text-foreground")}>{value}</p>
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label}
+        onClick={() => setOpen((current) => !current)}
+        className="flex h-9 w-52 items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors hover:border-foreground-subtle/30 focus-visible:border-primary/50"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span aria-hidden="true" className="h-3.5 w-3.5 shrink-0 rounded-full ring-1 ring-border" style={{ background: selected?.swatch }} />
+          <span className="truncate">{selected?.label}</span>
+        </span>
+        <ChevronDown size={14} className={cn("shrink-0 text-foreground-subtle transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          aria-label={label}
+          className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-border/60 bg-surface-1 py-1 shadow-lg"
+        >
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm transition-colors",
+                  isSelected ? "bg-surface-2 text-foreground" : "text-foreground-subtle hover:bg-surface-2/60 hover:text-foreground",
+                )}
+              >
+                <span aria-hidden="true" className="h-3.5 w-3.5 shrink-0 rounded-full ring-1 ring-border" style={{ background: option.swatch }} />
+                <span className="truncate">{option.label}</span>
+                {isSelected && <Check size={13} className="ml-auto shrink-0 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -638,34 +986,3 @@ function dependabotProbeLabel(status: string | undefined, t: ReturnType<typeof u
   return t("dependabotUnavailableRuntime");
 }
 
-function PreferenceToggle({ label, current, options, onSelect }: {
-  label: string; current: string; options: Array<{ value: string; label: string; icon?: React.ReactNode; swatch?: string }>; onSelect: (value: string) => void;
-}) {
-  return (
-    <div>
-      <p className="text-micro font-semibold text-foreground-subtle uppercase tracking-wider mb-2">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {options.map(opt => (
-          <button key={opt.value} onClick={() => onSelect(opt.value)}
-            className={cn(
-              "relative flex min-h-10 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 py-2 text-sm font-medium transition-all",
-              current === opt.value
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "border border-border/60 bg-surface-2 text-foreground-subtle hover:border-foreground-subtle/30 hover:text-foreground"
-            )}
-          >
-            {opt.icon}
-            {opt.label}
-            {opt.swatch && (
-              <span
-                aria-hidden="true"
-                className="absolute inset-x-2 bottom-1 h-1 rounded-full opacity-90"
-                style={{ background: opt.swatch }}
-              />
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
