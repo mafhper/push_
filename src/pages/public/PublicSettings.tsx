@@ -115,6 +115,16 @@ export default function PublicSettingsPage() {
               {rateLimit && <StatusLine label={t("rateLimit")} value={`${rateLimit.remaining}/${rateLimit.limit}`} />}
               <StatusLine label={t("featuredRepo")} value={mode === "public-profile" ? (publicRepos[0]?.fullName ?? t("none")) : (manifest.featuredRepo || t("none"))} highlight={mode === "public-profile" ? Boolean(publicRepos[0]?.fullName) : Boolean(manifest.featuredRepo)} />
             </div>
+            {/* Authenticated-only data gets an explicit "why it is absent"
+                instead of an empty section in the published runtime. */}
+            <div className="rounded-lg border border-border/30 bg-surface-2/50 p-3">
+              <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">
+                {t("quotaPublicUnavailableTitle")}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground-subtle">
+                {t("quotaPublicUnavailableBody")}
+              </p>
+            </div>
           </section>
         </div>
 

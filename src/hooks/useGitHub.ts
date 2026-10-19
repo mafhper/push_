@@ -17,6 +17,7 @@ import {
   fetchRepoSnapshot,
   fetchSnapshotManifest,
 } from '@/services/github';
+import { fetchAccountQuotas } from '@/services/github-quotas';
 
 function getRuntimeQueryKey(localRuntime: boolean, username?: string) {
   if (!localRuntime || !username) {
@@ -125,6 +126,31 @@ export function useRateLimit() {
     queryKey: ['rateLimit', tokenKey],
     queryFn: () => token ? fetchLiveRateLimit(token) : fetchRateLimit(),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Account quotas for the authenticated user.
+ *
+ * Polling is 10 minutes — the ceiling of the approved 5–10 minute window. The
+ * raw calls are cheap individually, but they multiply by repository, and the
+ * surface must not spend the very API quota it is reporting.
+ */
+export function useAccountQuotas() {
+  const { session, selectedRepos } = useApp();
+  const localRuntime = isLocalSecureRuntime();
+  const token = localRuntime ? session?.token?.trim() : '';
+  const login = localRuntime ? session?.username?.trim() ?? '' : '';
+  const tokenKey = getRuntimeQueryKey(localRuntime, session?.username);
+
+  return useQuery({
+    queryKey: ['account-quotas', tokenKey, selectedRepos.join('|')],
+    queryFn: () => fetchAccountQuotas(token, login, selectedRepos),
+    enabled: Boolean(token && login),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
+    refetchIntervalInBackground: false,
   });
 }
 

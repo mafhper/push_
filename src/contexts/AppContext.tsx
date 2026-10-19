@@ -3,7 +3,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { type DictKey, interpolate, resolveLanguage, translate } from '@/i18n';
 import { diagnoseToken, validateToken } from '@/services/github';
 import { clearGithubToken, loadGithubToken } from '@/services/secure-storage';
-import { clearIdentity, loadIdentity } from '@/services/presentation-identity';
+import { clearIdentity, saveIdentity } from '@/services/presentation-identity';
 import { removePersistedQueryCache } from '@/services/query-persistence';
 import { bootMark } from '@/services/startup-metrics';
 import { isTauriRuntime } from '@/config/site';
@@ -48,7 +48,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     clearIdentity();
     void clearGithubToken();
     void removePersistedQueryCache();
+    // The selection is deliberately kept: the account reconciliation (PU14)
+    // offers "keep the repositories and replace the token", which is exactly
+    // logout plus the same selection. `clearSelection` is the explicit exit.
   }, []);
+
+  /**
+   * Removes the selection keys instead of writing empty values: the account
+   * reconciliation (PU14) offers a path that deletes the old account's data,
+   * and writing `[]` back would leave the keys behind.
+   */
+  const clearSelection = useCallback(() => {
+    clearPrimary();
+    clearSelected();
+  }, [clearPrimary, clearSelected]);
 
   const clearAll = useCallback(() => {
     setSessionState(null);
@@ -134,13 +147,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const identity = loadIdentity();
-      if (!cancelled) {
-        setSession({ token: storedToken, username: identity?.username ?? '', avatarUrl: identity?.avatarUrl ?? '' });
-        setSessionStatus('authenticated');
-        bootMark('session-loaded');
-      }
-
+      // The stored identity is a hint written by an older token. It must never
+      // become the session on its own: account-aware surfaces (selection,
+      // quotas) would trust a name the current token has not proven (PU14/H4).
       const viewer = await validateToken(storedToken);
       if (cancelled) return;
       if (!viewer || !viewer.login) {
@@ -148,12 +157,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         setSessionState(null);
         setSessionStatus('invalid');
+        bootMark('session-loaded');
         return;
       }
 
       const diagnostics = await diagnoseToken(storedToken);
       if (!cancelled) {
         setSession({ token: storedToken, username: viewer.login, avatarUrl: viewer.avatarUrl, diagnostics });
+        setSessionStatus('authenticated');
+        saveIdentity({ username: viewer.login, avatarUrl: viewer.avatarUrl, savedAt: new Date().toISOString() });
+        bootMark('session-loaded');
       }
     }
     void restoreSession();
@@ -177,10 +190,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     rateLimitInfo,
     setRateLimitInfo,
     t,
+    clearSelection,
     clearAll,
   }), [
     normalizedSettings, sessionState, sessionStatus, primaryRepo, selectedRepos, rateLimitInfo,
-    setSession, setPrimaryRepo, setSelectedRepos, t, clearAll, updateSettings, logout
+    setSession, setPrimaryRepo, setSelectedRepos, t, clearSelection, clearAll, updateSettings, logout
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
