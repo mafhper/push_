@@ -1,8 +1,11 @@
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, UserRound, ChevronDown, ChevronRight, Lock, GitFork, Archive, ExternalLink, Check, X, CircleQuestionMark, Activity, SlidersHorizontal, ListTree } from "lucide-react";
+import { KeyRound, LoaderCircle, ShieldCheck, Star, LogOut, UserRound, ChevronDown, ChevronRight, Lock, GitFork, Archive, ExternalLink, Check, X, CircleQuestionMark, Activity, SlidersHorizontal, ListTree, Gauge, TriangleAlert } from "lucide-react";
 import { APP_VERSION, SITE_REPOSITORY_URL, isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
-import { useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
+import { useAccountQuotas, useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
+import { MixedAccountBanner } from "@/components/settings/MixedAccountBanner";
+import { QuotasSection } from "@/components/settings/QuotasSection";
+import { foreignRepoOwners, foreignRepos, isMixedAccount, isQuotaAlert, summarizeQuotas } from "@/quotas";
 import { formatDateTime, type DictKey, type Language } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { diagnoseToken, validateToken } from "@/services/github";
@@ -31,12 +34,17 @@ const CLASSIC_TOKEN_URL = "https://github.com/settings/tokens/new";
 /** Required read capabilities, in the order they are presented. */
 const TOKEN_PERMISSION_IDS = ["metadata", "contents", "actions", "dependabot"] as const satisfies readonly TokenPermissionId[];
 
-/** The settings summary rail: one entry per chapter, in page order. */
+/**
+ * The settings summary rail: one entry per chapter, in page order (PU14,
+ * approved 2026-10-19). The array drives the rail, the scroll-spy and the
+ * initial chapter, so the DOM order below must match it.
+ */
 const SETTINGS_SECTIONS = [
-  { id: "settings-access", labelKey: "githubAccess", icon: KeyRound },
-  { id: "settings-state", labelKey: "currentMode", icon: Activity },
   { id: "settings-preferences", labelKey: "preferences", icon: SlidersHorizontal },
+  { id: "settings-access", labelKey: "githubAccess", icon: KeyRound },
   { id: "settings-repos", labelKey: "repositoryControl", icon: ListTree },
+  { id: "settings-state", labelKey: "currentMode", icon: Activity },
+  { id: "settings-quotas", labelKey: "quotas", icon: Gauge },
 ] as const satisfies readonly { id: string; labelKey: DictKey; icon: typeof KeyRound }[];
 
 /** Most recent first; missing or invalid dates sort last. */
@@ -98,9 +106,20 @@ export default function SettingsPage() {
   const { data: overview } = useDashboardSnapshot();
   const { data: repos = [], isLoading: reposLoading } = useRepos();
   const { data: rateLimit } = useRateLimit();
+  const {
+    data: quotaSnapshot,
+    isLoading: quotasLoading,
+    isError: quotasError,
+    refetch: refetchQuotas,
+  } = useAccountQuotas();
   const [tokenInput, setTokenInput] = useState("");
   const [connectError, setConnectError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  /**
+   * Result of a reconciliation, kept by the page because the banner that
+   * triggered it unmounts as soon as the mismatch is gone (or the session ends).
+   */
+  const [accountNotice, setAccountNotice] = useState<string | null>(null);
   const [repoQuery, setRepoQuery] = useState("");
   const [repoFilter, setRepoFilter] = useState<"all" | "selected" | "unselected">("all");
   const [repoSort, setRepoSort] = useState<RepoSort>("name");
@@ -139,6 +158,20 @@ export default function SettingsPage() {
     document.getElementById(id)?.scrollIntoView?.({ behavior: "smooth", block: "start" });
   }
 
+  /**
+   * The alerts banner links to `Settings#settings-quotas`. The router does not
+   * scroll to a hash by itself, so the destination does it once, after the
+   * section exists in the DOM.
+   */
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) return;
+    const timer = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView?.({ block: "start" });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (!localSecureMode || !session?.token) return;
     // A valid diagnostics without a permissions report comes from a session
@@ -158,6 +191,20 @@ export default function SettingsPage() {
 
   const selectedRepoCount = localSecureMode && session ? selectedRepos.length : (overview?.repos.length ?? 0);
   const featuredRepoLabel = localSecureMode ? (primaryRepo ?? "none") : (manifest?.featuredRepo ?? "none");
+
+  const quotaSummary = quotaSnapshot ? summarizeQuotas(quotaSnapshot.families) : null;
+  const quotaBadgeVisible = Boolean(quotaSummary && isQuotaAlert(quotaSummary.status));
+  const quotaBadgePercent = quotaSummary?.percent ? Math.floor(quotaSummary.percent) : 0;
+  const quotaBadgeTone = quotaSummary?.status === "warning" ? "bg-warning/15 text-warning" : "bg-critical/15 text-critical";
+
+  /**
+   * PU14: the selection is stored per installation, so a token swap can leave
+   * another account's repositories selected. The banner names the mismatch and
+   * offers the three explicit paths; this page never reconciles on its own.
+   */
+  const mixedAccount = Boolean(session && isMixedAccount(session.username, selectedRepos));
+  const mixedOwners = session ? foreignRepoOwners(session.username, selectedRepos) : [];
+  const mixedRepoCount = session ? foreignRepos(session.username, selectedRepos).length : 0;
 
   const accessibleFullNames = useMemo(() => new Set(repos.map((repo) => repo.fullName)), [repos]);
 
@@ -268,6 +315,7 @@ export default function SettingsPage() {
     }
     const diagnostics = await diagnoseToken(trimmed);
     setSession({ token: trimmed, username: viewer.login, avatarUrl: viewer.avatarUrl, diagnostics });
+    setAccountNotice(null);
     await saveGithubToken(trimmed);
     saveIdentity({ username: viewer.login, avatarUrl: viewer.avatarUrl, savedAt: new Date().toISOString() });
     setTokenInput("");
@@ -277,6 +325,7 @@ export default function SettingsPage() {
     logout();
     setTokenInput("");
     setConnectError(null);
+    setAccountNotice(null);
   }
 
   /** Single write path, so the featured repo always follows the selection. */
@@ -332,7 +381,7 @@ export default function SettingsPage() {
 
         {/* Header */}
         <div className="max-w-3xl">
-          <h1 className="text-display font-headline font-bold tracking-tight text-foreground">{t("repositoryControl")}</h1>
+          <h1 className="text-display font-headline font-bold tracking-tight text-foreground">{t("settings")}</h1>
           <p className="text-body text-foreground-subtle mt-1">
             {localSecureMode ? t("connectLocalTokenBody") : t("snapshotOnlyBody")}
           </p>
@@ -352,6 +401,14 @@ export default function SettingsPage() {
                 )}>
                 <Icon size={15} className="shrink-0" />
                 {t(section.labelKey)}
+                {section.id === "settings-quotas" && quotaBadgeVisible && (
+                  <span
+                    aria-label={t("quotaRailBadge", { percent: quotaBadgePercent })}
+                    className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", quotaBadgeTone)}
+                  >
+                    {quotaBadgePercent}%
+                  </span>
+                )}
               </button>
             );
           })}
@@ -373,12 +430,74 @@ export default function SettingsPage() {
                   )}>
                   <Icon size={15} className="shrink-0" />
                   {t(section.labelKey)}
+                  {section.id === "settings-quotas" && quotaBadgeVisible && (
+                    <span
+                      aria-label={t("quotaRailBadge", { percent: quotaBadgePercent })}
+                      className={cn("ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", quotaBadgeTone)}
+                    >
+                      {quotaBadgePercent}%
+                    </span>
+                  )}
                 </button>
               );
             })}
           </nav>
 
           <div className="min-w-0 space-y-8">
+
+        {/* Preferences */}
+        <section id="settings-preferences" className="scroll-mt-4 space-y-3">
+          <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("preferences")}</h2>
+          <SurfaceCard>
+            {/* Theme: dropdown with the color dot beside each theme name. */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+              <p className="text-sm font-medium text-foreground">{t("theme")}</p>
+              <ThemeDropdown
+                label={t("theme")}
+                value={settings.theme}
+                options={themeOptions}
+                onChange={(value) => updateSettings({ theme: value as Theme })}
+              />
+            </div>
+
+            {/* Language */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+              <p className="text-sm font-medium text-foreground">{t("language")}</p>
+              <select
+                aria-label={t("language")}
+                value={settings.lang}
+                onChange={(event) => updateSettings({ lang: event.target.value as Language })}
+                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
+              >
+                <option value="en">{t("english")}</option>
+                <option value="pt-BR">{t("portugueseBrazil")}</option>
+                <option value="es">{t("spanish")}</option>
+              </select>
+            </div>
+
+            {/* Detail level, with the active level's own hint. */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+              <div>
+                <p className="text-sm font-medium text-foreground">{t("dataDetailLevel")}</p>
+                <p className="mt-0.5 text-[13px] text-foreground-subtle">
+                  {(settings.dataDetailMode ?? "balanced") === "detailed" ? t("detailDetailedHint")
+                    : (settings.dataDetailMode ?? "balanced") === "full" ? t("detailFullHint")
+                    : t("detailBalancedHint")}
+                </p>
+              </div>
+              <select
+                aria-label={t("dataDetailLevel")}
+                value={settings.dataDetailMode ?? "balanced"}
+                onChange={(event) => updateSettings({ dataDetailMode: event.target.value as DataDetailMode })}
+                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
+              >
+                <option value="balanced">{t("detailBalanced")}</option>
+                <option value="detailed">{t("detailDetailed")}</option>
+                <option value="full">{t("detailFull")}</option>
+              </select>
+            </div>
+          </SurfaceCard>
+        </section>
 
         {/* GitHub access */}
         <section id="settings-access" className="scroll-mt-4 space-y-3">
@@ -402,6 +521,24 @@ export default function SettingsPage() {
                   : t("snapshotOnly")}
               </span>
             </div>
+
+            {accountNotice && (
+              <p
+                role="status"
+                className="rounded-lg border border-success/30 bg-success/5 px-3 py-2 text-[13px] text-foreground"
+              >
+                {accountNotice}
+              </p>
+            )}
+
+            {localSecureMode && session && mixedAccount && (
+              <MixedAccountBanner
+                login={session.username}
+                owners={mixedOwners}
+                repoCount={mixedRepoCount}
+                onResolved={setAccountNotice}
+              />
+            )}
 
             {localSecureMode ? (
               <div className="space-y-3">
@@ -495,147 +632,6 @@ export default function SettingsPage() {
             )}
           </section>
 
-        {/* Current state: session, token permissions and scope, each in its surface. */}
-        <section id="settings-state" className="scroll-mt-4 space-y-3">
-            <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("currentMode")}</h2>
-            <div className="space-y-5 pt-1">
-              <div className="space-y-2">
-                <p className="text-[13px] font-semibold text-foreground-subtle">{t("sessionGroup")}</p>
-                <SurfaceCard>
-                  <StatusLine label={t("publishedSnapshotLabel")} value={formatDateTime(manifest.status.generatedAt, settings.lang)} />
-                  <StatusLine label={t("snapshotSource")} value={manifest.status.generatedBy} />
-                  <StatusLine label={t("currentMode")} value={localSecureMode ? (session ? "local-authenticated" : "localhost-public") : "github-pages"} />
-                  <StatusLine label={t("visibleRepos")} value={String(selectedRepoCount)} />
-                  {rateLimit && <StatusLine label={t("rateLimit")} value={`${rateLimit.remaining}/${rateLimit.limit}`} />}
-                  <StatusLine label={t("featuredRepo")} value={featuredRepoLabel} />
-                </SurfaceCard>
-              </div>
-
-              {localSecureMode && session?.diagnostics?.permissions && session.diagnostics.permissions.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[13px] font-semibold text-foreground-subtle">{t("tokenPermissions")}</p>
-                    {session.diagnostics.kind && session.diagnostics.kind !== "unknown" && (
-                      <span className="rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] font-medium text-foreground-subtle">
-                        {session.diagnostics.kind === "classic" ? t("tokenKindClassic") : t("tokenKindFineGrained")}
-                      </span>
-                    )}
-                  </div>
-                  <SurfaceCard>
-                    {TOKEN_PERMISSION_IDS.map((id) => {
-                      const status = session.diagnostics?.permissions?.find((permission) => permission.id === id)?.status ?? "unknown";
-                      return (
-                        <div key={id} className="flex items-center justify-between gap-3 px-4 py-3">
-                          <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                            {status === "granted" ? <Check size={13} className="shrink-0 text-success" />
-                              : status === "denied" ? <X size={13} className="shrink-0 text-warning" />
-                              : <CircleQuestionMark size={13} className="shrink-0 text-foreground-subtle/70" />}
-                            <span className="truncate">{permissionLabels[id]}</span>
-                          </span>
-                          <span className={cn(
-                            "shrink-0 text-sm font-semibold",
-                            status === "granted" && "text-foreground",
-                            status === "denied" && "text-warning",
-                            status === "unknown" && "text-foreground-subtle/70",
-                          )}>
-                            {status === "granted" ? t("permGranted") : status === "denied" ? t("permDenied") : t("permUnknown")}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </SurfaceCard>
-                </div>
-              )}
-
-              {session?.diagnostics && (session.diagnostics.accessibleRepoCount !== undefined || session.diagnostics.privateRepoCount !== undefined || session.diagnostics.dependabotProbe) && (
-                <div className="space-y-2">
-                  <p className="text-[13px] font-semibold text-foreground-subtle">{t("scopeGroup")}</p>
-                  <SurfaceCard>
-                    {session.diagnostics.accessibleRepoCount !== undefined && (
-                      <StatusLine label={t("diagnosticsAccessibleRepos")} value={String(session.diagnostics.accessibleRepoCount)} />
-                    )}
-                    {session.diagnostics.privateRepoCount !== undefined && (
-                      <div className="space-y-1 px-4 py-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm text-foreground-subtle">{t("diagnosticsPrivateRepos")}</span>
-                          <span className="truncate text-sm font-semibold tabular-nums text-foreground">{session.diagnostics.privateRepoCount}</span>
-                        </div>
-                        {session.diagnostics.privateRepoCount === 0 && (
-                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{t("diagnosticsPrivateScopeHint")}</p>
-                        )}
-                      </div>
-                    )}
-                    {session.diagnostics.dependabotProbe && (
-                      <div className="space-y-1 px-4 py-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm text-foreground-subtle">{t("settingsDependabotStatus")}</span>
-                          <span className="truncate text-sm font-semibold text-foreground">{dependabotProbeLabel(session.diagnostics.dependabotProbe.status, t)}</span>
-                        </div>
-                        {session.diagnostics.dependabotProbe.message && (
-                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{session.diagnostics.dependabotProbe.message}</p>
-                        )}
-                      </div>
-                    )}
-                  </SurfaceCard>
-                </div>
-              )}
-            </div>
-          </section>
-
-        {/* Preferences */}
-        <section id="settings-preferences" className="scroll-mt-4 space-y-3">
-          <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("preferences")}</h2>
-          <SurfaceCard>
-            {/* Theme: dropdown with the color dot beside each theme name. */}
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
-              <p className="text-sm font-medium text-foreground">{t("theme")}</p>
-              <ThemeDropdown
-                label={t("theme")}
-                value={settings.theme}
-                options={themeOptions}
-                onChange={(value) => updateSettings({ theme: value as Theme })}
-              />
-            </div>
-
-            {/* Language */}
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
-              <p className="text-sm font-medium text-foreground">{t("language")}</p>
-              <select
-                aria-label={t("language")}
-                value={settings.lang}
-                onChange={(event) => updateSettings({ lang: event.target.value as Language })}
-                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
-              >
-                <option value="en">{t("english")}</option>
-                <option value="pt-BR">{t("portugueseBrazil")}</option>
-                <option value="es">{t("spanish")}</option>
-              </select>
-            </div>
-
-            {/* Detail level, with the active level's own hint. */}
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
-              <div>
-                <p className="text-sm font-medium text-foreground">{t("dataDetailLevel")}</p>
-                <p className="mt-0.5 text-[13px] text-foreground-subtle">
-                  {(settings.dataDetailMode ?? "balanced") === "detailed" ? t("detailDetailedHint")
-                    : (settings.dataDetailMode ?? "balanced") === "full" ? t("detailFullHint")
-                    : t("detailBalancedHint")}
-                </p>
-              </div>
-              <select
-                aria-label={t("dataDetailLevel")}
-                value={settings.dataDetailMode ?? "balanced"}
-                onChange={(event) => updateSettings({ dataDetailMode: event.target.value as DataDetailMode })}
-                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
-              >
-                <option value="balanced">{t("detailBalanced")}</option>
-                <option value="detailed">{t("detailDetailed")}</option>
-                <option value="full">{t("detailFull")}</option>
-              </select>
-            </div>
-          </SurfaceCard>
-        </section>
-
         {/* Repository Selection (only in local mode) */}
         {localSecureMode && session && (
           <section id="settings-repos" className="scroll-mt-4 space-y-3">
@@ -655,6 +651,28 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+
+            {/* The selection is what feeds the mismatch, so the echo lives
+                here too — one line, with the way back to the actions. */}
+            {mixedAccount && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+                <TriangleAlert size={12} className="shrink-0 text-warning" />
+                <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-foreground-subtle">
+                  {t("mixedAccountEcho", {
+                    count: mixedRepoCount,
+                    owners: mixedOwners.join(", "),
+                    login: session.username,
+                  })}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => goToSection("settings-access")}
+                  className="shrink-0 text-[12px] font-medium text-primary transition-opacity hover:opacity-80"
+                >
+                  {t("mixedAccountEchoLink")}
+                </button>
+              </div>
+            )}
 
             {/* Search + Filters + Sort */}
             <div className="flex flex-col gap-2">
@@ -784,6 +802,105 @@ export default function SettingsPage() {
             </div>
           </section>
         )}
+
+        {/* Current state: session, token permissions and scope, each in its surface. */}
+        <section id="settings-state" className="scroll-mt-4 space-y-3">
+            <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("currentMode")}</h2>
+            <div className="space-y-5 pt-1">
+              <div className="space-y-2">
+                <p className="text-[13px] font-semibold text-foreground-subtle">{t("sessionGroup")}</p>
+                <SurfaceCard>
+                  <StatusLine label={t("publishedSnapshotLabel")} value={formatDateTime(manifest.status.generatedAt, settings.lang)} />
+                  <StatusLine label={t("snapshotSource")} value={manifest.status.generatedBy} />
+                  <StatusLine label={t("currentMode")} value={localSecureMode ? (session ? "local-authenticated" : "localhost-public") : "github-pages"} />
+                  <StatusLine label={t("visibleRepos")} value={String(selectedRepoCount)} />
+                  {rateLimit && <StatusLine label={t("rateLimit")} value={`${rateLimit.remaining}/${rateLimit.limit}`} />}
+                  <StatusLine label={t("featuredRepo")} value={featuredRepoLabel} />
+                </SurfaceCard>
+              </div>
+
+              {localSecureMode && session?.diagnostics?.permissions && session.diagnostics.permissions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[13px] font-semibold text-foreground-subtle">{t("tokenPermissions")}</p>
+                    {session.diagnostics.kind && session.diagnostics.kind !== "unknown" && (
+                      <span className="rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] font-medium text-foreground-subtle">
+                        {session.diagnostics.kind === "classic" ? t("tokenKindClassic") : t("tokenKindFineGrained")}
+                      </span>
+                    )}
+                  </div>
+                  <SurfaceCard>
+                    {TOKEN_PERMISSION_IDS.map((id) => {
+                      const status = session.diagnostics?.permissions?.find((permission) => permission.id === id)?.status ?? "unknown";
+                      return (
+                        <div key={id} className="flex items-center justify-between gap-3 px-4 py-3">
+                          <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                            {status === "granted" ? <Check size={13} className="shrink-0 text-success" />
+                              : status === "denied" ? <X size={13} className="shrink-0 text-warning" />
+                              : <CircleQuestionMark size={13} className="shrink-0 text-foreground-subtle/70" />}
+                            <span className="truncate">{permissionLabels[id]}</span>
+                          </span>
+                          <span className={cn(
+                            "shrink-0 text-sm font-semibold",
+                            status === "granted" && "text-foreground",
+                            status === "denied" && "text-warning",
+                            status === "unknown" && "text-foreground-subtle/70",
+                          )}>
+                            {status === "granted" ? t("permGranted") : status === "denied" ? t("permDenied") : t("permUnknown")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </SurfaceCard>
+                </div>
+              )}
+
+              {session?.diagnostics && (session.diagnostics.accessibleRepoCount !== undefined || session.diagnostics.privateRepoCount !== undefined || session.diagnostics.dependabotProbe) && (
+                <div className="space-y-2">
+                  <p className="text-[13px] font-semibold text-foreground-subtle">{t("scopeGroup")}</p>
+                  <SurfaceCard>
+                    {session.diagnostics.accessibleRepoCount !== undefined && (
+                      <StatusLine label={t("diagnosticsAccessibleRepos")} value={String(session.diagnostics.accessibleRepoCount)} />
+                    )}
+                    {session.diagnostics.privateRepoCount !== undefined && (
+                      <div className="space-y-1 px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-foreground-subtle">{t("diagnosticsPrivateRepos")}</span>
+                          <span className="truncate text-sm font-semibold tabular-nums text-foreground">{session.diagnostics.privateRepoCount}</span>
+                        </div>
+                        {session.diagnostics.privateRepoCount === 0 && (
+                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{t("diagnosticsPrivateScopeHint")}</p>
+                        )}
+                      </div>
+                    )}
+                    {session.diagnostics.dependabotProbe && (
+                      <div className="space-y-1 px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-foreground-subtle">{t("settingsDependabotStatus")}</span>
+                          <span className="truncate text-sm font-semibold text-foreground">{dependabotProbeLabel(session.diagnostics.dependabotProbe.status, t)}</span>
+                        </div>
+                        {session.diagnostics.dependabotProbe.message && (
+                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{session.diagnostics.dependabotProbe.message}</p>
+                        )}
+                      </div>
+                    )}
+                  </SurfaceCard>
+                </div>
+              )}
+            </div>
+          </section>
+
+        {/* Account quotas: every family the API exposes, plus the alert
+            thresholds. Last chapter: it describes the account, not the app. */}
+        <QuotasSection
+          snapshot={quotaSnapshot}
+          isLoading={quotasLoading}
+          isError={quotasError}
+          hasSession={Boolean(localSecureMode && session?.token)}
+          onRetry={() => {
+            void refetchQuotas();
+          }}
+        />
 
         {/* Footer: the app version, and the room the summary rail needs to
             reach the last chapter when every chevron is closed. */}

@@ -1,16 +1,22 @@
-import { useDashboardSnapshot, useRepoSnapshot } from "@/hooks/useGitHub";
+import { Link } from "react-router";
+import { TriangleAlert } from "lucide-react";
+import { useAccountQuotas, useDashboardSnapshot, useRepoSnapshot } from "@/hooks/useGitHub";
 import { EmptyPanel, SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { resolveDependabotReason } from "@/lib/github-copy";
 import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
+import { QUOTA_FAMILY_LABEL_KEYS, QUOTA_THRESHOLDS, isQuotaAlert, summarizeQuotas } from "@/quotas";
 
 export default function AlertsPage() {
   const { session, t } = useApp();
   const { data, isLoading, error } = useDashboardSnapshot();
+  const { data: quotaSnapshot } = useAccountQuotas();
   const localRuntime = isLocalSecureRuntime();
   const isLocalAuthenticated = localRuntime && Boolean(session?.token);
+  const quotaSummary = quotaSnapshot ? summarizeQuotas(quotaSnapshot.families) : null;
+  const quotaAlert = quotaSummary && isQuotaAlert(quotaSummary.status) ? quotaSummary : null;
 
   if (isLoading) {
     return <EmptyPanel title={t("alertsLoadingTitle")} body={t("alertsLoadingBody")} />;
@@ -61,6 +67,38 @@ export default function AlertsPage() {
             : t("alertsAttentionPublicBody")
         }
       />
+
+      {quotaAlert ? (
+        <Link
+          to="/app/settings#settings-quotas"
+          className={cn(
+            "flex items-start gap-3 rounded-[1.4rem] border p-5 transition-colors",
+            quotaAlert.status === "warning"
+              ? "border-secondary/25 bg-secondary/[0.06] hover:border-secondary/40"
+              : "border-destructive/25 bg-destructive/[0.06] hover:border-destructive/40",
+          )}
+        >
+          <TriangleAlert
+            size={18}
+            className={cn(
+              "mt-0.5 shrink-0",
+              quotaAlert.status === "warning" ? "text-secondary" : "text-destructive",
+            )}
+          />
+          <div className="min-w-0 flex-1">
+            <p className="terminal-label">{t("quotaAlertBannerTitle")}</p>
+            <p className="mt-2 text-sm leading-6 text-foreground/80">
+              {t("quotaAlertBannerBody", {
+                threshold: QUOTA_THRESHOLDS.warning,
+                families: quotaAlert.alerting.map((family) => t(QUOTA_FAMILY_LABEL_KEYS[family.id])).join(", "),
+              })}
+            </p>
+          </div>
+          <span className="shrink-0 self-center font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+            {t("quotaAlertBannerLink")}
+          </span>
+        </Link>
+      ) : null}
 
       <div className="grid gap-3 xl:grid-cols-4">
         <AlertMetric label={t("openAlertsLabel")} value={totalAlerts} tone={totalAlerts > 0 ? "critical" : "success"} />

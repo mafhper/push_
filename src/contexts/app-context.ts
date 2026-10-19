@@ -27,6 +27,8 @@ export interface AppContextValue {
   rateLimitInfo: RateLimitInfo | null;
   setRateLimitInfo: (info: RateLimitInfo | null) => void;
   t: (key: DictKey, values?: Record<string, string | number>) => string;
+  /** Forgets the selection and the featured repository without touching the session. */
+  clearSelection: () => void;
   clearAll: () => void;
 }
 

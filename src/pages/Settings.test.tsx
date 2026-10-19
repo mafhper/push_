@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import SettingsPage from "./Settings";
 import { AppProvider } from "@/contexts/AppContext";
 import { createManifest, createOverview, createRepo } from "@/test/factories";
+import type { AccountQuotaSnapshot } from "@/quotas";
 
 const fakeToken = `${["ghp", "_"].join("")}test`;
 
@@ -21,6 +22,7 @@ vi.mock("@/hooks/useGitHub", () => ({
   useDashboardSnapshot: vi.fn(),
   useRepos: vi.fn(),
   useRateLimit: vi.fn(),
+  useAccountQuotas: vi.fn(),
 }));
 
 vi.mock("@/services/github", async () => {
@@ -99,14 +101,51 @@ describe("SettingsPage", () => {
     ];
   }
 
-  async function renderSettings(repos: ReturnType<typeof createRepo>[]) {
+  function buildQuotaSnapshot(): AccountQuotaSnapshot {
+    return {
+      fetchedAt: "2026-10-19T12:00:00.000Z",
+      login: "mafhper",
+      billing: "enhanced",
+      families: [
+        {
+          id: "actionsMinutes",
+          used: 1800,
+          limit: 2000,
+          unit: "minutes",
+          resetAt: null,
+          origin: "billing",
+          monthly: true,
+        },
+      ],
+      repos: [
+        {
+          fullName: "mafhper/push_",
+          cacheMb: 512,
+          cacheCount: 2,
+          artifactsMb: 64,
+          actionsMinutes: 1800,
+        },
+      ],
+      repoProbe: { probed: 1, requested: 1 },
+      foreignOwners: [],
+      foreignRepoCount: 0,
+    };
+  }
+
+  async function renderSettings(repos: ReturnType<typeof createRepo>[], options: { login?: string } = {}) {
     const hooks = await import("@/hooks/useGitHub");
     const github = await import("@/services/github");
     vi.mocked(hooks.useSnapshotManifest).mockReturnValue({ data: createManifest() } as never);
     vi.mocked(hooks.useDashboardSnapshot).mockReturnValue({ data: createOverview(), isLoading: false, error: null } as never);
     vi.mocked(hooks.useRateLimit).mockReturnValue({ data: null } as never);
+    vi.mocked(hooks.useAccountQuotas).mockReturnValue({
+      data: buildQuotaSnapshot(),
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as never);
     vi.mocked(hooks.useRepos).mockReturnValue({ data: repos, isLoading: false, error: null } as never);
-    vi.mocked(github.validateToken).mockResolvedValue({ login: "mafhper", avatarUrl: "" });
+    vi.mocked(github.validateToken).mockResolvedValue({ login: options.login ?? "mafhper", avatarUrl: "" });
     vi.mocked(github.diagnoseToken).mockResolvedValue({
       token: "valid",
       kind: "fine-grained",
@@ -188,7 +227,7 @@ describe("SettingsPage", () => {
     expandGroup("Public repositories");
     expect(groupBox("Public repositories").getByText("mafhper/fork-do-proprio")).toBeInTheDocument();
     expect(groupBox("Public repositories").getByText("mafhper/push_")).toBeInTheDocument();
-    expect(screen.getAllByText("mafhper/push_")).toHaveLength(1);
+    expect(groupBox("Public repositories").getAllByText("mafhper/push_")).toHaveLength(1);
 
     expandGroup("Private repositories");
     expect(groupBox("Private repositories").getByText("mafhper/segredo")).toBeInTheDocument();
@@ -291,7 +330,7 @@ describe("SettingsPage", () => {
       expect(screen.getByText("Public repositories")).toBeInTheDocument();
     });
     expandGroup("Public repositories");
-    expect(screen.getByText("mafhper/push_")).toBeInTheDocument();
+    expect(groupBox("Public repositories").getByText("mafhper/push_")).toBeInTheDocument();
     expandGroup("Private repositories");
     expect(screen.getByText("Private in scope")).toBeInTheDocument();
     expect(screen.getAllByText("0").length).toBeGreaterThan(0);
@@ -307,6 +346,12 @@ describe("SettingsPage", () => {
     vi.mocked(hooks.useSnapshotManifest).mockReturnValue({ data: createManifest() } as never);
     vi.mocked(hooks.useDashboardSnapshot).mockReturnValue({ data: createOverview(), isLoading: false, error: null } as never);
     vi.mocked(hooks.useRateLimit).mockReturnValue({ data: null } as never);
+    vi.mocked(hooks.useAccountQuotas).mockReturnValue({
+      data: buildQuotaSnapshot(),
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as never);
     vi.mocked(hooks.useRepos).mockReturnValue({ data: [publicRepo], isLoading: false, error: null } as never);
     vi.mocked(github.validateToken).mockResolvedValue({ login: "mafhper", avatarUrl: "" });
     vi.mocked(github.diagnoseToken).mockResolvedValue({
@@ -553,5 +598,63 @@ describe("SettingsPage", () => {
     // The group itself survives the search (RF-08).
     expect(groupBox("Public repositories").getByText("0 of 2 selected")).toBeInTheDocument();
     expect(groupBox("Private repositories").getByText("No repository in this group matches the current filter.")).toBeInTheDocument();
+  });
+
+  it("shows account quotas and the rail badge above the 80% threshold", async () => {
+    await renderSettings([publicRepo]);
+
+    const section = document.getElementById("settings-quotas");
+    expect(section).not.toBeNull();
+    expect(within(section as HTMLElement).getByRole("heading", { name: "GitHub quotas" })).toBeInTheDocument();
+    expect(within(section as HTMLElement).getByText("Actions minutes")).toBeInTheDocument();
+    expect(within(section as HTMLElement).getByText("1,800 / 2,000 min")).toBeInTheDocument();
+    expect(within(section as HTMLElement).getByText("Critical usage")).toBeInTheDocument();
+    // Per-repository usage is closed by default; the header carries the count.
+    fireEvent.click(within(section as HTMLElement).getByRole("button", { name: /Usage by repository/ }));
+    expect(within(section as HTMLElement).getByText("mafhper/push_")).toBeInTheDocument();
+    // Mobile and desktop rails carry the same alert badge.
+    expect(screen.getAllByLabelText("Quota alert at 90%")).toHaveLength(2);
+  });
+
+  it("PU14: opens on Preferences with the approved chapter order", async () => {
+    await renderSettings([publicRepo]);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
+
+    // DOM order, which the scroll-spy follows.
+    expect(Array.from(document.querySelectorAll('section[id^="settings-"]')).map((element) => element.id))
+      .toEqual(["settings-preferences", "settings-access", "settings-repos", "settings-state", "settings-quotas"]);
+
+    // Both rails (narrow and wide) carry the same order; the quota badge is
+    // inside the last button and is stripped before comparing.
+    const rails = screen.getAllByRole("navigation", { name: "Settings" });
+    expect(rails).toHaveLength(2);
+    for (const rail of rails) {
+      const labels = within(rail).getAllByRole("button")
+        .map((button) => (button.textContent ?? "").replace(/\d+%$/, "").trim());
+      expect(labels).toEqual([
+        "Preferences",
+        "GitHub access",
+        "Repository Control",
+        "Current mode",
+        "Quotas",
+      ]);
+    }
+  });
+
+  it("PU14: warns at the top of the access chapter when the token and the selection disagree", async () => {
+    window.localStorage.setItem("gl_selected_repos", JSON.stringify(["mafhper/assets-hub"]));
+    window.localStorage.setItem("gl_primary_repo", JSON.stringify("mafhper/assets-hub"));
+
+    await renderSettings([publicRepo], { login: "betafunda" });
+
+    const banner = screen.getByTestId("mixed-account-banner");
+    expect(banner).toHaveTextContent("Token and repositories from different accounts");
+    expect(banner).toHaveTextContent("@betafunda");
+    expect(banner).toHaveTextContent("mafhper");
+    // The echo in the selection chapter keeps the warning reachable there.
+    expect(screen.getByText(/repositories are from @mafhper, but the token is @betafunda/)).toBeInTheDocument();
+    // Nothing was deleted by connecting the new token.
+    expect(JSON.parse(window.localStorage.getItem("gl_selected_repos") as string)).toEqual(["mafhper/assets-hub"]);
   });
 });
