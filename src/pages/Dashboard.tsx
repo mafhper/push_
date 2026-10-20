@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useQuotaOverview } from '@/hooks/useQuotaOverview';
+import { useApp } from '@/contexts/useApp';
 import { ConsoleLayout } from '@/components/console/ConsoleLayout';
 import { DashboardSkeleton } from '@/components/console/DashboardSkeleton';
 import { BackgroundRefreshIndicator } from '@/components/console/BackgroundRefreshIndicator';
@@ -9,6 +10,7 @@ import { Activity } from 'lucide-react';
 
 export default function Dashboard() {
   const { data, isPending, isFetching, error, quotaPressure } = useQuotaOverview();
+  const { settings } = useApp();
 
   const paintedRef = useRef(false);
   const freshRef = useRef(false);
@@ -41,7 +43,9 @@ export default function Dashboard() {
     );
   }
 
-  const sortedRepos = sortReposByAttention(data.repos);
+  // The queue is the one place the emphasis preferences act. The detail page
+  // and the snapshot keep the pure report order.
+  const sortedRepos = sortReposByAttention(data.repos, settings.attention);
 
   return (
     <>

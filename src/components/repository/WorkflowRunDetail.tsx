@@ -1,4 +1,5 @@
 import { StatusPill } from "@/components/site/TerminalPrimitives";
+import { StatusChip } from "@/components/ui/status-chip";
 import { useApp } from "@/contexts/useApp";
 import { formatDate } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -36,14 +37,14 @@ export function WorkflowRunDetail({ runs }: { runs: RepoSnapshotDetail["workflow
               <span className="min-w-0 truncate text-sm font-semibold text-foreground">{group.name}</span>
               <span className="flex shrink-0 items-center gap-2">
                 {successCount > 0 && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">
+                  <StatusChip tone="primary" className="rounded-full px-2 py-0.5 font-mono text-xs">
                     {t("workflowCountSuccess", { count: successCount })}
-                  </span>
+                  </StatusChip>
                 )}
                 {failCount > 0 && (
-                  <span className="rounded-full bg-destructive/10 px-2 py-0.5 font-mono text-xs text-destructive">
+                  <StatusChip tone="destructive" className="rounded-full px-2 py-0.5 font-mono text-xs">
                     {t("workflowCountFailed", { count: failCount })}
-                  </span>
+                  </StatusChip>
                 )}
                 <StatusPill tone={failCount > 0 ? "critical" : latest.conclusion === "success" ? "success" : "neutral"}>
                   {latestStatus}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, ChevronRight, ExternalLink, HelpCircle, Minus, XCircle } from "lucide-react";
 import { QuotaAlertLine } from "@/components/quotas/QuotaPressure";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
+import { StatusChip } from "@/components/ui/status-chip";
 import { useApp } from "@/contexts/useApp";
 import type { DictKey } from "@/i18n";
 import type { HealthCategoryResult, HealthCheck, HealthCheckStatus, HealthReport } from "@/health";
@@ -238,17 +239,20 @@ export function RepositoryHealthSection({
 }
 
 function CountPill({ label, tone }: { label: string; tone: "success" | "warning" | "neutral" }) {
+  if (tone === "neutral") {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-full bg-white/4 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+        {label}
+      </span>
+    );
+  }
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold",
-        tone === "success" && "bg-primary/10 text-primary",
-        tone === "warning" && "bg-secondary/12 text-secondary",
-        tone === "neutral" && "bg-white/4 text-muted-foreground",
-      )}
+    <StatusChip
+      tone={tone === "success" ? "primary" : "warning"}
+      className="gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
     >
       {label}
-    </span>
+    </StatusChip>
   );
 }
 

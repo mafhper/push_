@@ -11,6 +11,7 @@ import { useRepoSnapshot } from '@/hooks/useGitHub';
 import { usePublicRepoSnapshot } from '@/hooks/useGitHubPublic';
 import { useApp } from '@/contexts/useApp';
 import { RepositoryAvatar } from '@/components/repository/RepositoryAvatar';
+import { StatusChip } from '@/components/ui/status-chip';
 import type { WorkflowRun, DependabotAlert, RepoSnapshotDetail } from '@/types';
 
 interface InspectorProps {
@@ -255,9 +256,12 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                         <span className="text-body font-medium text-foreground">{sig.label}</span>
                         <span className="block text-micro text-foreground-subtle capitalize">{sig.kind} signal</span>
                       </div>
-                      <span className={cn("text-micro font-mono px-1.5 py-0.5 rounded", sig.severity === 'critical' && "bg-critical/10 text-critical", sig.severity === 'high' && "bg-warning/10 text-warning", sig.severity === 'warning' && "bg-warning/10 text-warning", sig.severity === 'info' && "bg-info/10 text-info")}>
+                      <StatusChip
+                        tone={sig.severity === 'critical' ? 'critical' : sig.severity === 'info' ? 'info' : 'warning'}
+                        className="text-micro font-mono"
+                      >
                         {sig.severity}
-                      </span>
+                      </StatusChip>
                     </div>
                     );
                   }) : (
@@ -292,7 +296,7 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                           <span className="block truncate text-sm font-semibold text-foreground">{alert.packageName}</span>
                           <span className="block truncate text-micro text-foreground-subtle">{alert.summary}</span>
                         </span>
-                        <span className="shrink-0 rounded bg-critical/10 px-1.5 py-0.5 text-micro font-mono text-critical">{alert.severity}</span>
+                        <StatusChip tone="critical" className="shrink-0 text-micro font-mono">{alert.severity}</StatusChip>
                       </a>
                     ))}
                     {repoDetailMode === 'balanced' && detail.alerts.length > 3 && (
@@ -399,12 +403,12 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                                 {group.runs.length} run{group.runs.length > 1 ? 's' : ''} · latest {formatAgo(group.latest.startedAt)}
                               </p>
                             </div>
-                            <span className={cn(
-                              "shrink-0 rounded-md px-1.5 py-0.5 text-micro font-mono",
-                              failRuns > 0 ? "bg-critical/10 text-critical" : "bg-success/10 text-success"
-                            )}>
+                            <StatusChip
+                              tone={failRuns > 0 ? 'critical' : 'success'}
+                              className="shrink-0 rounded-md text-micro font-mono"
+                            >
                               {failRuns > 0 ? `${failRuns} failed` : 'ok'}
-                            </span>
+                            </StatusChip>
                           </div>
                           <div className="mt-3 flex flex-wrap gap-1.5">
                             {events.map(event => (
@@ -448,7 +452,12 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-body font-medium text-foreground truncate">{group.name}</span>
-                              <span className={cn("text-micro px-1.5 py-0.5 rounded font-mono", latestConclusion === 'success' && "bg-success/10 text-success", latestConclusion === 'failure' && "bg-critical/10 text-critical", !latestConclusion && "bg-warning/10 text-warning")}>{latestConclusion || latest.status}</span>
+                              <StatusChip
+                                tone={latestConclusion === 'success' ? 'success' : latestConclusion === 'failure' ? 'critical' : 'warning'}
+                                className="text-micro font-mono"
+                              >
+                                {latestConclusion || latest.status}
+                              </StatusChip>
                             </div>
                             <div className="flex items-center gap-3 text-micro text-foreground-subtle mt-0.5">
                               <span>{totalRuns} run{totalRuns > 1 ? 's' : ''}</span>
@@ -467,7 +476,12 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                                 <WorkflowDot conclusion={run.conclusion} />
                                 <div className="flex-1 min-w-0 flex items-center gap-3 text-sm">
                                   <span className="text-foreground truncate min-w-0 text-body">{run.workflowName}</span>
-                                  <span className={cn("text-micro px-1.5 py-0.5 rounded-md font-mono shrink-0", run.conclusion === 'success' && "bg-success/10 text-success", run.conclusion === 'failure' && "bg-critical/10 text-critical", !run.conclusion && "bg-warning/10 text-warning")}>{run.conclusion || run.status}</span>
+                                  <StatusChip
+                                    tone={run.conclusion === 'success' ? 'success' : run.conclusion === 'failure' ? 'critical' : 'warning'}
+                                    className="shrink-0 rounded-md text-micro font-mono"
+                                  >
+                                    {run.conclusion || run.status}
+                                  </StatusChip>
                                   <span className="text-micro text-foreground-subtle/70 shrink-0">{run.branch}</span>
                                   <span className="text-micro text-foreground-subtle/70 shrink-0">{run.event}</span>
                                   {run.durationMs > 0 && <span className="text-micro text-foreground-subtle/70 shrink-0 tabular-nums">{(run.durationMs / 1000).toFixed(0)}s</span>}
@@ -583,9 +597,20 @@ function InspectorContent({ repo, detail }: { repo: ScoredRepo | null; detail?: 
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-body font-medium text-foreground">{alert.packageName}</span>
                               <span className="text-micro text-foreground-subtle">{alert.ecosystem}</span>
-                              <span className={cn("text-micro font-mono px-1.5 py-0.5 rounded", alert.severity === 'critical' && "bg-critical/10 text-critical", alert.severity === 'high' && "bg-warning/10 text-warning", alert.severity === 'medium' && "bg-info/10 text-info")}>
+                              <StatusChip
+                                tone={
+                                  alert.severity === 'critical'
+                                    ? 'critical'
+                                    : alert.severity === 'high'
+                                      ? 'warning'
+                                      : alert.severity === 'medium'
+                                        ? 'info'
+                                        : 'neutral'
+                                }
+                                className="text-micro font-mono"
+                              >
                                 {alert.severity}
-                              </span>
+                              </StatusChip>
                             </div>
                             <p className="mt-0.5 truncate text-sm text-foreground-subtle">{alert.summary}</p>
                             <div className="mt-1.5 flex flex-wrap items-center gap-3">

@@ -9,6 +9,7 @@ import { WorkflowPulsePanel } from "@/components/repository/WorkflowPulsePanel";
 import { WorkflowRunDetail } from "@/components/repository/WorkflowRunDetail";
 import { contextFromSnapshotDetail, evaluateRepositoryHealth } from "@/health";
 import { EmptyPanel, StatusPill } from "@/components/site/TerminalPrimitives";
+import { StatusChip } from "@/components/ui/status-chip";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { useRepoSnapshot, useAccountQuotas } from "@/hooks/useGitHub";
@@ -434,13 +435,24 @@ function DetailRow({
       tone === "critical" && "shadow-[inset_0_0_0_1px_rgba(244,122,97,0.18)]",
     )}>
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={cn(
-        highlighted ? "rounded-full px-3 py-1 text-sm font-semibold" : "text-sm font-semibold text-foreground",
-        highlighted && tone === "critical" && "bg-destructive/10 text-destructive",
-        highlighted && tone === "warning" && "bg-secondary/12 text-secondary",
-        highlighted && tone === "success" && "bg-success/10 text-success",
-        highlighted && tone === "neutral" && "bg-primary/10 text-primary",
-      )}>{value}</span>
+      {highlighted ? (
+        <StatusChip
+          tone={
+            tone === "critical"
+              ? "destructive"
+              : tone === "warning"
+                ? "warning"
+                : tone === "success"
+                  ? "success"
+                  : "primary"
+          }
+          className="rounded-full px-3 py-1 text-sm font-semibold"
+        >
+          {value}
+        </StatusChip>
+      ) : (
+        <span className="text-sm font-semibold text-foreground">{value}</span>
+      )}
     </div>
   );
 }

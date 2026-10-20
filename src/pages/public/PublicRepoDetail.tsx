@@ -9,6 +9,7 @@ import { WorkflowPulsePanel } from "@/components/repository/WorkflowPulsePanel";
 import { WorkflowRunDetail } from "@/components/repository/WorkflowRunDetail";
 import { contextFromSnapshotDetail, evaluateRepositoryHealth } from "@/health";
 import { EmptyPanel, StatusPill } from "@/components/site/TerminalPrimitives";
+import { StatusChip } from "@/components/ui/status-chip";
 import { useApp } from "@/contexts/useApp";
 import { usePublicRuntime } from "@/contexts/usePublicRuntime";
 import { usePublicRepoSnapshot } from "@/hooks/useGitHubPublic";
@@ -308,7 +309,11 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/2 px-4 py-3">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={highlighted ? "rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary" : "text-sm font-semibold text-foreground"}>{value}</span>
+      {highlighted ? (
+        <StatusChip tone="primary" className="rounded-full px-3 py-1 text-sm font-semibold">{value}</StatusChip>
+      ) : (
+        <span className="text-sm font-semibold text-foreground">{value}</span>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import PublicSettingsPage from "./PublicSettings";
@@ -40,5 +40,16 @@ describe("PublicSettingsPage", () => {
     expect(screen.getByRole("heading", { name: "Published snapshot" })).toBeInTheDocument();
     expect(screen.queryByText("GitHub token")).not.toBeInTheDocument();
     expect(screen.getByText("The published site does not accept a GitHub token.")).toBeInTheDocument();
+
+    // The queue-scoring chapter is local preference, not a credential flow: it
+    // renders the same controls without a token and reorders the snapshot the
+    // runtime already downloaded.
+    const chapter = document.getElementById("settings-scoring");
+    expect(chapter).not.toBeNull();
+    const scope = within(chapter as HTMLElement);
+    expect(scope.getByRole("heading", { name: "Queue scoring" })).toBeInTheDocument();
+    expect(scope.getByRole("switch", { name: "Critical alerts" })).toHaveAttribute("aria-checked", "true");
+    expect(scope.getByRole("group", { name: "Alert cap" })).toHaveTextContent("Up to 5");
+    expect(scope.getByTestId("attention-preview")).toHaveTextContent("0 Critical · 1 Warning");
   });
 });

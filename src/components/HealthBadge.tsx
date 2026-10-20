@@ -10,15 +10,18 @@ export function HealthBadge({ status, score, size = 'md' }: HealthBadgeProps) {
   const config = {
     healthy: {
       icon: CheckCircle2,
-      className: 'bg-success/10 text-success border-success/20',
+      className: 'bg-success/10 border-success/20',
+      iconClass: 'text-success',
     },
     warning: {
       icon: AlertTriangle,
-      className: 'bg-warning/10 text-warning border-warning/20',
+      className: 'bg-warning/10 border-warning/20',
+      iconClass: 'text-warning',
     },
     critical: {
       icon: Shield,
-      className: 'bg-critical/10 text-critical border-critical/20 animate-pulse-critical',
+      className: 'bg-critical/10 border-critical/20 animate-pulse-critical',
+      iconClass: 'text-critical',
     },
   };
   const labels = {
@@ -27,7 +30,7 @@ export function HealthBadge({ status, score, size = 'md' }: HealthBadgeProps) {
     critical: 'Critical',
   };
 
-  const { icon: Icon, className } = config[status];
+  const { icon: Icon, className, iconClass } = config[status];
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5 gap-1',
     md: 'text-sm px-2.5 py-1 gap-1.5',
@@ -39,9 +42,9 @@ export function HealthBadge({ status, score, size = 'md' }: HealthBadgeProps) {
     <span
       aria-label={`${labels[status]} health score ${score}`}
       title={`${labels[status]} health score ${score}`}
-      className={`inline-flex items-center rounded-full border font-medium transition-theme ${className} ${sizeClasses[size]}`}
+      className={`inline-flex items-center rounded-full border font-medium transition-theme text-foreground ${className} ${sizeClasses[size]}`}
     >
-      <Icon size={iconSizes[size]} strokeWidth={1.5} />
+      <Icon size={iconSizes[size]} strokeWidth={1.5} className={iconClass} />
       {size === 'lg' ? <span className="text-xs font-bold uppercase tracking-wider">{labels[status]}</span> : <span className="sr-only">{labels[status]}</span>}
       {score}
     </span>

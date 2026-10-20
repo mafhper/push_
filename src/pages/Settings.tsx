@@ -4,7 +4,9 @@ import { APP_VERSION, SITE_REPOSITORY_URL, isLocalSecureRuntime } from "@/config
 import { useApp } from "@/contexts/useApp";
 import { useAccountQuotas, useDashboardSnapshot, useRateLimit, useRepos, useSnapshotManifest } from "@/hooks/useGitHub";
 import { MixedAccountBanner } from "@/components/settings/MixedAccountBanner";
+import { AttentionSettingsControls } from "@/components/settings/AttentionSettingsControls";
 import { QuotasSection } from "@/components/settings/QuotasSection";
+import { StatusChip } from "@/components/ui/status-chip";
 import { foreignRepoOwners, foreignRepos, isMixedAccount, isQuotaAlert, summarizeQuotas } from "@/quotas";
 import { formatDateTime, type DictKey, type Language } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,7 @@ const TOKEN_PERMISSION_IDS = ["metadata", "contents", "actions", "dependabot"] a
  */
 const SETTINGS_SECTIONS = [
   { id: "settings-preferences", labelKey: "preferences", icon: SlidersHorizontal },
+  { id: "settings-scoring", labelKey: "settingsAttentionRail", icon: TriangleAlert },
   { id: "settings-access", labelKey: "githubAccess", icon: KeyRound },
   { id: "settings-repos", labelKey: "repositoryControl", icon: ListTree },
   { id: "settings-state", labelKey: "currentMode", icon: Activity },
@@ -195,7 +198,7 @@ export default function SettingsPage() {
   const quotaSummary = quotaSnapshot ? summarizeQuotas(quotaSnapshot.families) : null;
   const quotaBadgeVisible = Boolean(quotaSummary && isQuotaAlert(quotaSummary.status));
   const quotaBadgePercent = quotaSummary?.percent ? Math.floor(quotaSummary.percent) : 0;
-  const quotaBadgeTone = quotaSummary?.status === "warning" ? "bg-warning/15 text-warning" : "bg-critical/15 text-critical";
+  const quotaBadgeTone: "warning" | "critical" = quotaSummary?.status === "warning" ? "warning" : "critical";
 
   /**
    * PU14: the selection is stored per installation, so a token swap can leave
@@ -402,12 +405,13 @@ export default function SettingsPage() {
                 <Icon size={15} className="shrink-0" />
                 {t(section.labelKey)}
                 {section.id === "settings-quotas" && quotaBadgeVisible && (
-                  <span
+                  <StatusChip
+                    tone={quotaBadgeTone}
                     aria-label={t("quotaRailBadge", { percent: quotaBadgePercent })}
-                    className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", quotaBadgeTone)}
+                    className="rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums"
                   >
                     {quotaBadgePercent}%
-                  </span>
+                  </StatusChip>
                 )}
               </button>
             );
@@ -431,12 +435,13 @@ export default function SettingsPage() {
                   <Icon size={15} className="shrink-0" />
                   {t(section.labelKey)}
                   {section.id === "settings-quotas" && quotaBadgeVisible && (
-                    <span
+                    <StatusChip
+                      tone={quotaBadgeTone}
                       aria-label={t("quotaRailBadge", { percent: quotaBadgePercent })}
-                      className={cn("ml-auto rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", quotaBadgeTone)}
+                      className="ml-auto rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums"
                     >
                       {quotaBadgePercent}%
-                    </span>
+                    </StatusChip>
                   )}
                 </button>
               );
@@ -447,10 +452,10 @@ export default function SettingsPage() {
 
         {/* Preferences */}
         <section id="settings-preferences" className="scroll-mt-4 space-y-3">
-          <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("preferences")}</h2>
+          <h2 className="text-title font-headline font-semibold text-foreground">{t("preferences")}</h2>
           <SurfaceCard>
             {/* Theme: dropdown with the color dot beside each theme name. */}
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+            <div className="grid grid-cols-1 items-center gap-2 px-4 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-4">
               <p className="text-sm font-medium text-foreground">{t("theme")}</p>
               <ThemeDropdown
                 label={t("theme")}
@@ -461,13 +466,13 @@ export default function SettingsPage() {
             </div>
 
             {/* Language */}
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+            <div className="grid grid-cols-1 items-center gap-2 px-4 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-4">
               <p className="text-sm font-medium text-foreground">{t("language")}</p>
               <select
                 aria-label={t("language")}
                 value={settings.lang}
                 onChange={(event) => updateSettings({ lang: event.target.value as Language })}
-                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
+                className="h-9 w-full shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-52"
               >
                 <option value="en">{t("english")}</option>
                 <option value="pt-BR">{t("portugueseBrazil")}</option>
@@ -476,10 +481,10 @@ export default function SettingsPage() {
             </div>
 
             {/* Detail level, with the active level's own hint. */}
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5">
+            <div className="grid grid-cols-1 items-center gap-2 px-4 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-4">
               <div>
                 <p className="text-sm font-medium text-foreground">{t("dataDetailLevel")}</p>
-                <p className="mt-0.5 text-[13px] text-foreground-subtle">
+                <p className="mt-1 text-sm text-foreground-subtle">
                   {(settings.dataDetailMode ?? "balanced") === "detailed" ? t("detailDetailedHint")
                     : (settings.dataDetailMode ?? "balanced") === "full" ? t("detailFullHint")
                     : t("detailBalancedHint")}
@@ -489,7 +494,7 @@ export default function SettingsPage() {
                 aria-label={t("dataDetailLevel")}
                 value={settings.dataDetailMode ?? "balanced"}
                 onChange={(event) => updateSettings({ dataDetailMode: event.target.value as DataDetailMode })}
-                className="h-9 w-52 shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50"
+                className="h-9 w-full shrink-0 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-52"
               >
                 <option value="balanced">{t("detailBalanced")}</option>
                 <option value="detailed">{t("detailDetailed")}</option>
@@ -499,33 +504,51 @@ export default function SettingsPage() {
           </SurfaceCard>
         </section>
 
+        {/* Queue scoring: emphasis preferences, local to this device. The
+            chapter sits between the interface preferences and the access
+            chapter, and its order is mirrored by SETTINGS_SECTIONS. */}
+        <section id="settings-scoring" className="scroll-mt-4 space-y-3">
+          <div>
+            <h2 className="text-title font-headline font-semibold text-foreground">{t("settingsAttentionTitle")}</h2>
+            <p className="mt-1 text-sm text-foreground-subtle">{t("settingsAttentionBody")}</p>
+          </div>
+          <SurfaceCard>
+            <AttentionSettingsControls repos={overview?.repos ?? []} />
+          </SurfaceCard>
+        </section>
+
         {/* GitHub access */}
         <section id="settings-access" className="scroll-mt-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("githubAccess")}</h2>
-                <p className="text-[13px] text-foreground-subtle mt-0.5">
+                <h2 className="text-title font-headline font-semibold text-foreground">{t("githubAccess")}</h2>
+                <p className="text-sm text-foreground-subtle mt-1">
                   {localSecureMode ? t("tokenSessionOnlyBody") : t("publishedRuntimeNoBrowserTokenBody")}
                 </p>
               </div>
-              <span className={cn(
-                "text-micro font-semibold px-2 py-1 rounded-md shrink-0",
-                localSecureMode && session && "bg-success/10 text-success",
-                localSecureMode && !session && sessionStatus === "invalid" && "bg-critical/10 text-critical",
-                localSecureMode && !session && sessionStatus !== "invalid" && "bg-warning/10 text-warning",
-                !localSecureMode && "bg-surface-3 text-foreground-subtle"
-              )}>
+              <StatusChip
+                tone={
+                  localSecureMode
+                    ? session
+                      ? "success"
+                      : sessionStatus === "invalid"
+                        ? "critical"
+                        : "warning"
+                    : "neutral"
+                }
+                className="text-micro font-semibold px-2 py-1 rounded-md shrink-0"
+              >
                 {localSecureMode && session ? t("localAuth")
                   : localSecureMode && sessionStatus === "invalid" ? t("invalidToken")
                   : localSecureMode ? t("awaitingTokenLabel")
                   : t("snapshotOnly")}
-              </span>
+              </StatusChip>
             </div>
 
             {accountNotice && (
               <p
                 role="status"
-                className="rounded-lg border border-success/30 bg-success/5 px-3 py-2 text-[13px] text-foreground"
+                className="rounded-lg border border-success/30 bg-success/5 px-3 py-2 text-sm text-foreground"
               >
                 {accountNotice}
               </p>
@@ -551,11 +574,11 @@ export default function SettingsPage() {
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-3 text-primary"><UserRound size={16} /></div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-micro text-foreground-subtle">{t("currentIdentity")}</p>
+                      <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{t("currentIdentity")}</p>
                       <p className="text-sm font-semibold text-foreground truncate">{session ? `@${session.username}` : t("noActiveSession")}</p>
                     </div>
                     {session && (
-                      <button onClick={handleDisconnect} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-3 text-[13px] font-medium text-foreground-subtle transition-colors hover:border-critical/40 hover:text-critical">
+                      <button onClick={handleDisconnect} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-3 text-sm font-medium text-foreground-subtle transition-colors hover:border-critical/40 hover:text-critical">
                         <LogOut size={12} /> {t("disconnect")}
                       </button>
                     )}
@@ -572,7 +595,7 @@ export default function SettingsPage() {
                           value={tokenInput}
                           onChange={e => setTokenInput(e.target.value)}
                           placeholder={session ? t("pasteNewToken") : t("pastePersonalToken")}
-                          className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
+                          className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-hidden placeholder:text-foreground-muted focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
                         />
                       </div>
                       <button type="submit" disabled={isConnecting} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
@@ -584,7 +607,7 @@ export default function SettingsPage() {
                   </form>
 
                   {/* Memory row */}
-                  <p className="px-4 py-3 text-[13px] text-foreground-subtle">{t("tokenMemoryOnlyBody")}</p>
+                  <p className="px-4 py-3 text-sm text-foreground-subtle">{t("tokenMemoryOnlyBody")}</p>
                 </SurfaceCard>
 
                 {/* What to create and where */}
@@ -599,13 +622,13 @@ export default function SettingsPage() {
                         </li>
                       ))}
                     </ul>
-                    <p className="text-[13px] leading-relaxed text-foreground-subtle">{t("tokenSetupHint")}</p>
+                    <p className="text-sm leading-relaxed text-foreground-subtle">{t("tokenSetupHint")}</p>
                     <div className="flex flex-wrap gap-2">
                       <a
                         href={FINE_GRAINED_TOKEN_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-surface-3/50 px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-surface-3/50 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
                       >
                         <ExternalLink size={11} />
                         {t("tokenCreateFineGrained")}
@@ -614,7 +637,7 @@ export default function SettingsPage() {
                         href={CLASSIC_TOKEN_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-surface-3/50 px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-surface-3/50 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
                       >
                         <ExternalLink size={11} />
                         {t("tokenCreateClassic")}
@@ -625,7 +648,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               <SurfaceCard>
-                <p className="px-4 py-3.5 text-[13px] text-foreground-subtle leading-relaxed">
+                <p className="px-4 py-3.5 text-sm text-foreground-subtle leading-relaxed">
                   {t("publishedRuntimeNoBrowserTokenBody")}
                 </p>
               </SurfaceCard>
@@ -637,16 +660,16 @@ export default function SettingsPage() {
           <section id="settings-repos" className="scroll-mt-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("repositoryControl")}</h2>
-                <p className="text-[13px] text-foreground-subtle mt-0.5" aria-live="polite">
+                <h2 className="text-title font-headline font-semibold text-foreground">{t("repositoryControl")}</h2>
+                <p className="text-sm text-foreground-subtle mt-1" aria-live="polite">
                   {t("groupSelectedOfTotal", { selected: selectedRepos.length, total: repos.length })}
                 </p>
               </div>
               <div className="flex gap-2">
-                <button onClick={selectAllNonPrivate} className="inline-flex h-8 items-center rounded-lg border border-primary/30 bg-primary/10 px-3 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/15">
+                <button onClick={selectAllNonPrivate} className="inline-flex h-8 items-center rounded-lg border border-primary/30 bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/15">
                   {t("bulkSelectPublic")}
                 </button>
-                <button onClick={deselectAll} className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-surface-2/70 px-3 text-[13px] font-medium text-foreground-subtle transition-colors hover:text-foreground">
+                <button onClick={deselectAll} className="inline-flex h-8 items-center rounded-lg border border-border/60 bg-surface-2/70 px-3 text-sm font-medium text-foreground-subtle transition-colors hover:text-foreground">
                   {t("bulkDeselectAll")}
                 </button>
               </div>
@@ -657,7 +680,7 @@ export default function SettingsPage() {
             {mixedAccount && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
                 <TriangleAlert size={12} className="shrink-0 text-warning" />
-                <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-foreground-subtle">
+                <p className="min-w-0 flex-1 text-sm leading-relaxed text-foreground-subtle">
                   {t("mixedAccountEcho", {
                     count: mixedRepoCount,
                     owners: mixedOwners.join(", "),
@@ -667,7 +690,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => goToSection("settings-access")}
-                  className="shrink-0 text-[12px] font-medium text-primary transition-opacity hover:opacity-80"
+                  className="inline-flex min-h-6 shrink-0 items-center text-sm font-medium text-primary transition-opacity hover:opacity-80"
                 >
                   {t("mixedAccountEchoLink")}
                 </button>
@@ -680,13 +703,13 @@ export default function SettingsPage() {
                 <input
                   type="text" value={repoQuery} onChange={e => setRepoQuery(e.target.value)}
                   placeholder={t("repoSearchPlaceholder")}
-                  className="flex-1 h-9 rounded-lg border border-border/60 bg-surface-2 px-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
+                  className="flex-1 h-9 rounded-lg border border-border/60 bg-surface-2 px-3 text-sm text-foreground outline-hidden placeholder:text-foreground-muted focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
                 />
                 <div className="flex gap-1 overflow-x-auto">
                   {(["all", "selected", "unselected"] as const).map(f => (
                     <button key={f} onClick={() => setRepoFilter(f)}
                       className={cn(
-                        "shrink-0 text-[13px] font-medium px-2.5 py-1.5 rounded-lg transition-colors",
+                        "shrink-0 text-sm font-medium px-2.5 py-1.5 rounded-lg transition-colors",
                         repoFilter === f ? "bg-primary/10 text-primary" : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
                       )}>
                       {f === "all" ? t("all") : f === "selected" ? t("selected") : t("filterUnselected")}
@@ -699,7 +722,7 @@ export default function SettingsPage() {
                 {REPO_SORTS.map(sort => (
                   <button key={sort} onClick={() => setRepoSort(sort)} aria-pressed={repoSort === sort}
                     className={cn(
-                      "shrink-0 text-[13px] font-medium px-2.5 py-1.5 rounded-lg transition-colors",
+                      "shrink-0 text-sm font-medium px-2.5 py-1.5 rounded-lg transition-colors",
                       repoSort === sort ? "bg-primary/10 text-primary" : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
                     )}>
                     {repoSortLabels[sort]}
@@ -752,15 +775,15 @@ export default function SettingsPage() {
                       >
                         {displayOpen ? <ChevronDown size={15} className="shrink-0 text-foreground-subtle" /> : <ChevronRight size={15} className="shrink-0 text-foreground-subtle" />}
                         <span id={headingId} className="truncate text-sm font-semibold">{groupLabels[group.id]}</span>
-                        <span className="truncate text-[13px] text-foreground-subtle tabular-nums" aria-live="polite">
+                        <span className="truncate text-sm text-foreground-subtle tabular-nums" aria-live="polite">
                           {t("groupSelectedOfTotal", { selected: group.selectedTotal, total: group.total })}
                         </span>
                       </button>
                       <div className="flex shrink-0 gap-2">
-                        <button onClick={() => selectGroup(group.id)} disabled={group.total === 0} className="inline-flex h-8 items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-40 disabled:hover:bg-primary/10">
+                        <button onClick={() => selectGroup(group.id)} disabled={group.total === 0} className="inline-flex h-8 items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-40 disabled:hover:bg-primary/10">
                           {t("groupSelectAll")}
                         </button>
-                        <button onClick={() => clearGroup(group.id)} disabled={group.selectedTotal === 0} className="inline-flex h-8 items-center rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[13px] font-medium text-foreground-subtle transition-colors hover:text-foreground disabled:opacity-40 disabled:hover:text-foreground-subtle">
+                        <button onClick={() => clearGroup(group.id)} disabled={group.selectedTotal === 0} className="inline-flex h-8 items-center rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-sm font-medium text-foreground-subtle transition-colors hover:text-foreground disabled:opacity-40 disabled:hover:text-foreground-subtle">
                           {t("groupClear")}
                         </button>
                       </div>
@@ -777,18 +800,18 @@ export default function SettingsPage() {
                             t={t}
                           />
                         )) : (
-                          <p className="px-3.5 py-2 text-[13px] text-foreground-subtle/80 italic">
+                          <p className="px-3.5 py-2 text-sm text-foreground-subtle italic">
                             {group.total > 0 ? t("noRepoMatchesInGroup") : groupEmptyLabels[group.id]}
                           </p>
                         )}
                         {!repoSearchActive && state === "partial" && capped && (
                           <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1.5">
-                            <p className="text-[13px] text-foreground-subtle tabular-nums">
+                            <p className="text-sm text-foreground-subtle tabular-nums">
                               {t("groupShowingFirst", { count: REPO_GROUP_PAGE, total: group.repos.length })}
                             </p>
                             <button
                               onClick={() => setGroupState(current => ({ ...current, [group.id]: "open" }))}
-                              className="inline-flex h-8 items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/15"
+                              className="inline-flex h-8 items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/15"
                             >
                               {t("groupShowAll", { count: group.repos.length })}
                             </button>
@@ -805,10 +828,10 @@ export default function SettingsPage() {
 
         {/* Current state: session, token permissions and scope, each in its surface. */}
         <section id="settings-state" className="scroll-mt-4 space-y-3">
-            <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("currentMode")}</h2>
+            <h2 className="text-title font-headline font-semibold text-foreground">{t("currentMode")}</h2>
             <div className="space-y-5 pt-1">
               <div className="space-y-2">
-                <p className="text-[13px] font-semibold text-foreground-subtle">{t("sessionGroup")}</p>
+                <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{t("sessionGroup")}</p>
                 <SurfaceCard>
                   <StatusLine label={t("publishedSnapshotLabel")} value={formatDateTime(manifest.status.generatedAt, settings.lang)} />
                   <StatusLine label={t("snapshotSource")} value={manifest.status.generatedBy} />
@@ -822,9 +845,9 @@ export default function SettingsPage() {
               {localSecureMode && session?.diagnostics?.permissions && session.diagnostics.permissions.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[13px] font-semibold text-foreground-subtle">{t("tokenPermissions")}</p>
+                    <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{t("tokenPermissions")}</p>
                     {session.diagnostics.kind && session.diagnostics.kind !== "unknown" && (
-                      <span className="rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] font-medium text-foreground-subtle">
+                      <span className="rounded-md bg-surface-3 px-1.5 py-0.5 text-micro font-medium text-foreground-muted">
                         {session.diagnostics.kind === "classic" ? t("tokenKindClassic") : t("tokenKindFineGrained")}
                       </span>
                     )}
@@ -837,14 +860,14 @@ export default function SettingsPage() {
                           <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
                             {status === "granted" ? <Check size={13} className="shrink-0 text-success" />
                               : status === "denied" ? <X size={13} className="shrink-0 text-warning" />
-                              : <CircleQuestionMark size={13} className="shrink-0 text-foreground-subtle/70" />}
+                              : <CircleQuestionMark size={13} className="shrink-0 text-foreground-subtle" />}
                             <span className="truncate">{permissionLabels[id]}</span>
                           </span>
                           <span className={cn(
                             "shrink-0 text-sm font-semibold",
                             status === "granted" && "text-foreground",
                             status === "denied" && "text-warning",
-                            status === "unknown" && "text-foreground-subtle/70",
+                            status === "unknown" && "text-foreground-subtle",
                           )}>
                             {status === "granted" ? t("permGranted") : status === "denied" ? t("permDenied") : t("permUnknown")}
                           </span>
@@ -857,7 +880,7 @@ export default function SettingsPage() {
 
               {session?.diagnostics && (session.diagnostics.accessibleRepoCount !== undefined || session.diagnostics.privateRepoCount !== undefined || session.diagnostics.dependabotProbe) && (
                 <div className="space-y-2">
-                  <p className="text-[13px] font-semibold text-foreground-subtle">{t("scopeGroup")}</p>
+                  <p className="text-micro font-semibold uppercase tracking-wider text-foreground-subtle">{t("scopeGroup")}</p>
                   <SurfaceCard>
                     {session.diagnostics.accessibleRepoCount !== undefined && (
                       <StatusLine label={t("diagnosticsAccessibleRepos")} value={String(session.diagnostics.accessibleRepoCount)} />
@@ -869,7 +892,7 @@ export default function SettingsPage() {
                           <span className="truncate text-sm font-semibold tabular-nums text-foreground">{session.diagnostics.privateRepoCount}</span>
                         </div>
                         {session.diagnostics.privateRepoCount === 0 && (
-                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{t("diagnosticsPrivateScopeHint")}</p>
+                          <p className="text-sm leading-relaxed text-foreground-subtle">{t("diagnosticsPrivateScopeHint")}</p>
                         )}
                       </div>
                     )}
@@ -880,7 +903,7 @@ export default function SettingsPage() {
                           <span className="truncate text-sm font-semibold text-foreground">{dependabotProbeLabel(session.diagnostics.dependabotProbe.status, t)}</span>
                         </div>
                         {session.diagnostics.dependabotProbe.message && (
-                          <p className="text-[12px] leading-relaxed text-foreground-subtle/80">{session.diagnostics.dependabotProbe.message}</p>
+                          <p className="text-sm leading-relaxed text-foreground-subtle">{session.diagnostics.dependabotProbe.message}</p>
                         )}
                       </div>
                     )}
@@ -912,8 +935,8 @@ export default function SettingsPage() {
         {/* Footer: the app version, and the room the summary rail needs to
             reach the last chapter when every chevron is closed. */}
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pb-20 pt-6">
-          <p className="text-[13px] text-foreground-subtle">
-            push_ <span className="tabular-nums text-foreground-subtle/80">v{APP_VERSION}</span>
+          <p className="text-sm text-foreground-subtle">
+            push_ <span className="tabular-nums text-foreground-subtle">v{APP_VERSION}</span>
           </p>
           <a
             href={SITE_REPOSITORY_URL}
@@ -926,7 +949,7 @@ export default function SettingsPage() {
               event.preventDefault();
               void openExternal(SITE_REPOSITORY_URL);
             }}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground-subtle transition-colors hover:text-primary"
+            className="inline-flex min-h-6 items-center gap-1.5 text-sm font-medium text-foreground-subtle transition-colors hover:text-primary"
           >
             <ExternalLink size={12} />
             {t("githubRepository")}
@@ -980,25 +1003,25 @@ function RepoRow({ repo, isSelected, isFeatured, onToggle, t }: RepoRowProps) {
         <span className="text-body font-medium text-foreground truncate block">{repo.fullName}</span>
         <span className="flex items-center gap-2 flex-wrap">
           {repo.isPrivate && (
-            <span className="text-[11px] font-medium text-warning inline-flex items-center gap-1">
+            <span className="text-micro font-medium text-warning inline-flex items-center gap-1">
               <Lock size={10} />{t("privateBadge")}
             </span>
           )}
           {upstreamLabel && (
-            <span className="text-[11px] font-medium text-foreground-subtle inline-flex items-center gap-1">
+            <span className="text-micro font-medium text-foreground-subtle inline-flex items-center gap-1">
               <GitFork size={10} />{upstreamLabel}
             </span>
           )}
           {repo.archived && (
-            <span className="text-[11px] font-medium text-foreground-subtle inline-flex items-center gap-1">
+            <span className="text-micro font-medium text-foreground-subtle inline-flex items-center gap-1">
               <Archive size={10} />{t("archivedBadge")}
             </span>
           )}
-          {repo.description && <span className="text-[12px] text-foreground-subtle truncate">{repo.description}</span>}
+          {repo.description && <span className="text-sm text-foreground-subtle truncate">{repo.description}</span>}
         </span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {repo.language && <span className="text-[11px] text-foreground-subtle">{repo.language}</span>}
+        {repo.language && <span className="text-micro text-foreground-subtle">{repo.language}</span>}
         {isFeatured && <Star size={12} className="text-primary fill-primary" />}
       </div>
     </button>
@@ -1059,7 +1082,7 @@ function ThemeDropdown({ label, value, options, onChange }: {
         aria-expanded={open}
         aria-label={label}
         onClick={() => setOpen((current) => !current)}
-        className="flex h-9 w-52 items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors hover:border-foreground-subtle/30 focus-visible:border-primary/50"
+        className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-2 px-2.5 text-sm text-foreground outline-hidden transition-colors hover:border-foreground-subtle/30 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-52"
       >
         <span className="flex min-w-0 items-center gap-2">
           <span aria-hidden="true" className="h-3.5 w-3.5 shrink-0 rounded-full ring-1 ring-border" style={{ background: selected?.swatch }} />
@@ -1071,7 +1094,7 @@ function ThemeDropdown({ label, value, options, onChange }: {
         <div
           role="listbox"
           aria-label={label}
-          className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-border/60 bg-surface-1 py-1 shadow-lg"
+          className="absolute right-0 top-full z-20 mt-1 w-full rounded-lg border border-border/60 bg-surface-1 py-1 shadow-lg sm:w-52"
         >
           {options.map((option) => {
             const isSelected = option.value === value;

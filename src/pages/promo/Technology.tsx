@@ -1,4 +1,5 @@
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { SITE_REPOSITORY_URL } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import { Link } from "react-router";
 
@@ -89,7 +90,7 @@ export default function TechnologyPage() {
           {t("promoTechClosingBody")}
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <a href="https://github.com/mafhper/push_" className="button-secondary-terminal">{t("promoCloneRepository")}</a>
+          <a href={SITE_REPOSITORY_URL} className="button-secondary-terminal">{t("promoCloneRepository")}</a>
           <Link to="/app" className="button-primary-terminal">{t("promoExploreDashboard")}</Link>
         </div>
       </section>

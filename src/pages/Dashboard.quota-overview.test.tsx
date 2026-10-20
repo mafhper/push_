@@ -6,6 +6,7 @@ import PublicDashboard from "./public/PublicDashboard";
 import type { AccountQuotaSnapshot, QuotaFamily } from "@/quotas";
 import { createOverview } from "@/test/factories";
 import { renderWithAppProviders } from "@/test/render-app";
+import type { OverviewRepoSnapshot } from "@/types";
 
 /**
  * The overview card and the repository detail must agree under a quota band.
@@ -21,7 +22,7 @@ vi.mock("@/components/console/ConsoleLayout", () => ({
     repos,
     quotaPressure,
   }: {
-    repos: Array<{ health: { score: number; status: string } }>;
+    repos: Array<{ repo: { fullName: string }; health: { score: number; status: string } }>;
     quotaPressure?: { status: string } | null;
   }) => (
     <div
@@ -29,6 +30,7 @@ vi.mock("@/components/console/ConsoleLayout", () => ({
       data-score={repos[0]?.health.score}
       data-status={repos[0]?.health.status}
       data-pressure={quotaPressure?.status ?? "none"}
+      data-order={repos.map((entry) => entry.repo.fullName).join(",")}
     />
   ),
 }));
@@ -85,6 +87,34 @@ async function mockDashboard() {
     isFetching: false,
     error: null,
   } as never);
+}
+
+/** One overview row with explicit alert metrics; the rest stays at zero. */
+function attentionRow(name: string, critical: number, open: number): OverviewRepoSnapshot {
+  const base = createOverview().repos[0];
+  return {
+    ...base,
+    repo: { ...base.repo, id: name.length + critical, name, fullName: `acme/${name}` },
+    health: {
+      ...base.health,
+      score: 100,
+      status: "healthy",
+      workflowSuccessRate: 100,
+      failedRuns7d: 0,
+      stalenessDays: 0,
+      dependabotOpenCount: open,
+      dependabotCriticalCount: critical,
+    },
+    stats: { ...base.stats, openPullRequestCount: 0 },
+  };
+}
+
+function persistEmphasisOff() {
+  window.localStorage.setItem("gl_settings", JSON.stringify({
+    theme: "dark",
+    lang: "en",
+    attention: { criticalAlerts: false, failedRuns: true, alertCap: 5 },
+  }));
 }
 
 beforeEach(async () => {
@@ -151,5 +181,52 @@ describe("Dashboard quota context", () => {
 
     const localHooks = await import("@/hooks/useGitHub");
     expect(vi.mocked(localHooks.useAccountQuotas)).not.toHaveBeenCalled();
+  });
+
+  it("orders the local queue with the persisted emphasis", async () => {
+    persistEmphasisOff();
+    const hooks = await import("@/hooks/useGitHub");
+    vi.mocked(hooks.useDashboardSnapshot).mockReturnValue({
+      data: createOverview({ repos: [attentionRow("critical", 1, 1), attentionRow("noisy", 0, 2)] }),
+      isPending: false,
+      isFetching: false,
+      error: null,
+    } as never);
+
+    renderWithAppProviders(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>,
+    );
+
+    // With the critical emphasis off, two ordinary alerts outrank one critical
+    // in the order: the queue reads the preference, not only the pure report.
+    expect(screen.getByTestId("console")).toHaveAttribute("data-order", "acme/noisy,acme/critical");
+  });
+
+  it("orders the published queue with the persisted emphasis", async () => {
+    persistEmphasisOff();
+    const publicHooks = await import("@/hooks/useGitHubPublic");
+    vi.mocked(publicHooks.usePublicDashboardSnapshot).mockReturnValue({
+      data: createOverview({ repos: [attentionRow("critical", 1, 1), attentionRow("noisy", 0, 2)] }),
+      isLoading: false,
+      error: null,
+    } as never);
+    vi.mocked(publicHooks.usePublicProfileRepos).mockReturnValue({ data: [], isLoading: false, error: null } as never);
+    const runtime = await import("@/contexts/usePublicRuntime");
+    vi.mocked(runtime.usePublicRuntime).mockReturnValue({
+      mode: "snapshot",
+      username: null,
+      setUsername: vi.fn(),
+      clearUsername: vi.fn(),
+    } as never);
+
+    renderWithAppProviders(
+      <MemoryRouter>
+        <PublicDashboard />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId("console")).toHaveAttribute("data-order", "acme/noisy,acme/critical");
   });
 });

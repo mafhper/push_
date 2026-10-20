@@ -25,24 +25,49 @@ export function SectionHeading({
   );
 }
 
+/**
+ * Terminal-skin status pill: neutral label, hue on the glyph.
+ *
+ * `bg-secondary/12 text-secondary` measured 3.03–3.54:1 in the light theme —
+ * the warning token painted on its own tint. The label is now `foreground`,
+ * which measures at least 12.2:1 on the same pills in the browser, and the icon
+ * keeps the hue, which is what identifies the status as a non-text indicator.
+ */
 export function StatusPill({
   tone,
   children,
-}: PropsWithChildren<{ tone: "success" | "warning" | "critical" | "neutral" }>) {
+  className,
+}: PropsWithChildren<{
+  tone: "success" | "warning" | "critical" | "neutral";
+  className?: string;
+}>) {
   const icon =
     tone === "success" ? <ShieldCheck size={12} /> : tone === "warning" ? <TriangleAlert size={12} /> : tone === "critical" ? <CircleAlert size={12} /> : null;
+  const glyphTone =
+    tone === "success"
+      ? "text-primary"
+      : tone === "warning"
+        ? "text-secondary"
+        : tone === "critical"
+          ? "text-destructive"
+          : "text-muted-foreground";
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]",
-        tone === "success" && "bg-primary/10 text-primary",
-        tone === "warning" && "bg-secondary/12 text-secondary",
-        tone === "critical" && "bg-destructive/15 text-destructive",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-foreground",
+        tone === "success" && "bg-primary/10",
+        tone === "warning" && "bg-secondary/12",
+        tone === "critical" && "bg-destructive/15",
         tone === "neutral" && "bg-white/5 text-muted-foreground",
+        className,
       )}
     >
-      {icon}
+      {icon ? (
+        <span aria-hidden="true" className={cn("inline-flex", glyphTone)}>
+          {icon}
+        </span>
+      ) : null}
       {children}
     </span>
   );

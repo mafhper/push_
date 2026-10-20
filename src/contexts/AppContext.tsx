@@ -10,6 +10,7 @@ import { isTauriRuntime } from '@/config/site';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { RateLimitInfo, SessionStatus, UserSession, UserSettings, Theme } from '@/types';
 import { AppContext, defaultSettings, normalizeTheme, type AppContextValue } from '@/contexts/app-context';
+import { normalizeAttentionSettings } from '@/lib/attention';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings, clearSettings] = useLocalStorage<UserSettings>('gl_settings', defaultSettings);
@@ -22,6 +23,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ...settings,
     theme: normalizeTheme(settings.theme),
     lang: resolveLanguage(settings.lang),
+    attention: normalizeAttentionSettings(settings.attention),
   }), [settings]);
 
   const updateSettings = useCallback((partial: Partial<UserSettings>) => {
@@ -30,6 +32,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ...partial,
       theme: partial.theme ? normalizeTheme(partial.theme) : normalizeTheme(prev.theme),
       lang: partial.lang ? resolveLanguage(partial.lang) : resolveLanguage(prev.lang),
+      // Written as a complete object: the queue reads it on both runtimes, and
+      // an absent block must mean the defaults, not "no emphasis".
+      attention: normalizeAttentionSettings(partial.attention ?? prev.attention),
     }));
   }, [setSettings]);
 

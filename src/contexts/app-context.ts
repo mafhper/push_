@@ -1,6 +1,7 @@
 import { createContext } from "react";
 import type { DictKey } from "@/i18n";
 import { detectBrowserLanguage } from "@/i18n";
+import { DEFAULT_ATTENTION_SETTINGS } from "@/lib/attention";
 import type { Language, RateLimitInfo, SessionStatus, Theme, UserSession, UserSettings } from "@/types";
 
 export const supportedThemes = [
@@ -59,6 +60,7 @@ export const defaultSettings: UserSettings = {
   pollingInterval: 300,
   notificationsEnabled: false,
   highlightMode: "primary",
+  attention: { ...DEFAULT_ATTENTION_SETTINGS },
 };
 
 export const AppContext = createContext<AppContextValue | null>(null);

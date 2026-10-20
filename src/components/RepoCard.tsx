@@ -155,16 +155,21 @@ function StatusIndicator({ label, value, variant, icon: Icon, failed }: {
   failed?: boolean;
 }) {
   const colorClass = 
-    variant === 'success' ? 'bg-success/15 text-success border-success/30' :
-    variant === 'warning' ? 'bg-warning/15 text-warning border-warning/30' :
-    variant === 'critical' ? 'bg-critical/15 text-critical border-critical/30' :
+    variant === 'success' ? 'bg-success/10 text-foreground border-success/30' :
+    variant === 'warning' ? 'bg-warning/10 text-foreground border-warning/30' :
+    variant === 'critical' ? 'bg-critical/10 text-foreground border-critical/30' :
     'bg-secondary/40 text-muted-foreground border-border/60';
+  const glyphTone =
+    variant === 'success' ? 'text-success' :
+    variant === 'warning' ? 'text-warning' :
+    variant === 'critical' ? 'text-critical' :
+    '';
 
   return (
     <div className={`flex flex-col items-center justify-center p-2 rounded-xl border ${colorClass} ${failed ? 'animate-pulse ring-2 ring-critical/40' : ''}`}>
       <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">{label}</span>
       <div className="flex items-center gap-1.5">
-        {Icon && <Icon size={12} strokeWidth={3} />}
+        {Icon && <Icon size={12} strokeWidth={3} className={glyphTone} />}
         {failed && <XCircle size={12} className="text-critical" />}
         <span className="text-sm font-black tabular-nums">{value}</span>
       </div>

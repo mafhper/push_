@@ -11,6 +11,8 @@
 @plugin 'tailwindcss-animate';
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* The app themes by `theme-*` class; the neutral dark theme is `theme-dark`. */
+@custom-variant theme-dark (&:where(.theme-dark, .theme-dark *));
 
 @theme {
   --font-sans: Manrope, system-ui, sans-serif;
@@ -31,6 +33,7 @@
   --text-display--letter-spacing: -0.02em;
 
   --color-border: hsl(var(--border));
+  --color-border-strong: hsl(var(--border-strong));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --color-background: hsl(var(--background));
@@ -54,6 +57,7 @@
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
 
+  --color-promo-hero-bg: hsl(var(--promo-hero-bg));
   --color-surface-1: hsl(var(--surface-1));
   --color-surface-2: hsl(var(--surface-2));
   --color-surface-3: hsl(var(--surface-3));
@@ -134,22 +138,6 @@
   }
 }
 
-@utility signal-field-hero {
-  --background: 0 0% 4%;
-  --surface-1: 0 0% 7%;
-  --surface-2: 0 0% 10%;
-  --surface-3: 0 0% 14%;
-  --foreground: 0 0% 96%;
-  --foreground-muted: 0 0% 78%;
-  --foreground-subtle: 0 0% 62%;
-  --border: 0 0% 38%;
-  --primary: 212 92% 60%;
-  --primary-foreground: 220 14% 98%;
-  --critical: 0 75% 58%;
-  --ring: 212 92% 60%;
-  color-scheme: dark;
-}
-
 @utility app-viewport {
   width: 100%;
   height: 100vh;
@@ -191,6 +179,18 @@
     --ring:          212 92% 60%;
     --selection-bg:  212 92% 60% / 0.28;
 
+    /* Pressure field: decoration only, read by the WebGL chart. */
+    --field-ink:    #9aa3b2;
+    --field-warn:   #e8a33d;
+    --field-hot:    #f05252;
+    --field-alpha:  0.42;
+    --field-hatch:  0.30;
+
+    /* Promo hero surface: decoration under the shader, never a reading surface.
+       Neutral dark takes the lighter surface so the card sits below it; the
+       other dark themes inherit this rule instead of inventing a tone. */
+    --promo-hero-bg: var(--surface-2);
+
     --radius: 0.625rem;
 
     --card: var(--surface-1);
@@ -214,21 +214,32 @@
 
     --foreground:        222 22% 10%;
     --foreground-muted:  222 10% 30%;
-    --foreground-subtle: 222  8% 44%;
+    --foreground-subtle: 222  8% 40%;
 
     --border:        220 16% 78%;
     --border-strong: 220 14% 62%;
 
-    --primary:             212 90% 48%;
+    --primary:             212 90% 44%;
     --primary-foreground:  0 0% 100%;
 
-    --success:    150 55% 34%;
-    --warning:     38 88% 42%;
-    --critical:     0 72% 48%;
+    --success:    150 55% 28%;
+    --warning:     38 88% 36%;
+    --critical:     0 72% 42%;
     --info:       200 78% 42%;
 
     --ring:          212 90% 48%;
     --selection-bg:  212 90% 48% / 0.18;
+
+    /* Pressure field: decoration only, read by the WebGL chart. */
+    --field-ink:    #6b7484;
+    --field-warn:   #a86200;
+    --field-hot:    #9a4545;
+    --field-alpha:  0.26;
+    --field-hatch:  0.15;
+
+    /* Promo hero: greige one step under the white card, so the shader stops
+       competing with the queue surface. ΔL ≈ 9 against --surface-1. */
+    --promo-hero-bg: 220 18% 91%;
 
     --card: var(--surface-1);
     --card-foreground: var(--foreground);
@@ -261,6 +272,12 @@
     --info:       158 80% 58%;
     --ring:          121 100% 55%;
     --selection-bg:  121 100% 55% / 0.22;
+
+    /* Pressure field: decoration only, read by the WebGL chart. */
+    --field-ink:    #86c98f;
+    --field-warn:   #d8b84a;
+    --field-hot:    #ff5c5c;
+    --field-alpha:  0.40;
   }
 
   :root.theme-golden-matrix {
@@ -281,6 +298,12 @@
     --info:       204 72% 58%;
     --ring:          44 96% 58%;
     --selection-bg:  44 96% 58% / 0.22;
+
+    /* Pressure field: decoration only, read by the WebGL chart. */
+    --field-ink:    #d0b56a;
+    --field-warn:   #e0a800;
+    --field-hot:    #ff6b4a;
+    --field-alpha:  0.40;
   }
 
   :root.theme-blue-calm {
@@ -301,6 +324,12 @@
     --info:       199 92% 62%;
     --ring:          199 92% 62%;
     --selection-bg:  199 92% 62% / 0.22;
+
+    /* Pressure field: decoration only, read by the WebGL chart. */
+    --field-ink:    #8db6dd;
+    --field-warn:   #d6a13a;
+    --field-hot:    #e06060;
+    --field-alpha:  0.40;
   }
 
   :root.theme-green-ish {
@@ -321,6 +350,12 @@
     --info:       190 72% 58%;
     --ring:          154 74% 52%;
     --selection-bg:  154 74% 52% / 0.22;
+
+    /* Pressure field: decoration only, read by the WebGL chart. */
+    --field-ink:    #8cc7b0;
+    --field-warn:   #d9ad4a;
+    --field-hot:    #dd6b6b;
+    --field-alpha:  0.40;
   }
 
   :root.theme-brown-earth {
@@ -341,6 +376,12 @@
     --info:       200 62% 58%;
     --ring:          32 78% 58%;
     --selection-bg:  32 78% 58% / 0.22;
+
+    /* Pressure field: decoration only, read by the WebGL chart. */
+    --field-ink:    #cdb094;
+    --field-warn:   #d9a441;
+    --field-hot:    #d4695a;
+    --field-alpha:  0.40;
   }
 
   :root.theme-phosphor-green,
