@@ -40,7 +40,7 @@ uniform vec2 uRes; uniform float uTime; uniform float uDpr;
 uniform vec3 uSrc[N];
 uniform vec3 uMouse;
 uniform vec3 uInk; uniform vec3 uWarn; uniform vec3 uHot;
-uniform float uAlpha;
+uniform float uAlpha; uniform float uHatch;
 out vec4 o;
 
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -86,7 +86,7 @@ void main(){
   float hp = (gl_FragCoord.x - gl_FragCoord.y) / (6. * uDpr);
   float hl = 1. - smoothstep(.08, .2, abs(fract(hp) - .5));
   float inside = smoothstep(.66, .7, f);
-  float hatchA = hl * inside * uAlpha * .3;
+  float hatchA = hl * inside * uAlpha * uHatch;
 
   float a = max(lineA, hatchA);
   vec3 col = lineA >= hatchA ? c : uHot;
@@ -98,6 +98,7 @@ interface Palette {
   warn: [number, number, number];
   hot: [number, number, number];
   alpha: number;
+  hatch: number;
 }
 
 const FALLBACK_PALETTE: Palette = {
@@ -105,6 +106,7 @@ const FALLBACK_PALETTE: Palette = {
   warn: [0.96, 0.7, 0.15],
   hot: [1, 0.28, 0.27],
   alpha: 0.42,
+  hatch: 0.3,
 };
 
 function resolveColor(ctx: CanvasRenderingContext2D, value: string, fallback: [number, number, number]) {
@@ -122,16 +124,21 @@ function resolveColor(ctx: CanvasRenderingContext2D, value: string, fallback: [n
   }
 }
 
+function readNumber(styles: CSSStyleDeclaration, name: string, fallback: number) {
+  const value = Number.parseFloat(styles.getPropertyValue(name));
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
 function readPalette(ctx: CanvasRenderingContext2D | null): Palette {
   if (!ctx) return FALLBACK_PALETTE;
   try {
     const styles = getComputedStyle(document.documentElement);
-    const alpha = Number.parseFloat(styles.getPropertyValue("--field-alpha"));
     return {
       ink: resolveColor(ctx, styles.getPropertyValue("--field-ink"), FALLBACK_PALETTE.ink),
       warn: resolveColor(ctx, styles.getPropertyValue("--field-warn"), FALLBACK_PALETTE.warn),
       hot: resolveColor(ctx, styles.getPropertyValue("--field-hot"), FALLBACK_PALETTE.hot),
-      alpha: Number.isFinite(alpha) && alpha > 0 ? alpha : FALLBACK_PALETTE.alpha,
+      alpha: readNumber(styles, "--field-alpha", FALLBACK_PALETTE.alpha),
+      hatch: readNumber(styles, "--field-hatch", FALLBACK_PALETTE.hatch),
     };
   } catch {
     return FALLBACK_PALETTE;
@@ -221,6 +228,7 @@ export function PressureField({ sources, className, pointerTarget }: PressureFie
     const uWarn = uniform("uWarn");
     const uHot = uniform("uHot");
     const uAlpha = uniform("uAlpha");
+    const uHatch = uniform("uHatch");
 
     const probe = document.createElement("canvas");
     probe.width = 1;
@@ -274,6 +282,7 @@ export function PressureField({ sources, className, pointerTarget }: PressureFie
       gl.uniform3fv(uWarn, palette.warn);
       gl.uniform3fv(uHot, palette.hot);
       gl.uniform1f(uAlpha, palette.alpha);
+      gl.uniform1f(uHatch, palette.hatch);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

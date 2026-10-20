@@ -11,6 +11,8 @@
 @plugin 'tailwindcss-animate';
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* The app themes by `theme-*` class; the neutral dark theme is `theme-dark`. */
+@custom-variant theme-dark (&:where(.theme-dark, .theme-dark *));
 
 @theme {
   --font-sans: Manrope, system-ui, sans-serif;
@@ -54,6 +56,7 @@
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
 
+  --color-promo-hero-bg: hsl(var(--promo-hero-bg));
   --color-surface-1: hsl(var(--surface-1));
   --color-surface-2: hsl(var(--surface-2));
   --color-surface-3: hsl(var(--surface-3));
@@ -180,6 +183,12 @@
     --field-warn:   #e8a33d;
     --field-hot:    #f05252;
     --field-alpha:  0.42;
+    --field-hatch:  0.30;
+
+    /* Promo hero surface: decoration under the shader, never a reading surface.
+       Neutral dark takes the lighter surface so the card sits below it; the
+       other dark themes inherit this rule instead of inventing a tone. */
+    --promo-hero-bg: var(--surface-2);
 
     --radius: 0.625rem;
 
@@ -223,8 +232,13 @@
     /* Pressure field: decoration only, read by the WebGL chart. */
     --field-ink:    #6b7484;
     --field-warn:   #a86200;
-    --field-hot:    #b91c1c;
-    --field-alpha:  0.36;
+    --field-hot:    #9a4545;
+    --field-alpha:  0.26;
+    --field-hatch:  0.15;
+
+    /* Promo hero: greige one step under the white card, so the shader stops
+       competing with the queue surface. ΔL ≈ 9 against --surface-1. */
+    --promo-hero-bg: 220 18% 91%;
 
     --card: var(--surface-1);
     --card-foreground: var(--foreground);

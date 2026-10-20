@@ -38,7 +38,7 @@ export function PromoQueueCard({ handle, onRawChange, onApply, hover, onHover }:
   return (
     <aside
       aria-labelledby="promo-queue-title"
-      className="relative rounded-xl border border-border/70 bg-surface-1/85 shadow-2xl shadow-background/40 backdrop-blur-md"
+      className="relative rounded-xl border border-border/70 bg-surface-1/85 shadow-2xl shadow-background/40 backdrop-blur-md theme-dark:border-border"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
         <div>
