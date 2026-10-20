@@ -1,6 +1,15 @@
 export const SITE_NAME = "push_";
 export const APP_VERSION = __PUSH_APP_VERSION__;
 export const SITE_TAGLINE = "A semantic command center for your public GitHub footprint.";
+/**
+ * The owner's account appears in this URL and nowhere else in the product.
+ *
+ * Every "View source" / "Read the setup" link has to reach the real repository,
+ * so the account is a functional requirement of the link, not copy. The promo
+ * surface still never *shows* the account: the queue is labelled with the
+ * neutral sample handle and the visible text stays owner-free. Keeping the
+ * exception in one constant means the audit has a single place to look.
+ */
 export const SITE_REPOSITORY_URL = "https://github.com/mafhper/push_";
 export const SITE_BASE_URL = import.meta.env.BASE_URL;
 export const LOCAL_RUNTIME_HOSTS = new Set(["localhost", "127.0.0.1"]);

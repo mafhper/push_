@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { SITE_REPOSITORY_URL } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 import * as Accordion from "@radix-ui/react-accordion";
 import { ChevronDown } from "lucide-react";
@@ -91,7 +92,7 @@ export default function FAQPage() {
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Link to="/app" className="button-primary-terminal">{t("promoOpenDashboard")}</Link>
-          <a href="https://github.com/mafhper/push_" className="button-secondary-terminal">{t("promoReadRepository")}</a>
+          <a href={SITE_REPOSITORY_URL} className="button-secondary-terminal">{t("promoReadRepository")}</a>
         </div>
       </section>
     </div>

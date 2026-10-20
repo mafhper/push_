@@ -181,7 +181,11 @@ describe("SettingsPage", () => {
     return view;
   }
 
-  it("shows token controls in local runtime and never lists a private repository by default", async () => {
+  // Setup waits on token validation and the repository query: 1.4s warm, 5.6s on a
+  // cold module cache, against a 15s global budget — no headroom once the suite
+  // competes for the CPU. fd4e567 (clean baseline) failed here before any promo
+  // change, so this budget is about the test's weight, not about a regression.
+  it("shows token controls in local runtime and never lists a private repository by default", { timeout: 30000 }, async () => {
     await renderSettings([publicRepo, secondPublicRepo, privateRepo]);
 
     expect(screen.getAllByText("GitHub token").length).toBeGreaterThan(0);
@@ -523,7 +527,10 @@ describe("SettingsPage", () => {
     expect(rowTexts()[0]).toContain("mafhper/aaa-updated");
   });
 
-  it("paginates a big group at 50 rows per click: first page, everything, closed", async () => {
+  // The heaviest render in the suite (150+60+45+20 rows, three expansion passes):
+  // 3.0s warm, 14.4s on a cold module cache, against a 15s global budget. fd4e567
+  // (clean baseline) failed here before any promo change; assertions are untouched.
+  it("paginates a big group at 50 rows per click: first page, everything, closed", { timeout: 45000 }, async () => {
     await renderSettings(buildLargeCatalog());
 
     // Biggest first, and the counters live on the collapsed headers.

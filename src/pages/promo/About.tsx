@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { SectionHeading, StatusPill } from "@/components/site/TerminalPrimitives";
+import { SITE_REPOSITORY_URL } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
 
 export default function AboutPage() {
@@ -25,7 +26,7 @@ export default function AboutPage() {
           />
           <div className="flex flex-wrap gap-4">
             <Link to="/app" className="button-primary-terminal">{t("promoEnterDashboard")}</Link>
-            <a href="https://github.com/mafhper/push_" className="button-secondary-terminal">{t("promoVisitGitHub")}</a>
+            <a href={SITE_REPOSITORY_URL} className="button-secondary-terminal">{t("promoVisitGitHub")}</a>
           </div>
         </div>
 
