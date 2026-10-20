@@ -184,4 +184,19 @@ describe("published snapshot privacy barrier", () => {
       expect(content).not.toContain("Internal roadmap");
     }
   });
+
+  it("publishes no account quota data", async () => {
+    const generatedFiles = await readdir(path.join(workDir, "repos"));
+    const allFiles = ["manifest.json", "overview.json", ...generatedFiles.map((name) => `repos/${name}`)];
+
+    // Account quotas are an authenticated runtime reading; the published
+    // snapshot is public data and must never carry them, not even as a key.
+    const quotaKeys = ["quotas", "families", "billing", "repoProbe", "foreignOwners"];
+    for (const name of allFiles) {
+      const content = await readFile(path.join(workDir, name), "utf8");
+      for (const key of quotaKeys) {
+        expect(content, `${name} publishes "${key}"`).not.toContain(`"${key}"`);
+      }
+    }
+  });
 });

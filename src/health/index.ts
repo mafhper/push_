@@ -12,6 +12,7 @@ export type {
   HealthCheckStatus,
   HealthContext,
   HealthContextExtras,
+  HealthContextSupplement,
   HealthMetrics,
   HealthReport,
 } from "./types";

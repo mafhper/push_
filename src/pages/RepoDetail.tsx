@@ -11,7 +11,7 @@ import { contextFromSnapshotDetail, evaluateRepositoryHealth } from "@/health";
 import { EmptyPanel, StatusPill } from "@/components/site/TerminalPrimitives";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
-import { useRepoSnapshot } from "@/hooks/useGitHub";
+import { useRepoSnapshot, useAccountQuotas } from "@/hooks/useGitHub";
 import { formatDate } from "@/i18n";
 import { resolveDependabotReason } from "@/lib/github-copy";
 import { cn } from "@/lib/utils";
@@ -21,10 +21,18 @@ export default function RepoDetail() {
   const { owner = "", repo = "" } = useParams();
   const { session, settings, updateSettings, t } = useApp();
   const { data, isLoading, error } = useRepoSnapshot(owner, repo);
+  // Account quotas are a runtime reading of the authenticated account, not
+  // repository data: they reach the score only here, through the context
+  // supplement the public detail never passes.
+  const { data: accountQuotas } = useAccountQuotas();
+  const quotaFamilies = accountQuotas?.families;
   const localRuntime = isLocalSecureRuntime();
   const isLocalAuthenticated = localRuntime && Boolean(session?.token);
   const modeLabel = data?.status.dataMode === "authenticated" || isLocalAuthenticated ? "local auth" : "snapshot";
-  const report = useMemo(() => (data ? evaluateRepositoryHealth(contextFromSnapshotDetail(data)) : null), [data]);
+  const report = useMemo(
+    () => (data ? evaluateRepositoryHealth(contextFromSnapshotDetail(data, { quotas: quotaFamilies })) : null),
+    [data, quotaFamilies],
+  );
 
   if (isLoading) {
     return <EmptyPanel title={t("loadingRepository")} body={t("loadingRepositoryBody")} />;

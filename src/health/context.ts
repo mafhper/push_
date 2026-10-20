@@ -1,7 +1,17 @@
 import type { RepoSnapshotDetail } from "@/types";
-import type { HealthContext } from "./types";
+import type { HealthContext, HealthContextSupplement } from "./types";
 
-export function contextFromSnapshotDetail(detail: RepoSnapshotDetail): HealthContext {
+/**
+ * Builds the health context from a repository snapshot.
+ *
+ * A snapshot is public data and never carries account quotas, so anything that
+ * is only knowable at runtime arrives through `supplement` — and only the
+ * authenticated runtime has it. Omitting the argument is the public path.
+ */
+export function contextFromSnapshotDetail(
+  detail: RepoSnapshotDetail,
+  supplement?: HealthContextSupplement,
+): HealthContext {
   const extended = detail.extended;
   return {
     repo: detail.repo,
@@ -18,6 +28,7 @@ export function contextFromSnapshotDetail(detail: RepoSnapshotDetail): HealthCon
     readmeAvailable: extended?.readme ? Boolean(extended.readme) : undefined,
     contributors: detail.contributors,
     languages: detail.languages,
+    quotas: supplement?.quotas,
     dataMode: detail.status?.dataMode,
   };
 }

@@ -99,3 +99,10 @@ export interface HealthContext {
 }
 
 export type HealthContextExtras = Omit<HealthContext, "repo" | "runs" | "alerts">;
+
+/**
+ * Context data that never comes from a snapshot and only an authenticated
+ * runtime can supply. Kept separate from `HealthContextExtras` so a snapshot
+ * mapper cannot be handed the whole context by accident.
+ */
+export type HealthContextSupplement = Pick<HealthContext, "quotas">;
