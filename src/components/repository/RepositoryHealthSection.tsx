@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, ChevronRight, ExternalLink, HelpCircle, Minus, XCircle } from "lucide-react";
+import { QuotaAlertLine } from "@/components/quotas/QuotaPressure";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
 import type { DictKey } from "@/i18n";
 import type { HealthCategoryResult, HealthCheck, HealthCheckStatus, HealthReport } from "@/health";
+import type { QuotaPressure } from "@/quotas";
 import type { DataDetailMode } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +76,19 @@ function summaryCounts(report: HealthReport) {
   return { passed, attention, notVerified, notApplicable };
 }
 
-export function RepositoryHealthSection({ report, mode }: { report: HealthReport; mode: DataDetailMode }) {
+export function RepositoryHealthSection({
+  report,
+  mode,
+  quotaPressure,
+}: {
+  report: HealthReport;
+  mode: DataDetailMode;
+  /**
+   * Account quota reading, already classified. The public page passes nothing;
+   * a quiet reading renders no line, so the section keeps its usual opening.
+   */
+  quotaPressure?: QuotaPressure | null;
+}) {
   const { t } = useApp();
   const [drillIn, setDrillIn] = useState(false);
   const effectiveMode = drillIn ? "detailed" : mode;
@@ -99,6 +113,11 @@ export function RepositoryHealthSection({ report, mode }: { report: HealthReport
 
   return (
     <section className="rounded-4xl ops-surface p-6">
+      <QuotaAlertLine
+        pressure={quotaPressure}
+        scopeNote={t("quotaAccountScope")}
+        className="mb-4"
+      />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="terminal-label">{t("healthTitle")}</p>

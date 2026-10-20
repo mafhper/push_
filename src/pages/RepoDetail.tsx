@@ -11,20 +11,33 @@ import { contextFromSnapshotDetail, evaluateRepositoryHealth } from "@/health";
 import { EmptyPanel, StatusPill } from "@/components/site/TerminalPrimitives";
 import { isLocalSecureRuntime } from "@/config/site";
 import { useApp } from "@/contexts/useApp";
-import { useRepoSnapshot } from "@/hooks/useGitHub";
+import { useRepoSnapshot, useAccountQuotas } from "@/hooks/useGitHub";
 import { formatDate } from "@/i18n";
 import { resolveDependabotReason } from "@/lib/github-copy";
 import { cn } from "@/lib/utils";
+import { accountPressure } from "@/quotas";
 import { LANGUAGE_COLORS, type DataDetailMode } from "@/types";
 
 export default function RepoDetail() {
   const { owner = "", repo = "" } = useParams();
   const { session, settings, updateSettings, t } = useApp();
   const { data, isLoading, error } = useRepoSnapshot(owner, repo);
+  // Account quotas are a runtime reading of the authenticated account, not
+  // repository data: they reach the score only here, through the context
+  // supplement the public detail never passes.
+  const { data: accountQuotas } = useAccountQuotas();
+  const quotaFamilies = accountQuotas?.families;
   const localRuntime = isLocalSecureRuntime();
   const isLocalAuthenticated = localRuntime && Boolean(session?.token);
   const modeLabel = data?.status.dataMode === "authenticated" || isLocalAuthenticated ? "local auth" : "snapshot";
-  const report = useMemo(() => (data ? evaluateRepositoryHealth(contextFromSnapshotDetail(data)) : null), [data]);
+  const report = useMemo(
+    () => (data ? evaluateRepositoryHealth(contextFromSnapshotDetail(data, { quotas: quotaFamilies })) : null),
+    [data, quotaFamilies],
+  );
+  // One reading of the account, shared by both headers. The families are global
+  // to the token, so every repository page prints the same band and percentage;
+  // the repository data never enters this value.
+  const quotaPressure = useMemo(() => accountPressure(quotaFamilies), [quotaFamilies]);
 
   if (isLoading) {
     return <EmptyPanel title={t("loadingRepository")} body={t("loadingRepositoryBody")} />;
@@ -120,9 +133,10 @@ export default function RepoDetail() {
         runs={data.workflowRuns}
         pullRequests={data.pullRequests}
         updatedAt={data.status?.generatedAt}
+        quotaPressure={quotaPressure}
       />
 
-      <RepositoryHealthSection report={report} mode={viewMode} />
+      <RepositoryHealthSection report={report} mode={viewMode} quotaPressure={quotaPressure} />
 
       <div className="grid gap-6 xl:grid-cols-[1.48fr_1fr] xl:items-start">
         <WorkflowPulsePanel

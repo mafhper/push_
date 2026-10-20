@@ -1,7 +1,9 @@
 export { HEALTH_CATEGORIES, assertWeightsTotalHundred, getCategoryDefinition } from "./categories";
 export { HEALTH_CHECKS, successRate, failedRuns7d, stalenessDays } from "./checks";
 export { contextFromSnapshotDetail } from "./context";
-export { evaluateRepositoryHealth } from "./scoring";
+export { applyQuotasToOverview, penalizeHealth } from "./overview";
+export { QUOTA_PENALTY_POINTS, applyQuotaPenalty, quotaPenalty } from "./quotas";
+export { evaluateRepositoryHealth, healthStatusForScore } from "./scoring";
 export { toRepoHealth } from "./toRepoHealth";
 export type {
   HealthCategoryDefinition,
@@ -11,6 +13,7 @@ export type {
   HealthCheckStatus,
   HealthContext,
   HealthContextExtras,
+  HealthContextSupplement,
   HealthMetrics,
   HealthReport,
 } from "./types";

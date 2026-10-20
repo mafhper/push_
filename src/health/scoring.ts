@@ -1,6 +1,8 @@
+import type { QuotaFamily } from "@/quotas";
 import { HEALTH_CATEGORIES } from "./categories";
 import { HEALTH_CHECKS, type CheckDefinition } from "./checks";
 import { failedRuns7d, successRate } from "./checks";
+import { applyQuotaPenalty } from "./quotas";
 import type {
   HealthCategoryResult,
   HealthCheck,
@@ -69,7 +71,20 @@ function buildMetrics(ctx: HealthContext): HealthMetrics {
   };
 }
 
-function summarize(categories: HealthCategoryResult[]): {
+/**
+ * The band cut assigned to a final score. Kept in one place so the report and
+ * the overview re-band (after a quota penalty) cannot drift apart.
+ */
+export function healthStatusForScore(score: number): HealthReport["status"] {
+  if (score >= 70) return "healthy";
+  if (score >= 40) return "warning";
+  return "critical";
+}
+
+function summarize(
+  categories: HealthCategoryResult[],
+  quotas?: QuotaFamily[],
+): {
   score: number;
   status: HealthReport["status"];
   verifiedChecks: number;
@@ -84,11 +99,9 @@ function summarize(categories: HealthCategoryResult[]): {
     0,
   );
 
-  const score = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
-  let status: HealthReport["status"];
-  if (score >= 70) status = "healthy";
-  else if (score >= 40) status = "warning";
-  else status = "critical";
+  const rawScore = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
+  const score = applyQuotaPenalty(rawScore, quotas);
+  let status: HealthReport["status"] = healthStatusForScore(score);
   if (verifiedChecks === 0) status = "warning";
   return {
     score,
@@ -107,7 +120,7 @@ export function evaluateRepositoryHealth(ctx: HealthContext): HealthReport {
     const built = buildCategory(categoryChecks, ctx);
     if (built) categories.push(built);
   }
-  const { score, status, verifiedChecks, totalChecks } = summarize(categories);
+  const { score, status, verifiedChecks, totalChecks } = summarize(categories, ctx.quotas);
   return {
     score,
     status,

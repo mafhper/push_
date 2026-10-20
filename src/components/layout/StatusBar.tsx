@@ -2,7 +2,10 @@ import { Link, useLocation } from 'react-router';
 import { ArrowLeft, RefreshCw, Settings, Search, User, ShieldAlert, CircleCheck, GitBranch } from 'lucide-react';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/contexts/useApp';
-import { useDashboardSnapshot, useRateLimit } from '@/hooks/useGitHub';
+import { useAccountQuotas, useDashboardSnapshot, useRateLimit } from '@/hooks/useGitHub';
+import { QuotaPressurePill } from '@/components/quotas/QuotaPressure';
+import { accountPressure, rateLimitPressure } from '@/quotas';
+import type { QuotaPressure } from '@/quotas';
 import { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRateLimit, usePublicSnapshotManifest } from '@/hooks/useGitHubPublic';
 import { usePublicRuntime } from '@/contexts/usePublicRuntime';
 import { isLocalSecureRuntime } from '@/config/site';
@@ -19,9 +22,13 @@ function LocalStatusBar() {
   const { t, session } = useApp();
   const { data } = useDashboardSnapshot();
   const { data: rateLimit } = useRateLimit();
+  const { data: quotaSnapshot } = useAccountQuotas();
   const localRuntime = isLocalSecureRuntime();
   const isLocalAuthenticated = localRuntime && Boolean(session?.token);
   const username = session?.username;
+  // The account reading wins; the API window is the fallback when billing is
+  // unavailable, so the old rate text is absorbed instead of duplicated.
+  const quotaPressure = accountPressure(quotaSnapshot?.families) ?? rateLimitPressure(rateLimit);
 
   return (
     <StatusBarFrame
@@ -29,7 +36,7 @@ function LocalStatusBar() {
       updatedAt={data?.status?.generatedAt}
       isLive={isLocalAuthenticated}
       repos={data?.repos ?? []}
-      rightMeta={isLocalAuthenticated && rateLimit ? `rate ${rateLimit.remaining}/${rateLimit.limit}` : undefined}
+      quotaPressure={quotaPressure}
       username={isLocalAuthenticated ? username : undefined}
       avatarUrl={isLocalAuthenticated ? session?.avatarUrl : undefined}
       t={t}
@@ -95,6 +102,7 @@ function StatusBarFrame({
   isLive,
   repos,
   rightMeta,
+  quotaPressure,
   username,
   avatarUrl,
   t,
@@ -104,6 +112,7 @@ function StatusBarFrame({
   isLive: boolean;
   repos: OverviewRepoSnapshot[];
   rightMeta?: string;
+  quotaPressure?: QuotaPressure | null;
   username?: string;
   avatarUrl?: string;
   t: ReturnType<typeof useApp>['t'];
@@ -149,6 +158,19 @@ function StatusBarFrame({
             </>
           )}
         </div>
+
+        {/* Metadata pill, not a control: it reports the account reading and
+            links to the quota chapter. Below md the header has no room for a
+            fifth token at 360px, so the pill steps aside and the overview alert
+            line carries the signal instead. On the settings route it steps
+            aside too: the quota chapter below repeats the same reading, and the
+            pill would only link to the screen it is already on. */}
+        {quotaPressure && !onSettingsRoute ? (
+          <>
+            <div className="hidden h-4 w-px bg-border md:block" />
+            <QuotaPressurePill pressure={quotaPressure} className="hidden md:inline-flex" />
+          </>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">

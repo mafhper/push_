@@ -18,6 +18,7 @@
   },
   "include": [
     "src/test/snapshot-privacy.test.ts",
+    "src/test/quota-single-source.test.ts",
     "scripts/**/*.mjs"
   ]
 }

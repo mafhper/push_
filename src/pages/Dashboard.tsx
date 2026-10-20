@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useDashboardSnapshot } from '@/hooks/useGitHub';
+import { useQuotaOverview } from '@/hooks/useQuotaOverview';
 import { ConsoleLayout } from '@/components/console/ConsoleLayout';
 import { DashboardSkeleton } from '@/components/console/DashboardSkeleton';
 import { BackgroundRefreshIndicator } from '@/components/console/BackgroundRefreshIndicator';
@@ -8,7 +8,7 @@ import { bootMark, logStartupReport } from '@/services/startup-metrics';
 import { Activity } from 'lucide-react';
 
 export default function Dashboard() {
-  const { data, isPending, isFetching, error } = useDashboardSnapshot();
+  const { data, isPending, isFetching, error, quotaPressure } = useQuotaOverview();
 
   const paintedRef = useRef(false);
   const freshRef = useRef(false);
@@ -45,7 +45,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <ConsoleLayout repos={sortedRepos} />
+      <ConsoleLayout repos={sortedRepos} quotaPressure={quotaPressure} />
       {isFetching && <BackgroundRefreshIndicator />}
     </>
   );

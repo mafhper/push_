@@ -14,7 +14,7 @@
  * 5. a 403 becomes an honest "no scope" state, and a missing token removes only
  *    the cache action — the external links stay available.
  */
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppProvider } from "@/contexts/AppContext";
 import type { AccountQuotaSnapshot, RepoQuotaUsage } from "@/quotas";
@@ -259,8 +259,9 @@ describe("QuotasSection — clearing a repository cache (PU15)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear cache" }));
     const confirm = await screen.findByRole("button", { name: "Delete 2 caches · ~2 GB" });
     // The action the user pressed unmounts; keyboard focus must land on the
-    // confirmation instead of falling back to the document.
-    expect(confirm).toHaveFocus();
+    // confirmation instead of falling back to the document. The focus runs in
+    // a passive effect, so wait for it instead of racing the commit.
+    await waitFor(() => expect(confirm).toHaveFocus());
     expect(screen.getByText(/Artifacts, Actions minutes and repository contents are not touched/)).toBeInTheDocument();
 
     const listCalls = () => calls.filter((call) => call.url.includes("/actions/caches?per_page=100"));
