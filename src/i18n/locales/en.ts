@@ -987,6 +987,9 @@ export const en = {
   promoDownloadNote: "The browser reads a published snapshot. The desktop app is the one that talks to GitHub with your token.",
   promoDownloadPrimary: "Open console",
   promoDownloadSecondary: "View source",
+  promoFooterNav: "Footer",
+  promoThemeSwitchToLight: "Switch to light theme",
+  promoThemeSwitchToDark: "Switch to dark theme",
 } satisfies Record<string, string>;
 
 export type MessageDictionary = { [K in keyof typeof en]: string };

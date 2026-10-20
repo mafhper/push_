@@ -90,7 +90,7 @@ export function AttentionSettingsControls({ repos, padded = true }: AttentionSet
           role="group"
           aria-label={t("settingsAttentionAlertCap")}
           aria-describedby={capBodyId}
-          className="flex h-9 shrink-0 items-center overflow-hidden rounded-lg border border-border/60 bg-surface-2/60"
+          className="flex h-9 shrink-0 items-center rounded-lg border border-border/60 bg-surface-2/60"
         >
           <button
             type="button"

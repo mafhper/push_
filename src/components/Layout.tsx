@@ -1,4 +1,5 @@
 import { SITE_REPOSITORY_URL } from "@/config/site";
+import { PromoFooter } from "@/components/promo/PromoFooter";
 import { Link, Outlet } from "react-router";
 
 export function PromoLayout() {
@@ -29,6 +30,8 @@ export function PromoLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      <PromoFooter />
     </div>
   );
 }

@@ -11,6 +11,10 @@
       content="default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://*.github.io http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; upgrade-insecure-requests"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- Same-origin, synchronous and before the stylesheet: the theme is on the
+         root element for the first paint. Resolution mirrors src/contexts/app-context.ts. -->
+    <script src="/theme-init.js"></script>
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <meta property="og:title" content="push_ | GitHub Dashboard" />
