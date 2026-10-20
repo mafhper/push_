@@ -100,7 +100,7 @@ describe("RepositoryHero quota marker", () => {
 
     const link = quotaMarker();
     expect(link).toHaveTextContent("120%");
-    expect(link).toHaveAccessibleName("Account quotas: Limit exceeded · 120% used. Open quota settings.");
+    expect(link).toHaveAccessibleName("Account quotas: Above the included allowance · 120% used. Open quota settings.");
   });
 
   it("stays absent in the normal band", () => {

@@ -810,7 +810,7 @@ export const en = {
   quotaStatusNormal: "Within limit",
   quotaStatusWarning: "Near the limit",
   quotaStatusCritical: "Critical usage",
-  quotaStatusExceeded: "Limit exceeded",
+  quotaStatusExceeded: "Above the included allowance",
   quotaStatusUnknown: "No comparable limit",
   quotaUsedOfLimit: "{used} / {limit} {unit}",
   quotaUsedNoLimit: "{used} {unit} used",

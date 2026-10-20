@@ -813,7 +813,7 @@ export const ptBR: MessageDictionary = {
   quotaStatusNormal: "Dentro do limite",
   quotaStatusWarning: "Perto do limite",
   quotaStatusCritical: "Uso crítico",
-  quotaStatusExceeded: "Limite estourado",
+  quotaStatusExceeded: "Acima da franquia incluída",
   quotaStatusUnknown: "Sem limite comparável",
   quotaUsedOfLimit: "{used} / {limit} {unit}",
   quotaUsedNoLimit: "{used} {unit} em uso",

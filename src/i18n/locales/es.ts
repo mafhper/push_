@@ -813,7 +813,7 @@ export const es: MessageDictionary = {
   quotaStatusNormal: "Dentro del límite",
   quotaStatusWarning: "Cerca del límite",
   quotaStatusCritical: "Uso crítico",
-  quotaStatusExceeded: "Límite superado",
+  quotaStatusExceeded: "Por encima de la cuota incluida",
   quotaStatusUnknown: "Sin límite comparable",
   quotaUsedOfLimit: "{used} / {limit} {unit}",
   quotaUsedNoLimit: "{used} {unit} en uso",

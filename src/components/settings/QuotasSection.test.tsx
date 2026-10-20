@@ -71,7 +71,7 @@ describe("QuotasSection", () => {
     const section = screen.getByRole("heading", { name: "GitHub quotas" }).closest("section") as HTMLElement;
     expect(within(section).getByText("512 / 500 MB")).toBeInTheDocument();
     expect(within(section).getByText("102%")).toBeInTheDocument();
-    expect(within(section).getByText("Limit exceeded")).toBeInTheDocument();
+    expect(within(section).getByText("Above the included allowance")).toBeInTheDocument();
     // The bar and the pill carry the state; the old impact sentence is gone.
     expect(within(section).queryByText(/may be blocked until the cycle renews/)).not.toBeInTheDocument();
   });
