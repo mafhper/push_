@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { AtSign, Search, Moon, Sun, LoaderCircle } from "lucide-react";
 import { useApp } from "@/contexts/useApp";
 import { usePublicRuntime } from "@/contexts/usePublicRuntime";
+import { AttentionSettingsControls } from "@/components/settings/AttentionSettingsControls";
 import { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRateLimit, usePublicSnapshotManifest } from "@/hooks/useGitHubPublic";
 import { formatDateTime } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -58,11 +59,11 @@ export default function PublicSettingsPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-title font-headline font-semibold text-foreground">{t("publicSourceTitle")}</h2>
-                <p className="text-sm text-foreground-subtle mt-0.5">{t("enterGitHubUsernameBody")}</p>
+                <p className="text-sm text-foreground-subtle mt-1">{t("enterGitHubUsernameBody")}</p>
               </div>
               <span className={cn(
                 "text-micro font-semibold px-2 py-1 rounded-md shrink-0",
-                mode === "public-profile" ? "bg-success/10 text-success" : "bg-surface-3 text-foreground-subtle"
+                mode === "public-profile" ? "bg-success/10 text-success" : "bg-surface-3 text-foreground-muted"
               )}>
                 {mode === "public-profile" ? t("publicApiLabel") : t("snapshotLabel")}
               </span>
@@ -79,7 +80,7 @@ export default function PublicSettingsPage() {
                       value={usernameInput}
                       onChange={e => setUsernameInput(e.target.value)}
                       placeholder="@mafhper"
-                      className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-hidden placeholder:text-foreground-subtle/40 focus:border-primary/50 transition-colors"
+                      className="h-10 w-full rounded-lg border border-border/60 bg-surface-2 pl-9 pr-3 text-sm text-foreground outline-hidden placeholder:text-foreground-muted focus:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
                     />
                   </div>
                   <button type="submit" className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
@@ -94,7 +95,7 @@ export default function PublicSettingsPage() {
                   {mode === "public-profile" ? `${t("currentSource")}: @${username}` : `${t("currentSource")}: ${t("publishedSnapshot").toLowerCase()}`}
                 </p>
                 {mode === "public-profile" && (
-                  <button type="button" onClick={clearUsername} className="text-micro font-medium text-primary hover:text-primary/80 transition-colors">
+                  <button type="button" onClick={clearUsername} className="inline-flex min-h-6 items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors">
                     {t("useSnapshot")}
                   </button>
                 )}
@@ -132,7 +133,7 @@ export default function PublicSettingsPage() {
         <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
           <div>
             <h2 className="text-title font-headline font-semibold text-foreground">{t("preferences")}</h2>
-            <p className="text-sm text-foreground-subtle mt-0.5">{t("interfaceSettings")}</p>
+            <p className="text-sm text-foreground-subtle mt-1">{t("interfaceSettings")}</p>
           </div>
           <div className="flex flex-wrap gap-6">
             <PreferenceToggle
@@ -173,6 +174,17 @@ export default function PublicSettingsPage() {
           <p className="text-sm text-foreground-subtle">{t("detailBalancedHint")}</p>
         </section>
 
+        {/* Queue scoring: the same controls as the console, reduced to the
+            local preference. No token, no refetch — the published snapshot
+            already downloaded is reordered on this device. */}
+        <section id="settings-scoring" className="scroll-mt-4 rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
+          <div>
+            <h2 className="text-title font-headline font-semibold text-foreground">{t("settingsAttentionTitle")}</h2>
+            <p className="text-sm text-foreground-subtle mt-1">{t("settingsAttentionBody")}</p>
+          </div>
+          <AttentionSettingsControls repos={overview?.repos ?? []} padded={false} />
+        </section>
+
         {/* Repositories List */}
         <section className="rounded-xl border border-border/60 bg-surface-1 shadow-xs p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
@@ -180,11 +192,11 @@ export default function PublicSettingsPage() {
               <h2 className="text-title font-headline font-semibold text-foreground">
                 {mode === "public-profile" ? t("publicRepositoriesPanelTitle") : t("trackedRepositoriesPanelTitle")}
               </h2>
-              <p className="text-sm text-foreground-subtle mt-0.5">
+              <p className="text-sm text-foreground-subtle mt-1">
                 {mode === "public-profile" ? t("publicReposLoadedForUserBody", { username }) : t("trackedReposSnapshotBody")}
               </p>
             </div>
-            <span className="text-micro font-medium px-2 py-1 rounded-md bg-surface-3 text-foreground-subtle shrink-0">
+            <span className="text-micro font-medium px-2 py-1 rounded-md bg-surface-3 text-foreground-muted shrink-0">
               {mode === "public-profile" ? `${publicRepos.length} public` : `${overview?.repos.length ?? 0} tracked`}
             </span>
           </div>
@@ -200,11 +212,11 @@ export default function PublicSettingsPage() {
                   <div key={repo.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/30 bg-surface-2/40 px-4 py-3 hover:bg-surface-2/60 transition-colors">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{repo.fullName}</p>
-                      <p className="text-micro text-foreground-subtle truncate">{repo.description || t("noDescription")}</p>
+                      <p className="text-sm text-foreground-subtle truncate">{repo.description || t("noDescription")}</p>
                     </div>
                     <span className={cn(
                       "text-micro font-medium px-2 py-0.5 rounded shrink-0",
-                      index === 0 ? "bg-primary/10 text-primary" : "bg-surface-3 text-foreground-subtle"
+                      index === 0 ? "bg-primary/10 text-primary" : "bg-surface-3 text-foreground-muted"
                     )}>
                       {index === 0 ? t("latestPush") : t("publicLabel")}
                     </span>
@@ -218,11 +230,11 @@ export default function PublicSettingsPage() {
                 <div key={entry.repo.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/30 bg-surface-2/40 px-4 py-3 hover:bg-surface-2/60 transition-colors">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{entry.repo.fullName}</p>
-                    <p className="text-micro text-foreground-subtle truncate">{entry.repo.description || t("noRepositoryDescriptionSnapshot")}</p>
+                    <p className="text-sm text-foreground-subtle truncate">{entry.repo.description || t("noRepositoryDescriptionSnapshot")}</p>
                   </div>
                   <span className={cn(
                     "text-micro font-medium px-2 py-0.5 rounded shrink-0",
-                    entry.repo.fullName === manifest.featuredRepo ? "bg-primary/10 text-primary" : "bg-surface-3 text-foreground-subtle"
+                    entry.repo.fullName === manifest.featuredRepo ? "bg-primary/10 text-primary" : "bg-surface-3 text-foreground-muted"
                   )}>
                     {entry.repo.fullName === manifest.featuredRepo ? t("featured") : t("tracked")}
                   </span>
@@ -270,8 +282,9 @@ function PreferenceToggle({ label, current, options, onSelect }: {
       <div className="flex flex-wrap gap-2">
         {options.map(opt => (
           <button key={opt.value} onClick={() => onSelect(opt.value)}
+            aria-pressed={current === opt.value}
             className={cn(
-              "relative flex min-h-10 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 py-2 text-sm font-medium transition-all",
+              "relative flex min-h-10 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
               current === opt.value
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "border border-border/60 bg-surface-2 text-foreground-subtle hover:border-foreground-subtle/30 hover:text-foreground"

@@ -73,8 +73,11 @@ describe("SettingsPage", () => {
   }
 
   function groupOrder() {
+    // Repository groups are the labelled ones; the page also carries the alert
+    // cap stepper as a group, which is not part of this ordering.
     return screen
       .getAllByRole("group")
+      .filter((element) => element.hasAttribute("aria-labelledby"))
       .map((element) => document.getElementById(element.getAttribute("aria-labelledby") ?? "")?.textContent);
   }
 
@@ -213,7 +216,13 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("button", { name: /mafhper\/segredo/ })).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("CA-4: shows the four groups with the fixed precedence and no duplicated item", async () => {
+  // The three group tests below mount the same page and then walk its rows: 1.4s,
+  // 1.8s and 2.3s measured on an idle machine, which leaves no room once the
+  // suite competes for the CPU. On a fully loaded one (96% CPU) CA-4 and CA-5
+  // crossed the 15s global budget and were aborted at 21.2s and 20.5s, with the
+  // file at 215s against 161s on the previous run. The assertion is untouched:
+  // only the ceiling moves, so a real regression still fails inside the budget.
+  it("CA-4: shows the four groups with the fixed precedence and no duplicated item", { timeout: 30000 }, async () => {
     await renderSettings([publicRepo, secondPublicRepo, privateRepo, archivedRepo, forkRepo, forkOfAccessibleRepo]);
 
     expect(screen.getByRole("group", { name: "Public repositories" })).toBeInTheDocument();
@@ -245,7 +254,7 @@ describe("SettingsPage", () => {
     expect(groupBox("Forks").queryByText("mafhper/fork-do-proprio")).not.toBeInTheDocument();
   });
 
-  it("CA-5: selecting a group does not touch the other groups", async () => {
+  it("CA-5: selecting a group does not touch the other groups", { timeout: 30000 }, async () => {
     await renderSettings([publicRepo, secondPublicRepo, privateRepo]);
 
     expandGroup("Public repositories");
@@ -274,7 +283,11 @@ describe("SettingsPage", () => {
     expect(groupBox("Public repositories").getByRole("button", { name: /mafhper\/push_/ })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("CA-7: the global bulk action never selects a private repository", async () => {
+  // Same page and rows as CA-4/CA-5, plus the bulk action: 2.3s idle, aborted at
+  // 10.6s under the loaded run above when the previous two timed out and left
+  // their queued updates behind. The larger ceiling (45s) covers the action on a
+  // starved CPU; the assertions stay exactly as they were.
+  it("CA-7: the global bulk action never selects a private repository", { timeout: 45000 }, async () => {
     await renderSettings([publicRepo, secondPublicRepo, privateRepo]);
 
     expandGroup("Public repositories");
@@ -630,7 +643,14 @@ describe("SettingsPage", () => {
 
     // DOM order, which the scroll-spy follows.
     expect(Array.from(document.querySelectorAll('section[id^="settings-"]')).map((element) => element.id))
-      .toEqual(["settings-preferences", "settings-access", "settings-repos", "settings-state", "settings-quotas"]);
+      .toEqual([
+        "settings-preferences",
+        "settings-scoring",
+        "settings-access",
+        "settings-repos",
+        "settings-state",
+        "settings-quotas",
+      ]);
 
     // Both rails (narrow and wide) carry the same order; the quota badge is
     // inside the last button and is stripped before comparing.
@@ -641,12 +661,36 @@ describe("SettingsPage", () => {
         .map((button) => (button.textContent ?? "").replace(/\d+%$/, "").trim());
       expect(labels).toEqual([
         "Preferences",
+        "Scoring",
         "GitHub access",
         "Repository Control",
         "Current mode",
         "Quotas",
       ]);
     }
+  });
+
+  it("renders the scoring chapter with the emphasis controls and the live preview", async () => {
+    await renderSettings([publicRepo]);
+
+    const chapter = document.getElementById("settings-scoring");
+    expect(chapter).not.toBeNull();
+    const scope = within(chapter as HTMLElement);
+    expect(scope.getByRole("heading", { name: "Queue scoring" })).toBeInTheDocument();
+    expect(scope.getByRole("switch", { name: "Critical alerts" })).toHaveAttribute("aria-checked", "true");
+    expect(scope.getByRole("switch", { name: "Failed runs" })).toHaveAttribute("aria-checked", "true");
+    expect(scope.getByRole("group", { name: "Alert cap" })).toHaveTextContent("Up to 5");
+
+    // The one snapshot repository has a single open alert and no critical one:
+    // the preview says so before any control is touched.
+    expect(within(chapter as HTMLElement).getByTestId("attention-preview")).toHaveTextContent("0 Critical · 1 Warning");
+
+    fireEvent.click(scope.getByRole("switch", { name: "Critical alerts" }));
+    expect(JSON.parse(window.localStorage.getItem("gl_settings") ?? "{}").attention).toEqual({
+      criticalAlerts: false,
+      failedRuns: true,
+      alertCap: 5,
+    });
   });
 
   it("PU14: warns at the top of the access chapter when the token and the selection disagree", async () => {

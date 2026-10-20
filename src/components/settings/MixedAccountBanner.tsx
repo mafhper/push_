@@ -61,13 +61,13 @@ export function MixedAccountBanner({
           <TriangleAlert size={14} className="mt-0.5 shrink-0 text-warning" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-foreground">{t("mixedAccountTitle")}</p>
-            <p className="mt-1 text-[13px] leading-relaxed text-foreground-subtle">{body}</p>
+            <p className="mt-1 text-sm leading-relaxed text-foreground-subtle">{body}</p>
             <button
               type="button"
               onClick={() => {
                 document.getElementById("settings-access")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
               }}
-              className="mt-1.5 text-[12px] font-medium text-primary transition-opacity hover:opacity-80"
+              className="mt-1.5 inline-flex min-h-6 items-center text-sm font-medium text-primary transition-opacity hover:opacity-80"
             >
               {t("quotaForeignReposAction")}
             </button>
@@ -127,7 +127,7 @@ export function MixedAccountBanner({
         <TriangleAlert size={14} className="mt-0.5 shrink-0 text-warning" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">{t("mixedAccountTitle")}</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-foreground-subtle">{body}</p>
+          <p className="mt-1 text-sm leading-relaxed text-foreground-subtle">{body}</p>
 
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             {actions.map((action) => (
@@ -145,12 +145,12 @@ export function MixedAccountBanner({
                 )}
               >
                 <span className={cn(
-                  "block text-[13px] font-semibold",
+                  "block text-sm font-semibold",
                   action.id === "clearData" ? "text-critical" : "text-foreground",
                 )}>
                   {action.label}
                 </span>
-                <span className="mt-0.5 block text-[11px] leading-relaxed text-foreground-subtle">{action.hint}</span>
+                <span className="mt-0.5 block text-sm leading-relaxed text-foreground-subtle">{action.hint}</span>
               </button>
             ))}
           </div>
@@ -161,14 +161,14 @@ export function MixedAccountBanner({
               aria-label={pendingAction.confirm}
               className="mt-3 rounded-lg border border-border/60 bg-surface-1/70 p-3"
             >
-              <p className="text-[13px] font-medium text-foreground">{pendingAction.confirm}</p>
+              <p className="text-sm font-medium text-foreground">{pendingAction.confirm}</p>
 
               {pendingAction.id === "clearData" && (
                 <>
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle">
+                  <p className="mt-1 text-micro font-semibold uppercase tracking-wider text-foreground-subtle">
                     {t("mixedAccountClearDataKeys")}
                   </p>
-                  <ul className="mt-1 grid gap-0.5 font-mono text-[11px] text-foreground-subtle/80 sm:grid-cols-2">
+                  <ul className="mt-1 grid gap-0.5 font-mono text-micro text-foreground-subtle sm:grid-cols-2">
                     {ACCOUNT_LOCAL_KEYS.map((key) => <li key={key}>{key}</li>)}
                     {ACCOUNT_LOCAL_PREFIXES.map((prefix) => <li key={prefix}>{prefix}*</li>)}
                   </ul>
@@ -180,7 +180,7 @@ export function MixedAccountBanner({
                   type="button"
                   onClick={confirmPending}
                   className={cn(
-                    "inline-flex h-8 items-center rounded-md px-3 text-[13px] font-semibold transition-colors",
+                    "inline-flex h-8 items-center rounded-md px-3 text-sm font-semibold transition-colors",
                     pendingAction.id === "clearData"
                       ? "bg-critical/15 text-critical hover:bg-critical/20"
                       : "bg-primary text-primary-foreground hover:opacity-90",
@@ -191,7 +191,7 @@ export function MixedAccountBanner({
                 <button
                   type="button"
                   onClick={() => setPending(null)}
-                  className="inline-flex h-8 items-center rounded-md border border-border/60 bg-surface-2/70 px-3 text-[13px] font-medium text-foreground-subtle transition-colors hover:text-foreground"
+                  className="inline-flex h-8 items-center rounded-md border border-border/60 bg-surface-2/70 px-3 text-sm font-medium text-foreground-subtle transition-colors hover:text-foreground"
                 >
                   {t("mixedAccountCancel")}
                 </button>

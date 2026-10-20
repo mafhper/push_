@@ -9,7 +9,7 @@ import { sortReposByAttention } from "@/lib/attention";
 import type { OverviewRepoSnapshot } from "@/types";
 
 export default function PublicDashboard() {
-  const { t } = useApp();
+  const { settings, t } = useApp();
   const { mode, username } = usePublicRuntime();
   const snapshotQuery = usePublicDashboardSnapshot();
   const publicProfileQuery = usePublicProfileRepos();
@@ -90,7 +90,7 @@ export default function PublicDashboard() {
         dependabotAlerts: { available: false, source: 'public-api' },
       },
     }));
-    const scoredRepos = sortReposByAttention(mappedRepos);
+    const scoredRepos = sortReposByAttention(mappedRepos, settings.attention);
 
     return <ConsoleLayout repos={scoredRepos} runtime="public" />;
   }
@@ -114,7 +114,7 @@ export default function PublicDashboard() {
     );
   }
 
-  const sortedRepos = sortReposByAttention(data.repos);
+  const sortedRepos = sortReposByAttention(data.repos, settings.attention);
 
   return <ConsoleLayout repos={sortedRepos} runtime="public" />;
 }

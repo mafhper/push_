@@ -64,7 +64,7 @@ const STATUS_PILL_TONE: Record<QuotaStatus, string> = {
   warning: "bg-warning/10 text-warning",
   critical: "bg-critical/10 text-critical",
   exceeded: "bg-critical/15 text-critical",
-  unknown: "bg-surface-3 text-foreground-subtle",
+  unknown: "bg-surface-3 text-foreground-muted",
 };
 
 const BAR_TONE: Record<QuotaStatus, string> = {
@@ -112,13 +112,13 @@ export function QuotasSection({
   return (
     <section id="settings-quotas" className="scroll-mt-4 space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h2 className="text-[19px] font-semibold tracking-tight text-foreground">{t("quotaSectionTitle")}</h2>
+        <h2 className="text-title font-headline font-semibold text-foreground">{t("quotaSectionTitle")}</h2>
         {snapshot && (
           <div className="shrink-0 text-right">
             {snapshot.login && (
-              <p className="text-[12px] font-medium text-foreground">{t("quotaAccount", { login: snapshot.login })}</p>
+              <p className="text-sm font-medium text-foreground">{t("quotaAccount", { login: snapshot.login })}</p>
             )}
-            <p className="text-[12px] tabular-nums text-foreground-subtle">
+            <p className="text-sm tabular-nums text-foreground-subtle">
               {t("quotaUpdatedAt", { when: formatDateTime(snapshot.fetchedAt, settings.lang) })}
             </p>
           </div>
@@ -129,12 +129,12 @@ export function QuotasSection({
         <SurfaceCard>
           <div className="px-4 py-3.5">
             <p className="text-sm font-medium text-foreground">{t("quotaNoTokenTitle")}</p>
-            <p className="mt-1 text-[13px] text-foreground-subtle">{t("quotaNoTokenBody")}</p>
+            <p className="mt-1 text-sm text-foreground-subtle">{t("quotaNoTokenBody")}</p>
           </div>
         </SurfaceCard>
       ) : !snapshot && isLoading ? (
         <SurfaceCard>
-          <div className="flex items-center gap-2 px-4 py-3.5 text-[13px] text-foreground-subtle">
+          <div className="flex items-center gap-2 px-4 py-3.5 text-sm text-foreground-subtle">
             <LoaderCircle size={14} className="animate-spin" />
             {t("quotaLoading")}
           </div>
@@ -154,7 +154,7 @@ export function QuotasSection({
               testId="quota-account-mismatch"
             />
           )}
-          {isError && <p className="text-[12px] text-warning">{t("quotaBillingErrorBody")}</p>}
+          {isError && <p className="text-sm text-warning">{t("quotaBillingErrorBody")}</p>}
           {snapshot.billing !== "enhanced" && snapshot.billing !== "legacy" && (
             <BillingNotice state={snapshot.billing} message={snapshot.billingMessage} onRetry={onRetry} />
           )}
@@ -167,7 +167,7 @@ export function QuotasSection({
             </div>
           ) : (
             <SurfaceCard>
-              <p className="px-4 py-3.5 text-[13px] text-foreground-subtle">{t("quotaNoFamilies")}</p>
+              <p className="px-4 py-3.5 text-sm text-foreground-subtle">{t("quotaNoFamilies")}</p>
             </SurfaceCard>
           )}
 
@@ -211,12 +211,12 @@ function BillingNotice({
         <TriangleAlert size={14} className="mt-0.5 shrink-0 text-warning" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">{copy.title}</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-foreground-subtle">{copy.body}</p>
-          {message && <p className="mt-1.5 break-all font-mono text-[11px] text-foreground-subtle/70">{message}</p>}
+          <p className="mt-1 text-sm leading-relaxed text-foreground-subtle">{copy.body}</p>
+          {message && <p className="mt-1.5 break-all font-mono text-micro text-foreground-subtle">{message}</p>}
           <button
             type="button"
             onClick={onRetry}
-            className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[12px] font-medium text-foreground-subtle transition-colors hover:text-foreground"
+            className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-sm font-medium text-foreground-subtle transition-colors hover:text-foreground"
           >
             <RefreshCw size={11} />
             {t("quotaRetry")}
@@ -248,7 +248,7 @@ function QuotaCard({ family }: { family: QuotaFamily }) {
     <SurfaceCard>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <p className="text-sm font-semibold text-foreground">{label}</p>
-        <span className={cn("shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold", STATUS_PILL_TONE[status])}>
+        <span className={cn("shrink-0 rounded-md px-2 py-0.5 text-micro font-semibold", STATUS_PILL_TONE[status])}>
           {t(QUOTA_STATUS_LABEL_KEYS[status])}
         </span>
       </div>
@@ -272,7 +272,7 @@ function QuotaCard({ family }: { family: QuotaFamily }) {
             <div className={cn("h-full rounded-full", BAR_TONE[status])} style={{ width: `${clamped}%` }} />
           </div>
         )}
-        <p className="text-[12px] text-foreground-subtle/80">
+        <p className="text-sm text-foreground-subtle">
           {family.resetAt && resetDays !== null
             ? resetDays <= 0
               ? t("quotaResetToday", { date: formatDate(family.resetAt, settings.lang, { month: "short", day: "numeric" }) })
@@ -336,20 +336,20 @@ function RepositoryUsageCard({
         {open
           ? <ChevronDown size={14} className="shrink-0" />
           : <ChevronRight size={14} className="shrink-0" />}
-        <span className="text-[13px] font-semibold">{t("quotaPerRepoTitle")}</span>
-        <span className="text-[12px] tabular-nums text-foreground-subtle/70">· {repos.length}</span>
+        <span className="text-sm font-semibold">{t("quotaPerRepoTitle")}</span>
+        <span className="text-sm tabular-nums text-foreground-subtle">· {repos.length}</span>
       </button>
 
       {open && (
         <div id={contentId} className="space-y-2 px-4 py-3">
           {repos.length === 0 ? (
-            <p className="text-[13px] text-foreground-subtle">{t("quotaPerRepoEmpty")}</p>
+            <p className="text-sm text-foreground-subtle">{t("quotaPerRepoEmpty")}</p>
           ) : (
             <>
               {/* A single row has no order to choose, so the control is absent. */}
               {sortedRepos.length > 1 && (
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="mr-0.5 text-[12px] font-semibold text-foreground-subtle">
+                  <span className="mr-0.5 text-micro font-semibold uppercase tracking-wider text-foreground-subtle">
                     {t("quotaRepoSortLabel")}
                   </span>
                   {(["usage", "name"] as const).map((value) => (
@@ -359,7 +359,7 @@ function RepositoryUsageCard({
                       onClick={() => chooseSort(value)}
                       aria-pressed={repoSort === value}
                       className={cn(
-                        "shrink-0 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+                        "shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
                         repoSort === value
                           ? "bg-primary/10 text-primary"
                           : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
@@ -385,7 +385,7 @@ function RepositoryUsageCard({
             </>
           )}
           {probe.probed < probe.requested && (
-            <p className="text-[12px] text-foreground-subtle/80">
+            <p className="text-sm text-foreground-subtle">
               {t("quotaReposTruncated", { shown: probe.probed, total: probe.requested })}
             </p>
           )}
@@ -541,7 +541,7 @@ function RepositoryUsageRow({
 
       {expanded && (
         <div id={contentId} className="mt-2 space-y-2 border-t border-border/40 pt-2">
-          <div className="flex flex-wrap gap-x-4 gap-y-1 pl-6 text-[12px] tabular-nums text-foreground-subtle">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 pl-6 text-sm tabular-nums text-foreground-subtle">
             {repo.cacheMb !== null && (
               <span>
                 {t("quotaRepoCache", {
@@ -559,7 +559,7 @@ function RepositoryUsageRow({
             {!hasReadings && <span className="italic">{t("quotaRepoNoData")}</span>}
           </div>
 
-          <p className="pl-6 text-[12px] leading-relaxed text-foreground-subtle/80">
+          <p className="pl-6 text-sm leading-relaxed text-foreground-subtle">
             {t("quotaRepoMinutesNotRecoverable")}
           </p>
 
@@ -571,28 +571,28 @@ function RepositoryUsageRow({
                     type="button"
                     disabled
                     aria-disabled="true"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[12px] font-medium text-foreground-subtle/60"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-sm font-medium text-foreground-subtle/60"
                   >
                     <Trash2 size={12} />
                     {t("quotaRepoClearCache")}
                   </button>
-                  <p className="text-[12px] leading-relaxed text-foreground-subtle">
+                  <p className="text-sm leading-relaxed text-foreground-subtle">
                     {t("quotaRepoClearCacheNoScope")}
                   </p>
                   <a
                     href="#settings-access"
-                    className="text-[12px] font-medium text-primary transition-opacity hover:opacity-80"
+                    className="inline-flex min-h-6 items-center text-sm font-medium text-primary transition-opacity hover:opacity-80"
                   >
                     {t("quotaRepoClearCacheScopeLink")}
                   </a>
                 </div>
               ) : flow.phase === "confirm" ? (
                 <div className="space-y-1.5 rounded-lg border border-critical/30 bg-critical/5 px-3 py-2">
-                  <p className="text-[12px] leading-relaxed text-foreground-subtle">
+                  <p className="text-sm leading-relaxed text-foreground-subtle">
                     {t("quotaRepoClearCacheConfirmBody")}
                   </p>
                   {flow.truncated && (
-                    <p className="text-[12px] text-warning">
+                    <p className="text-sm text-warning">
                       {t("quotaRepoClearCacheTruncated", {
                         shown: flow.entries.length,
                         total: flow.totalCount,
@@ -604,7 +604,7 @@ function RepositoryUsageRow({
                       type="button"
                       ref={confirmButtonRef}
                       onClick={confirmClear}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-critical/40 bg-critical/10 px-2.5 text-[12px] font-semibold text-critical transition-colors hover:bg-critical/15"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-critical/40 bg-critical/10 px-2.5 text-sm font-semibold text-critical transition-colors hover:bg-critical/15"
                     >
                       <Trash2 size={12} />
                       {confirmLabel}
@@ -612,7 +612,7 @@ function RepositoryUsageRow({
                     <button
                       type="button"
                       onClick={() => setFlow({ phase: "idle" })}
-                      className="inline-flex h-8 items-center rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[12px] font-medium text-foreground-subtle transition-colors hover:text-foreground"
+                      className="inline-flex h-8 items-center rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-sm font-medium text-foreground-subtle transition-colors hover:text-foreground"
                     >
                       {t("quotaRepoClearCacheCancel")}
                     </button>
@@ -623,7 +623,7 @@ function RepositoryUsageRow({
                   type="button"
                   disabled
                   aria-busy="true"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[12px] font-medium text-foreground-subtle"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-sm font-medium text-foreground-subtle"
                 >
                   <LoaderCircle size={12} className="animate-spin" />
                   {t("quotaRepoClearCacheDeleting")}
@@ -633,7 +633,7 @@ function RepositoryUsageRow({
                   type="button"
                   disabled
                   aria-busy="true"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[12px] font-medium text-foreground-subtle"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-sm font-medium text-foreground-subtle"
                 >
                   <LoaderCircle size={12} className="animate-spin" />
                   {t("quotaRepoClearCacheListing")}
@@ -643,21 +643,21 @@ function RepositoryUsageRow({
                   <button
                     type="button"
                     onClick={startListing}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-[12px] font-medium text-foreground-subtle transition-colors hover:border-critical/40 hover:text-critical"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-surface-2/70 px-2.5 text-sm font-medium text-foreground-subtle transition-colors hover:border-critical/40 hover:text-critical"
                   >
                     <Trash2 size={12} />
                     {t("quotaRepoClearCache")}
                   </button>
                   {flow.phase === "empty" && (
-                    <p className="text-[12px] text-foreground-subtle">{t("quotaRepoClearCacheEmpty")}</p>
+                    <p className="text-sm text-foreground-subtle">{t("quotaRepoClearCacheEmpty")}</p>
                   )}
                   {flow.phase === "done" && (
-                    <p role="status" className="text-[12px] font-medium text-success">
+                    <p role="status" className="text-sm font-medium text-success">
                       {doneMessage(flow.deleted, flow.bytes)}
                     </p>
                   )}
                   {flow.phase === "error" && flow.kind !== "scope" && (
-                    <p role="alert" className="text-[12px] leading-relaxed text-warning">
+                    <p role="alert" className="text-sm leading-relaxed text-warning">
                       {flow.deleted && flow.total
                         ? t("quotaRepoClearCachePartial", {
                             deleted: flow.deleted,
@@ -674,7 +674,7 @@ function RepositoryUsageRow({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 pl-6 text-[12px]">
+          <div className="flex flex-wrap items-center gap-3 pl-6 text-sm">
             <a
               href={`https://github.com/${repo.fullName}`}
               target="_blank"
@@ -716,13 +716,13 @@ function InfoNote({ label, body }: { label: string; body: string }) {
         aria-label={label}
         aria-expanded={open}
         aria-controls={open ? contentId : undefined}
-        className="inline-flex items-center gap-1.5 text-[12px] text-foreground-subtle/70 transition-colors hover:text-foreground"
+        className="inline-flex min-h-6 items-center gap-1.5 text-sm text-foreground-subtle transition-colors hover:text-foreground"
       >
         <Info size={12} className="shrink-0" />
         {label}
       </button>
       {open && (
-        <p id={contentId} className="mt-1 text-[12px] leading-relaxed text-foreground-subtle/80">
+        <p id={contentId} className="mt-1 text-sm leading-relaxed text-foreground-subtle">
           {body}
         </p>
       )}

@@ -3,6 +3,20 @@ export type Language = 'en' | 'pt-BR' | 'es';
 export type SidebarMode = 'expanded' | 'compact';
 export type DataDetailMode = 'balanced' | 'detailed' | 'full';
 
+/**
+ * Queue emphasis preferences. They change the order of the triage queue only:
+ * the health engine keeps its own weights, so the score and the checks of a
+ * repository never move because of these values.
+ */
+export interface AttentionSettings {
+  /** Charge each critical alert as the strongest signal in the order. */
+  criticalAlerts: boolean;
+  /** Charge recent CI failures and a low recent success rate. */
+  failedRuns: boolean;
+  /** How many open alerts the order charges per repository (0-5). */
+  alertCap: number;
+}
+
 export interface UserSettings {
   theme: Theme;
   lang: Language;
@@ -19,6 +33,8 @@ export interface UserSettings {
   pollingInterval?: number;
   notificationsEnabled?: boolean;
   highlightMode?: 'primary' | 'recent';
+  /** Absent until the reader changes the queue emphasis, then always complete. */
+  attention?: AttentionSettings;
 }
 
 export interface UserSession {
