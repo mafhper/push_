@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -112,6 +112,20 @@ describe("StatusBar", () => {
 
     // jsdom has no layout; the contract is the responsive class pair.
     expect(screen.getByRole("link", { name: /Account quotas/ }).className).toContain("hidden md:inline-flex");
+  });
+
+  it("hides the pill on preferences and keeps it on the dashboard with the same reading", async () => {
+    await mockLocalQuotas(850);
+
+    // Preferences carries the quota chapter itself, so the header pill would
+    // only repeat the reading from one screen above it.
+    renderStatusBar("/app/settings");
+    expect(screen.queryByRole("link", { name: /Account quotas/ })).not.toBeInTheDocument();
+
+    cleanup();
+
+    renderStatusBar("/app");
+    expect(screen.getByRole("link", { name: /Near the limit · 85% used/ })).toBeInTheDocument();
   });
 
   it("moves the pill to the warning and critical bands with the same reading", async () => {

@@ -162,8 +162,10 @@ function StatusBarFrame({
         {/* Metadata pill, not a control: it reports the account reading and
             links to the quota chapter. Below md the header has no room for a
             fifth token at 360px, so the pill steps aside and the overview alert
-            line carries the signal instead. */}
-        {quotaPressure ? (
+            line carries the signal instead. On the settings route it steps
+            aside too: the quota chapter below repeats the same reading, and the
+            pill would only link to the screen it is already on. */}
+        {quotaPressure && !onSettingsRoute ? (
           <>
             <div className="hidden h-4 w-px bg-border md:block" />
             <QuotaPressurePill pressure={quotaPressure} className="hidden md:inline-flex" />
