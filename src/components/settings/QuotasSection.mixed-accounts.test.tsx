@@ -76,6 +76,13 @@ function QuotaSectionHarness() {
       onRetry={() => {
         void refetch();
       }}
+      token={session?.token}
+      actionsDenied={session?.diagnostics?.permissions?.some(
+        (permission) => permission.id === "actions" && permission.status === "denied",
+      ) ?? false}
+      onCachesCleared={() => {
+        void refetch();
+      }}
     />
   );
 }

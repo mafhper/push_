@@ -141,6 +141,13 @@ describe("QuotasSection", () => {
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(within(section).getByText("betafunda/push_")).toBeInTheDocument();
+
+    // The row is its own disclosure (PU15): the readings belong to the detail.
+    const row = within(section).getByRole("button", { name: "betafunda/push_" });
+    expect(row).toHaveAttribute("aria-expanded", "false");
+    expect(within(section).queryByText("Cache 1.5 GB / 10 GB")).not.toBeInTheDocument();
+    fireEvent.click(row);
+    expect(row).toHaveAttribute("aria-expanded", "true");
     expect(within(section).getByText("Cache 1.5 GB / 10 GB")).toBeInTheDocument();
     expect(within(section).getByText("Artifacts 64 MB")).toBeInTheDocument();
     expect(within(section).getByText("1,200 min")).toBeInTheDocument();

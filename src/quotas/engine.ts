@@ -1,4 +1,4 @@
-import type { QuotaFamily, QuotaStatus } from "./types";
+import type { QuotaFamily, QuotaStatus, RepoQuotaUsage } from "./types";
 
 /**
  * Fixed thresholds approved for v1 (2026-10-19). They are intentionally not
@@ -142,4 +142,56 @@ export function foreignRepoOwners(login: string, repoFullNames: readonly string[
  */
 export function isMixedAccount(login: string, repoFullNames: readonly string[]): boolean {
   return foreignRepos(login, repoFullNames).length > 0;
+}
+
+/** Order offered for the per-repository rows (PU15). */
+export type QuotaRepoSort = "usage" | "name";
+
+/**
+ * Storage a repository currently holds: cache plus artifacts, in MB.
+ *
+ * This is a rank key, never a displayed number: the two quantities come from
+ * different inventories and adding them would invite the reader to take the
+ * sum as a billing quantity. `null` means neither inventory answered, which
+ * is different from a repository that answered zero.
+ */
+export function repoStorageMb(repo: Pick<RepoQuotaUsage, "cacheMb" | "artifactsMb">): number | null {
+  const known = [repo.cacheMb, repo.artifactsMb].filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value),
+  );
+  if (known.length === 0) return null;
+  return known.reduce((total, value) => total + value, 0);
+}
+
+/** Descending, with "no reading" after every real reading. */
+function compareNumberDescNullsLast(left: number | null, right: number | null): number {
+  if (left === null && right === null) return 0;
+  if (left === null) return 1;
+  if (right === null) return -1;
+  return right - left;
+}
+
+/**
+ * Per-repository order approved in PU15:
+ * 1. storage (cache + artifacts) descending — the biggest consumer first;
+ * 2. Actions minutes descending, for repositories tied on storage;
+ * 3. `fullName` ascending, so the order is stable across refreshes.
+ *
+ * A repository whose probes returned nothing goes after every repository with
+ * a reading; the minutes tiebreak still applies among the unread ones, so a
+ * row that only has minutes is not hidden behind a row with no data at all.
+ */
+export function compareReposByUsage(left: RepoQuotaUsage, right: RepoQuotaUsage): number {
+  const byStorage = compareNumberDescNullsLast(repoStorageMb(left), repoStorageMb(right));
+  if (byStorage !== 0) return byStorage;
+  const byMinutes = compareNumberDescNullsLast(left.actionsMinutes, right.actionsMinutes);
+  if (byMinutes !== 0) return byMinutes;
+  return left.fullName.localeCompare(right.fullName);
+}
+
+/** Copy sorted for display; the snapshot itself keeps its own order. */
+export function sortQuotaRepos(repos: readonly RepoQuotaUsage[], sort: QuotaRepoSort): RepoQuotaUsage[] {
+  const copy = [...repos];
+  if (sort === "name") return copy.sort((left, right) => left.fullName.localeCompare(right.fullName));
+  return copy.sort(compareReposByUsage);
 }

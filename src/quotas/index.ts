@@ -1,6 +1,7 @@
 export {
   FREE_PLAN_LIMITS,
   QUOTA_THRESHOLDS,
+  compareReposByUsage,
   daysUntil,
   evaluateQuota,
   foreignRepoOwners,
@@ -9,9 +10,11 @@ export {
   isQuotaAlert,
   quotaPercent,
   quotaStatus,
+  repoStorageMb,
+  sortQuotaRepos,
   summarizeQuotas,
 } from "./engine";
-export type { QuotaSummary } from "./engine";
+export type { QuotaRepoSort, QuotaSummary } from "./engine";
 export {
   QUOTA_FAMILY_LABEL_KEYS,
   QUOTA_ORIGIN_LABEL_KEYS,
