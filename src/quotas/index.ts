@@ -15,6 +15,8 @@ export {
   summarizeQuotas,
 } from "./engine";
 export type { QuotaRepoSort, QuotaSummary } from "./engine";
+export { accountPressure, rateLimitPressure } from "./pressure";
+export type { QuotaPressure } from "./pressure";
 export {
   QUOTA_FAMILY_LABEL_KEYS,
   QUOTA_ORIGIN_LABEL_KEYS,

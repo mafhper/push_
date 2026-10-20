@@ -71,6 +71,16 @@ function buildMetrics(ctx: HealthContext): HealthMetrics {
   };
 }
 
+/**
+ * The band cut assigned to a final score. Kept in one place so the report and
+ * the overview re-band (after a quota penalty) cannot drift apart.
+ */
+export function healthStatusForScore(score: number): HealthReport["status"] {
+  if (score >= 70) return "healthy";
+  if (score >= 40) return "warning";
+  return "critical";
+}
+
 function summarize(
   categories: HealthCategoryResult[],
   quotas?: QuotaFamily[],
@@ -91,10 +101,7 @@ function summarize(
 
   const rawScore = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
   const score = applyQuotaPenalty(rawScore, quotas);
-  let status: HealthReport["status"];
-  if (score >= 70) status = "healthy";
-  else if (score >= 40) status = "warning";
-  else status = "critical";
+  let status: HealthReport["status"] = healthStatusForScore(score);
   if (verifiedChecks === 0) status = "warning";
   return {
     score,

@@ -5,12 +5,16 @@ import { SeverityDot } from './SeverityDot';
 import { ShieldAlert, GitPullRequest, Archive, GitCommit, Info, ChevronRight, Hash, Activity, Clock, AlertTriangle, Boxes, CircleCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isZeroMetricValue } from '@/lib/metric-state';
+import { QuotaAlertLine } from '@/components/quotas/QuotaPressure';
+import type { QuotaPressure } from '@/quotas';
 
 interface DashboardPanelProps {
   repos: ScoredRepo[];
+  /** Account quota reading; the public runtime never passes one. */
+  quotaPressure?: QuotaPressure | null;
 }
 
-export function DashboardPanel({ repos }: DashboardPanelProps) {
+export function DashboardPanel({ repos, quotaPressure }: DashboardPanelProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showScoreInfo, setShowScoreInfo] = useState(false);
 
@@ -77,6 +81,10 @@ export function DashboardPanel({ repos }: DashboardPanelProps) {
             About scoring
           </button>
         </div>
+
+        {/* Directly under the fleet heading: the alert belongs to the overview,
+            not to a settings screen the reader has to remember to visit. */}
+        <QuotaAlertLine pressure={quotaPressure} className="mx-auto mt-4 w-full max-w-5xl" />
 
         {showScoreInfo && (
           <div className="mx-auto mt-4 w-full max-w-5xl rounded-xl border border-border/60 bg-surface-1/80 p-4 text-sm text-foreground-muted shadow-xs backdrop-blur-xs animate-fade-in space-y-1.5">

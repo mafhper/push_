@@ -18,11 +18,17 @@ import {
   sidebarLabelOpacity,
 } from '@/components/console/sidebar-geometry';
 import type { ScoredRepo } from '@/lib/attention';
+import type { QuotaPressure } from '@/quotas';
 import type { SidebarMode } from '@/types';
 
 interface ConsoleLayoutProps {
   repos: ScoredRepo[];
   runtime?: 'local' | 'public';
+  /**
+   * Account quota reading, already classified. Absent on the public runtime,
+   * which is what hides the alert line below Fleet Overview.
+   */
+  quotaPressure?: QuotaPressure | null;
 }
 
 interface DragState {
@@ -31,7 +37,7 @@ interface DragState {
   startWidth: number;
 }
 
-export function ConsoleLayout({ repos, runtime = 'local' }: ConsoleLayoutProps) {
+export function ConsoleLayout({ repos, runtime = 'local', quotaPressure }: ConsoleLayoutProps) {
   const { settings, updateSettings, t } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const canShowWorkspace = useMediaQuery('(min-width: 768px)');
@@ -236,7 +242,7 @@ export function ConsoleLayout({ repos, runtime = 'local' }: ConsoleLayoutProps) 
       </aside>
 
       <section className="hidden min-h-0 min-w-0 overflow-hidden bg-surface-2 md:flex">
-        {desktopRepo ? <Inspector repo={desktopRepo} runtime={runtime} /> : <GlobalDashboard repos={repos} />}
+        {desktopRepo ? <Inspector repo={desktopRepo} runtime={runtime} /> : <GlobalDashboard repos={repos} quotaPressure={quotaPressure} />}
       </section>
 
       <Sheet open={!canShowWorkspace && Boolean(selectedRepo)} onOpenChange={(open) => { if (!open) clearSelectedRepo(); }}>

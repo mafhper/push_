@@ -69,7 +69,7 @@ export interface QuotaSummary {
  * One summary drives the settings-rail badge and the alerts-page banner, so
  * both surfaces can never disagree about whether a quota is close to its limit.
  */
-export function summarizeQuotas(families: QuotaFamily[]): QuotaSummary {
+export function summarizeQuotas(families: readonly QuotaFamily[]): QuotaSummary {
   let status: QuotaStatus = "unknown";
   let percent: number | null = null;
   const alerting: QuotaFamily[] = [];
