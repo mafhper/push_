@@ -29,14 +29,24 @@ function walk(dir: string): string[] {
   });
 }
 
-/** Source files that render a surface, excluding tests and the engine itself. */
-const surfaceFiles = walk("src").filter(
-  (file) => !file.includes(".test.") && !file.endsWith("src/quotas/engine.ts") && !file.endsWith("src/quotas/pressure.ts"),
-);
-
 function relative(file: string): string {
   return path.relative(root, file).split(path.sep).join("/");
 }
+
+/**
+ * Every source file under `src`, tests excluded, as `src/...` POSIX paths.
+ *
+ * Paths are normalised before filtering: `walk` yields platform-separated
+ * absolute paths, so a literal `src/quotas/engine.ts` comparison is true on
+ * Linux and false on Windows — the filter would silently apply on one OS only.
+ *
+ * The engine is deliberately *included*. The check below pins it as the single
+ * declarer of the threshold table, so excluding it here would leave that
+ * assertion with nothing to find.
+ */
+const sourceFiles = walk("src")
+  .map(relative)
+  .filter((file) => !file.includes(".test."));
 
 describe("quota presentation single source", () => {
   it("no longer ships the orphan rate bar", () => {
@@ -44,9 +54,7 @@ describe("quota presentation single source", () => {
   });
 
   it("declares the threshold table once", () => {
-    const declarers = surfaceFiles
-      .filter((file) => /QUOTA_THRESHOLDS\s*=/.test(read(relative(file))))
-      .map(relative);
+    const declarers = sourceFiles.filter((file) => /QUOTA_THRESHOLDS\s*=/.test(read(file)));
 
     expect(declarers).toEqual(["src/quotas/engine.ts"]);
   });
