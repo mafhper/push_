@@ -187,7 +187,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (value: boolea
       aria-checked={on}
       aria-label={label}
       onClick={() => onChange(!on)}
-      className="relative h-6 w-10 shrink-0 rounded-full bg-surface-3 transition-colors aria-checked:bg-primary"
+      className="relative h-6 w-10 shrink-0 rounded-full bg-border-strong transition-colors aria-checked:bg-primary"
     >
       <span
         className={cn(

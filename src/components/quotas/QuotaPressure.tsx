@@ -20,11 +20,11 @@ import type { QuotaPressure, QuotaStatus } from "@/quotas";
  */
 
 const PILL_TONE: Record<QuotaStatus, string> = {
-  normal: "border-success/25 bg-success/10 text-success",
-  warning: "border-warning/30 bg-warning/10 text-warning",
-  critical: "border-critical/25 bg-critical/10 text-critical",
-  exceeded: "border-critical/40 bg-critical/15 text-critical",
-  unknown: "border-border/60 bg-surface-3 text-foreground-subtle",
+  normal: "border-success/25 bg-success/10",
+  warning: "border-warning/30 bg-warning/10",
+  critical: "border-critical/25 bg-critical/10",
+  exceeded: "border-critical/40 bg-critical/15",
+  unknown: "border-border/60 bg-surface-3",
 };
 
 const DOT_TONE: Record<QuotaStatus, string> = {
@@ -66,7 +66,7 @@ export function QuotaPressurePill({ pressure, className }: { pressure: QuotaPres
   const content = (
     <>
       <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0 rounded-full", DOT_TONE[pressure.status])} />
-      <span className="truncate font-mono text-[10px] uppercase tracking-[0.18em] opacity-70">
+      <span className="truncate font-mono text-[10px] uppercase tracking-[0.18em] text-foreground-muted">
         {isAccount ? t("quotaPillLabel") : t("quotaRatePillLabel")}
       </span>
       <span className="font-mono text-[11px] font-semibold tabular-nums">{percent}%</span>
@@ -74,7 +74,7 @@ export function QuotaPressurePill({ pressure, className }: { pressure: QuotaPres
   );
 
   const classes = cn(
-    "inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1",
+    "inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-foreground",
     PILL_TONE[pressure.status],
     className,
   );

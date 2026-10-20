@@ -94,7 +94,7 @@ export function TriageQueue({ repos, selectedRepoId, compact = false, onToggleCo
           )}
         </div>
         <p
-          className={cn("hidden text-center font-mono text-[10px] font-semibold text-primary", compact && "md:block")}
+          className={cn("hidden text-center font-mono text-[10px] font-semibold text-foreground-muted", compact && "md:block")}
           style={{ opacity: railOpacity }}
         >
           {repos.length}

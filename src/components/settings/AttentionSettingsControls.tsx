@@ -157,12 +157,14 @@ export function AttentionSettingsControls({ repos, padded = true }: AttentionSet
  * as with a mouse. The thumb travels 20px between the two positions, so the
  * state reads from position, not from colour alone.
  *
- * Non-text contrast, measured 2026-10-20 across the seven themes: thumb against
- * track is at least 4.11:1 (checked) and 3.88:1 (unchecked), which clears 1.4.11.
- * The unchecked track against the card is 1.24–1.39:1 — `surface-3` sits close
- * to the reading surface by design, so the track boundary is **not** a 3:1 edge;
- * what identifies the control is the thumb, which does clear it. Do not read
- * this as a clean pass on the boundary.
+ * Non-text contrast, measured in the browser on 2026-10-20 across the seven
+ * themes, after the token retouch and the thumb pass: the checked thumb against
+ * the primary track is 4.77–14.35:1. The unchecked thumb is `foreground` and
+ * measures 4.30–6.63:1 against the `border-strong` track. That track against
+ * the settings card is 2.67–3.58:1 — below 3:1 in dark, light and blue-calm —
+ * so the *edge* is still not a clean 1.4.11 pass. The state reads from the
+ * thumb, which does clear it. Raising the track needs a token decision, not a
+ * class change; do not read this as a clean pass on the boundary.
  */
 function Switch({
   checked,
@@ -189,14 +191,14 @@ function Switch({
         aria-hidden="true"
         className={cn(
           "relative block h-6 w-11 rounded-full transition-colors motion-reduce:transition-none",
-          checked ? "bg-primary" : "bg-surface-3",
+          checked ? "bg-primary" : "bg-border-strong",
         )}
       >
         <span
           aria-hidden="true"
           className={cn(
             "absolute left-0.5 top-0.5 size-5 rounded-full shadow-xs transition-[transform,background-color] motion-reduce:transition-none",
-            checked ? "translate-x-5 bg-background" : "bg-foreground-subtle",
+            checked ? "translate-x-5 bg-background" : "bg-foreground",
           )}
         />
       </span>

@@ -33,6 +33,7 @@
   --text-display--letter-spacing: -0.02em;
 
   --color-border: hsl(var(--border));
+  --color-border-strong: hsl(var(--border-strong));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --color-background: hsl(var(--background));
@@ -213,17 +214,17 @@
 
     --foreground:        222 22% 10%;
     --foreground-muted:  222 10% 30%;
-    --foreground-subtle: 222  8% 44%;
+    --foreground-subtle: 222  8% 40%;
 
     --border:        220 16% 78%;
     --border-strong: 220 14% 62%;
 
-    --primary:             212 90% 48%;
+    --primary:             212 90% 44%;
     --primary-foreground:  0 0% 100%;
 
-    --success:    150 55% 34%;
-    --warning:     38 88% 42%;
-    --critical:     0 72% 48%;
+    --success:    150 55% 28%;
+    --warning:     38 88% 36%;
+    --critical:     0 72% 42%;
     --info:       200 78% 42%;
 
     --ring:          212 90% 48%;

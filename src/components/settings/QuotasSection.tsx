@@ -23,6 +23,7 @@ import type {
   RepoQuotaUsage,
 } from "@/quotas";
 import { deleteRepoCache, listRepoCaches, type RepoCacheEntry } from "@/services/github-quotas";
+import { StatusChip, type StatusTone } from "@/components/ui/status-chip";
 import { MixedAccountBanner } from "./MixedAccountBanner";
 
 type QuotasSectionProps = {
@@ -59,12 +60,12 @@ const STATUS_TEXT_TONE: Record<QuotaStatus, string> = {
   unknown: "text-foreground-subtle",
 };
 
-const STATUS_PILL_TONE: Record<QuotaStatus, string> = {
-  normal: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  critical: "bg-critical/10 text-critical",
-  exceeded: "bg-critical/15 text-critical",
-  unknown: "bg-surface-3 text-foreground-muted",
+const STATUS_PILL_TONE: Record<QuotaStatus, { tone: StatusTone; className?: string }> = {
+  normal: { tone: "success" },
+  warning: { tone: "warning" },
+  critical: { tone: "critical" },
+  exceeded: { tone: "critical", className: "bg-critical/15" },
+  unknown: { tone: "neutral" },
 };
 
 const BAR_TONE: Record<QuotaStatus, string> = {
@@ -248,9 +249,12 @@ function QuotaCard({ family }: { family: QuotaFamily }) {
     <SurfaceCard>
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <p className="text-sm font-semibold text-foreground">{label}</p>
-        <span className={cn("shrink-0 rounded-md px-2 py-0.5 text-micro font-semibold", STATUS_PILL_TONE[status])}>
+        <StatusChip
+          tone={STATUS_PILL_TONE[status].tone}
+          className={cn("shrink-0 rounded-md px-2 py-0.5 text-micro font-semibold", STATUS_PILL_TONE[status].className)}
+        >
           {t(QUOTA_STATUS_LABEL_KEYS[status])}
-        </span>
+        </StatusChip>
       </div>
 
       <StatusLine
@@ -604,9 +608,9 @@ function RepositoryUsageRow({
                       type="button"
                       ref={confirmButtonRef}
                       onClick={confirmClear}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-critical/40 bg-critical/10 px-2.5 text-sm font-semibold text-critical transition-colors hover:bg-critical/15"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-critical/40 bg-critical/10 px-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-critical/15"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={12} className="text-critical" />
                       {confirmLabel}
                     </button>
                     <button

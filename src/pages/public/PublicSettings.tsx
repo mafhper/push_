@@ -3,6 +3,7 @@ import { AtSign, Search, Moon, Sun, LoaderCircle } from "lucide-react";
 import { useApp } from "@/contexts/useApp";
 import { usePublicRuntime } from "@/contexts/usePublicRuntime";
 import { AttentionSettingsControls } from "@/components/settings/AttentionSettingsControls";
+import { StatusChip } from "@/components/ui/status-chip";
 import { usePublicDashboardSnapshot, usePublicProfileRepos, usePublicRateLimit, usePublicSnapshotManifest } from "@/hooks/useGitHubPublic";
 import { formatDateTime } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -61,12 +62,12 @@ export default function PublicSettingsPage() {
                 <h2 className="text-title font-headline font-semibold text-foreground">{t("publicSourceTitle")}</h2>
                 <p className="text-sm text-foreground-subtle mt-1">{t("enterGitHubUsernameBody")}</p>
               </div>
-              <span className={cn(
-                "text-micro font-semibold px-2 py-1 rounded-md shrink-0",
-                mode === "public-profile" ? "bg-success/10 text-success" : "bg-surface-3 text-foreground-muted"
-              )}>
+              <StatusChip
+                tone={mode === "public-profile" ? "success" : "neutral"}
+                className="text-micro font-semibold px-2 py-1 rounded-md shrink-0"
+              >
                 {mode === "public-profile" ? t("publicApiLabel") : t("snapshotLabel")}
-              </span>
+              </StatusChip>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
@@ -214,12 +215,12 @@ export default function PublicSettingsPage() {
                       <p className="text-sm font-medium text-foreground truncate">{repo.fullName}</p>
                       <p className="text-sm text-foreground-subtle truncate">{repo.description || t("noDescription")}</p>
                     </div>
-                    <span className={cn(
-                      "text-micro font-medium px-2 py-0.5 rounded shrink-0",
-                      index === 0 ? "bg-primary/10 text-primary" : "bg-surface-3 text-foreground-muted"
-                    )}>
+                    <StatusChip
+                      tone={index === 0 ? "primary" : "neutral"}
+                      className="text-micro font-medium px-2 py-0.5 shrink-0"
+                    >
                       {index === 0 ? t("latestPush") : t("publicLabel")}
-                    </span>
+                    </StatusChip>
                   </div>
                 ))
               ) : (
@@ -232,12 +233,12 @@ export default function PublicSettingsPage() {
                     <p className="text-sm font-medium text-foreground truncate">{entry.repo.fullName}</p>
                     <p className="text-sm text-foreground-subtle truncate">{entry.repo.description || t("noRepositoryDescriptionSnapshot")}</p>
                   </div>
-                  <span className={cn(
-                    "text-micro font-medium px-2 py-0.5 rounded shrink-0",
-                    entry.repo.fullName === manifest.featuredRepo ? "bg-primary/10 text-primary" : "bg-surface-3 text-foreground-muted"
-                  )}>
+                  <StatusChip
+                    tone={entry.repo.fullName === manifest.featuredRepo ? "primary" : "neutral"}
+                    className="text-micro font-medium px-2 py-0.5 shrink-0"
+                  >
                     {entry.repo.fullName === manifest.featuredRepo ? t("featured") : t("tracked")}
-                  </span>
+                  </StatusChip>
                 </div>
               ))
             )}

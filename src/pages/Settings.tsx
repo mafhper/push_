@@ -6,6 +6,7 @@ import { useAccountQuotas, useDashboardSnapshot, useRateLimit, useRepos, useSnap
 import { MixedAccountBanner } from "@/components/settings/MixedAccountBanner";
 import { AttentionSettingsControls } from "@/components/settings/AttentionSettingsControls";
 import { QuotasSection } from "@/components/settings/QuotasSection";
+import { StatusChip } from "@/components/ui/status-chip";
 import { foreignRepoOwners, foreignRepos, isMixedAccount, isQuotaAlert, summarizeQuotas } from "@/quotas";
 import { formatDateTime, type DictKey, type Language } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -197,7 +198,7 @@ export default function SettingsPage() {
   const quotaSummary = quotaSnapshot ? summarizeQuotas(quotaSnapshot.families) : null;
   const quotaBadgeVisible = Boolean(quotaSummary && isQuotaAlert(quotaSummary.status));
   const quotaBadgePercent = quotaSummary?.percent ? Math.floor(quotaSummary.percent) : 0;
-  const quotaBadgeTone = quotaSummary?.status === "warning" ? "bg-warning/15 text-warning" : "bg-critical/15 text-critical";
+  const quotaBadgeTone: "warning" | "critical" = quotaSummary?.status === "warning" ? "warning" : "critical";
 
   /**
    * PU14: the selection is stored per installation, so a token swap can leave
@@ -404,12 +405,13 @@ export default function SettingsPage() {
                 <Icon size={15} className="shrink-0" />
                 {t(section.labelKey)}
                 {section.id === "settings-quotas" && quotaBadgeVisible && (
-                  <span
+                  <StatusChip
+                    tone={quotaBadgeTone}
                     aria-label={t("quotaRailBadge", { percent: quotaBadgePercent })}
-                    className={cn("rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums", quotaBadgeTone)}
+                    className="rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums"
                   >
                     {quotaBadgePercent}%
-                  </span>
+                  </StatusChip>
                 )}
               </button>
             );
@@ -433,12 +435,13 @@ export default function SettingsPage() {
                   <Icon size={15} className="shrink-0" />
                   {t(section.labelKey)}
                   {section.id === "settings-quotas" && quotaBadgeVisible && (
-                    <span
+                    <StatusChip
+                      tone={quotaBadgeTone}
                       aria-label={t("quotaRailBadge", { percent: quotaBadgePercent })}
-                      className={cn("ml-auto rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums", quotaBadgeTone)}
+                      className="ml-auto rounded-md px-1.5 py-0.5 text-micro font-semibold tabular-nums"
                     >
                       {quotaBadgePercent}%
-                    </span>
+                    </StatusChip>
                   )}
                 </button>
               );
@@ -523,18 +526,23 @@ export default function SettingsPage() {
                   {localSecureMode ? t("tokenSessionOnlyBody") : t("publishedRuntimeNoBrowserTokenBody")}
                 </p>
               </div>
-              <span className={cn(
-                "text-micro font-semibold px-2 py-1 rounded-md shrink-0",
-                localSecureMode && session && "bg-success/10 text-success",
-                localSecureMode && !session && sessionStatus === "invalid" && "bg-critical/10 text-critical",
-                localSecureMode && !session && sessionStatus !== "invalid" && "bg-warning/10 text-warning",
-                !localSecureMode && "bg-surface-3 text-foreground-muted"
-              )}>
+              <StatusChip
+                tone={
+                  localSecureMode
+                    ? session
+                      ? "success"
+                      : sessionStatus === "invalid"
+                        ? "critical"
+                        : "warning"
+                    : "neutral"
+                }
+                className="text-micro font-semibold px-2 py-1 rounded-md shrink-0"
+              >
                 {localSecureMode && session ? t("localAuth")
                   : localSecureMode && sessionStatus === "invalid" ? t("invalidToken")
                   : localSecureMode ? t("awaitingTokenLabel")
                   : t("snapshotOnly")}
-              </span>
+              </StatusChip>
             </div>
 
             {accountNotice && (

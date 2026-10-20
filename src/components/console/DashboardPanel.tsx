@@ -5,6 +5,7 @@ import { SeverityDot } from './SeverityDot';
 import { ShieldAlert, GitPullRequest, Archive, GitCommit, Info, ChevronRight, Hash, Activity, Clock, AlertTriangle, Boxes, CircleCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isZeroMetricValue } from '@/lib/metric-state';
+import { StatusChip } from '@/components/ui/status-chip';
 import { QuotaAlertLine } from '@/components/quotas/QuotaPressure';
 import type { QuotaPressure } from '@/quotas';
 
@@ -228,15 +229,12 @@ function AttentionSourceRow({ repo, signal, onClick }: { repo: ScoredRepo; signa
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-body font-semibold text-foreground">{signal.label}</span>
-          <span className={cn(
-            "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
-            signal.severity === 'critical' && "bg-critical/10 text-critical",
-            signal.severity === 'high' && "bg-warning/10 text-warning",
-            signal.severity === 'warning' && "bg-warning/10 text-warning",
-            signal.severity === 'info' && "bg-info/10 text-info"
-          )}>
+          <StatusChip
+            tone={signal.severity === 'critical' ? 'critical' : signal.severity === 'info' ? 'info' : 'warning'}
+            className="text-[10px] font-semibold uppercase tracking-wider"
+          >
             {signal.kind}
-          </span>
+          </StatusChip>
         </div>
         <p className="mt-0.5 truncate text-micro text-foreground-subtle">
           {repo.repo.fullName} · score {repo.attentionScore}
@@ -322,7 +320,7 @@ function CriticalRepoRow({ repo, onClick }: { repo: ScoredRepo; onClick: () => v
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-body font-semibold text-foreground truncate">{repo.repo.fullName}</span>
-          <span className="text-micro font-mono font-semibold text-critical bg-critical/10 px-1.5 py-0.5 rounded">{repo.attentionScore}</span>
+          <StatusChip tone="critical" className="text-micro font-mono font-semibold">{repo.attentionScore}</StatusChip>
         </div>
         <div className="flex items-center gap-2 mt-1">
           {repo.signals.slice(0, 3).map(sig => (

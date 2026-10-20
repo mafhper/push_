@@ -5,6 +5,7 @@ import { calculateHealth, formatRelativeTime } from '@/utils/health';
 import { HealthBadge } from '@/components/HealthBadge';
 import { LanguageBar } from '@/components/LanguageBar';
 import { RepositoryAvatar } from '@/components/repository/RepositoryAvatar';
+import { StatusChip } from '@/components/ui/status-chip';
 import { 
   GitCommit, Activity, ShieldAlert, CheckCircle2, XCircle, 
   ExternalLink, ArrowRight, Clock, Star, GitFork
@@ -219,12 +220,12 @@ export function MainRepoHighlight({ repo }: MainRepoHighlightProps) {
                   {t('alerts')}
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <span className="rounded-lg bg-critical/20 px-3 py-1.5 text-xs font-black text-critical">
+                  <StatusChip tone="critical" className="rounded-lg px-3 py-1.5 text-xs font-black">
                     {alerts.filter(a => a.severity === 'critical').length} Critical
-                  </span>
-                  <span className="rounded-lg bg-warning/20 px-3 py-1.5 text-xs font-black text-warning">
+                  </StatusChip>
+                  <StatusChip tone="warning" className="rounded-lg px-3 py-1.5 text-xs font-black">
                     {alerts.filter(a => a.severity === 'high').length} High
-                  </span>
+                  </StatusChip>
                 </div>
               </div>
             )}
