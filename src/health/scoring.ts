@@ -1,6 +1,8 @@
+import type { QuotaFamily } from "@/quotas";
 import { HEALTH_CATEGORIES } from "./categories";
 import { HEALTH_CHECKS, type CheckDefinition } from "./checks";
 import { failedRuns7d, successRate } from "./checks";
+import { applyQuotaPenalty } from "./quotas";
 import type {
   HealthCategoryResult,
   HealthCheck,
@@ -69,7 +71,10 @@ function buildMetrics(ctx: HealthContext): HealthMetrics {
   };
 }
 
-function summarize(categories: HealthCategoryResult[]): {
+function summarize(
+  categories: HealthCategoryResult[],
+  quotas?: QuotaFamily[],
+): {
   score: number;
   status: HealthReport["status"];
   verifiedChecks: number;
@@ -84,7 +89,8 @@ function summarize(categories: HealthCategoryResult[]): {
     0,
   );
 
-  const score = totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : 0;
+  const rawScore = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
+  const score = applyQuotaPenalty(rawScore, quotas);
   let status: HealthReport["status"];
   if (score >= 70) status = "healthy";
   else if (score >= 40) status = "warning";
@@ -107,7 +113,7 @@ export function evaluateRepositoryHealth(ctx: HealthContext): HealthReport {
     const built = buildCategory(categoryChecks, ctx);
     if (built) categories.push(built);
   }
-  const { score, status, verifiedChecks, totalChecks } = summarize(categories);
+  const { score, status, verifiedChecks, totalChecks } = summarize(categories, ctx.quotas);
   return {
     score,
     status,

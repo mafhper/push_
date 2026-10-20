@@ -1,3 +1,4 @@
+import type { QuotaFamily } from "@/quotas";
 import type {
   BranchProtectionSummary,
   ContributorSummary,
@@ -92,6 +93,8 @@ export interface HealthContext {
     dependabotSecurityUpdates?: boolean;
   };
   availability?: Partial<OverviewRepoSnapshot["availability"]>;
+  /** Account quota families; only monthly families with a limit can deduct points. */
+  quotas?: QuotaFamily[];
   dataMode?: "public" | "authenticated";
 }
 
