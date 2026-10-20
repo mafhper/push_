@@ -55,6 +55,8 @@ jobs:
         uses: swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
         with:
           workspaces: "./src-tauri -> target"
+          # PR runs only restore; new entries are written from main alone.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Cargo check
         run: cargo check
