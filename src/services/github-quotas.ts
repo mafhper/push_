@@ -10,11 +10,11 @@ import type {
 } from "@/quotas";
 
 /**
- * Account quota reader.
+ * Account quota reader, plus the repository cache management of PU15.
  *
- * Every call here is read-only and independent: one family failing never hides
- * another, and the snapshot always says which source answered. The endpoints,
- * in the order they are tried:
+ * The snapshot reads are independent and read-only: one family failing never
+ * hides another, and the snapshot always says which source answered. The
+ * endpoints, in the order they are tried:
  *
  * 1. `GET /users/{login}/settings/billing/usage` — enhanced billing platform.
  *    It is the only source that names a repository per usage item (Lote 1 #2).
@@ -27,6 +27,13 @@ import type {
  *    and #5). They work on the Free plan and are labelled as current usage,
  *    never as billing.
  *
+ * The cache actions are the only destructive capability in this module and
+ * are separate from the snapshot: `GET .../actions/caches` lists what would be
+ * deleted, and `DELETE .../actions/caches/{cache_id}` removes one entry. Only
+ * those two documented endpoints are used; the delete-by-key variant is not,
+ * because it removes more than the confirmation names. A 403 is returned
+ * intact so the caller can state "no Actions write scope" instead of guessing.
+ *
  * `timing` endpoints are deliberately not used: they are being retired
  * (Lote 1 #6). `usage/summary` is a preview and is deliberately not used.
  */
@@ -36,14 +43,21 @@ const USAGE_MAX_PAGES = 10;
 const ARTIFACTS_MAX_PAGES = 3;
 /** 2 calls per repository every refresh: the probe is capped, not paginated. */
 const REPO_PROBE_LIMIT = 25;
+/** 100 entries per page; a repository above this is reported as truncated. */
+const CACHES_MAX_PAGES = 10;
 
 type RequestOk<T> = { state: "ok"; data: T; link?: string | null };
 type RequestFailure = { state: "error"; status: number; message: string };
 type RequestResult<T> = RequestOk<T> | RequestFailure;
 
-async function requestJson<T>(pathname: string, token: string): Promise<RequestResult<T>> {
+async function requestJson<T>(
+  pathname: string,
+  token: string,
+  method: "GET" | "DELETE" = "GET",
+): Promise<RequestResult<T>> {
   try {
     const response = await fetch(`${GITHUB_API_BASE}${pathname}`, {
+      method,
       headers: {
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2026-03-10",
@@ -53,6 +67,10 @@ async function requestJson<T>(pathname: string, token: string): Promise<RequestR
     });
     if (!response.ok) {
       return { state: "error", status: response.status, message: `${response.status} ${pathname}` };
+    }
+    // The delete-by-id endpoint documents 204 No Content, which has no body.
+    if (response.status === 204) {
+      return { state: "ok", data: undefined as T, link: null };
     }
     return { state: "ok", data: (await response.json()) as T, link: response.headers?.get("link") ?? null };
   } catch (error) {
@@ -385,6 +403,117 @@ async function fetchArtifactBytes(owner: string, repo: string, token: string): P
     if (artifacts.length < 100) break;
   }
   return answered ? totalBytes / (1024 * 1024) : null;
+}
+
+/** One cache entry as documented by `GET /repos/{owner}/{repo}/actions/caches`. */
+export interface RepoCacheEntry {
+  id: number;
+  key: string;
+  ref: string;
+  /** `size_in_bytes`; `0` when the endpoint omitted it, never an invented value. */
+  sizeInBytes: number;
+}
+
+export interface RepoCacheInventory {
+  entries: RepoCacheEntry[];
+  /** `total_count` from the endpoint, or the number of entries when absent. */
+  totalCount: number;
+  /** True when the listing stopped before `totalCount` entries. */
+  truncated: boolean;
+}
+
+export type RepoCacheListResult =
+  | { state: "ok"; inventory: RepoCacheInventory }
+  | { state: "error"; status: number; message: string };
+
+export type RepoCacheMutationResult = { state: "ok" } | { state: "error"; status: number; message: string };
+
+type CacheEntryPayload = {
+  id?: number;
+  key?: string;
+  ref?: string;
+  size_in_bytes?: number;
+};
+
+type CachesPayload = {
+  total_count?: number;
+  actions_caches?: CacheEntryPayload[];
+};
+
+/**
+ * Repository-scoped cache management (PU15, Lote 2).
+ *
+ * Only the two documented endpoints are used: the paginated listing and the
+ * delete-by-id. The delete-by-key variant is deliberately not used because it
+ * removes every cache that shares a key and a ref, which is more than the
+ * confirmation promises. A 403 is surfaced as-is so the surface can say the
+ * token lacks Actions write access instead of pretending the repository has
+ * no caches.
+ */
+function repositoryCachePath(fullName: string, suffix: string): string | null {
+  const [owner, repo] = fullName.split("/");
+  if (!owner || !repo) return null;
+  return `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/caches${suffix}`;
+}
+
+export async function listRepoCaches(token: string, fullName: string): Promise<RepoCacheListResult> {
+  const basePath = repositoryCachePath(fullName, "");
+  if (!basePath) {
+    return { state: "error", status: 0, message: `Invalid repository name: ${fullName}` };
+  }
+
+  const entries: RepoCacheEntry[] = [];
+  let totalCount = 0;
+  let pathname: string | null = `${basePath}?per_page=100`;
+
+  for (let depth = 0; pathname && depth < CACHES_MAX_PAGES; depth += 1) {
+    const result = await requestJson<CachesPayload>(pathname, token);
+    if (result.state === "error") {
+      // The first page failing is the request failing. A later page failing
+      // keeps what was already listed and is reported as truncated.
+      if (depth === 0) return { state: "error", status: result.status, message: result.message };
+      break;
+    }
+
+    const pageEntries = Array.isArray(result.data?.actions_caches) ? result.data.actions_caches : [];
+    if (typeof result.data?.total_count === "number" && Number.isFinite(result.data.total_count)) {
+      totalCount = Math.max(totalCount, result.data.total_count);
+    }
+    for (const entry of pageEntries) {
+      if (typeof entry.id !== "number" || !Number.isFinite(entry.id)) continue;
+      entries.push({
+        id: entry.id,
+        key: entry.key ?? "",
+        ref: entry.ref ?? "",
+        sizeInBytes: typeof entry.size_in_bytes === "number" && Number.isFinite(entry.size_in_bytes)
+          ? entry.size_in_bytes
+          : 0,
+      });
+    }
+
+    pathname = nextPagePath(result.link);
+    if (pageEntries.length < 100) pathname = null;
+  }
+
+  const reportedTotal = Math.max(totalCount, entries.length);
+  return {
+    state: "ok",
+    inventory: { entries, totalCount: reportedTotal, truncated: entries.length < reportedTotal },
+  };
+}
+
+/** `DELETE /repos/{owner}/{repo}/actions/caches/{cache_id}` — documented 204. */
+export async function deleteRepoCache(
+  token: string,
+  fullName: string,
+  cacheId: number,
+): Promise<RepoCacheMutationResult> {
+  const path = repositoryCachePath(fullName, `/${encodeURIComponent(String(cacheId))}`);
+  if (!path) {
+    return { state: "error", status: 0, message: `Invalid repository name: ${fullName}` };
+  }
+  const result = await requestJson<unknown>(path, token, "DELETE");
+  return result.state === "error" ? result : { state: "ok" };
 }
 
 async function probeRepository(fullName: string, token: string): Promise<RepoQuotaUsage> {

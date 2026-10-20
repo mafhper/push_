@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchAccountQuotas } from "./github-quotas";
+import { deleteRepoCache, fetchAccountQuotas, listRepoCaches } from "./github-quotas";
 
 type Handler = (url: string) => {
   status?: number;
@@ -263,5 +263,90 @@ describe("fetchAccountQuotas — mixed accounts (PU14)", () => {
     const snapshot = await fetchAccountQuotas("token", "", []);
 
     expect(snapshot.foreignOwners).toEqual([]);
+  });
+});
+
+describe("repository cache management (PU15)", () => {
+  it("follows the Link header and reports the documented entry fields", async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      id: index + 1,
+      key: `key-${index + 1}`,
+      ref: "refs/heads/main",
+      size_in_bytes: 1024,
+    }));
+    const urls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        urls.push(url);
+        const body = url.includes("page=2")
+          ? { total_count: 101, actions_caches: [{ id: 101, key: "last", ref: "refs/heads/dev", size_in_bytes: 2048 }] }
+          : { total_count: 101, actions_caches: firstPage };
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name: string) => name.toLowerCase() === "link" && !url.includes("page=2")
+              ? '<https://api.github.com/repos/acme/site/actions/caches?per_page=100&page=2>; rel="next"'
+              : null,
+          },
+          json: async () => body,
+        };
+      }),
+    );
+
+    const result = await listRepoCaches("token", "acme/site");
+
+    expect(result.state).toBe("ok");
+    if (result.state !== "ok") return;
+    expect(result.inventory.totalCount).toBe(101);
+    expect(result.inventory.truncated).toBe(false);
+    expect(result.inventory.entries).toHaveLength(101);
+    expect(result.inventory.entries[0]).toEqual({ id: 1, key: "key-1", ref: "refs/heads/main", sizeInBytes: 1024 });
+    expect(urls).toHaveLength(2);
+    expect(urls[1]).toContain("page=2");
+  });
+
+  it("returns the 403 intact so the caller can name the missing write scope", async () => {
+    stubFetch(() => ({ status: 403 }));
+
+    const result = await listRepoCaches("token", "acme/site");
+
+    expect(result).toEqual({
+      state: "error",
+      status: 403,
+      message: expect.stringContaining("403"),
+    });
+  });
+
+  it("deletes one cache by its documented id and accepts the 204", async () => {
+    const calls: Array<{ url: string; method: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        calls.push({ url: String(input), method: init?.method ?? "GET" });
+        return {
+          ok: true,
+          status: 204,
+          headers: { get: () => null },
+          json: async () => {
+            throw new Error("204 has no body");
+          },
+        };
+      }),
+    );
+
+    const result = await deleteRepoCache("token", "acme/site", 42);
+
+    expect(result).toEqual({ state: "ok" });
+    expect(calls).toEqual([
+      { url: "https://api.github.com/repos/acme/site/actions/caches/42", method: "DELETE" },
+    ]);
+  });
+
+  it("rejects a full name that does not name an owner and repository", async () => {
+    const result = await deleteRepoCache("token", "bare-name", 42);
+    expect(result.state).toBe("error");
   });
 });

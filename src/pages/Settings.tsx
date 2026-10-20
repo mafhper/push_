@@ -900,6 +900,13 @@ export default function SettingsPage() {
           onRetry={() => {
             void refetchQuotas();
           }}
+          token={localSecureMode ? session?.token : undefined}
+          actionsDenied={session?.diagnostics?.permissions?.some(
+            (permission) => permission.id === "actions" && permission.status === "denied",
+          ) ?? false}
+          onCachesCleared={() => {
+            void refetchQuotas();
+          }}
         />
 
         {/* Footer: the app version, and the room the summary rail needs to

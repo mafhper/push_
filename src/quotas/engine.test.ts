@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   FREE_PLAN_LIMITS,
   QUOTA_THRESHOLDS,
+  compareReposByUsage,
   daysUntil,
   evaluateQuota,
   foreignRepoOwners,
@@ -10,9 +11,11 @@ import {
   isQuotaAlert,
   quotaPercent,
   quotaStatus,
+  repoStorageMb,
+  sortQuotaRepos,
   summarizeQuotas,
 } from "./engine";
-import type { QuotaFamily } from "./types";
+import type { QuotaFamily, RepoQuotaUsage } from "./types";
 
 function createFamily(overrides: Partial<QuotaFamily> = {}): QuotaFamily {
   return {
@@ -142,6 +145,55 @@ describe("foreignRepoOwners (PU14 — selection that survived a token swap)", ()
     expect(foreignRepoOwners("betafunda", ["mafhper/assets-hub"])).toEqual(["mafhper"]);
     // A bare repository name names no account; the billing path can emit one.
     expect(foreignRepoOwners("betafunda", ["site"])).toEqual([]);
+  });
+});
+
+describe("per-repository order (PU15 — storage first, never the sum on screen)", () => {
+  function repo(fullName: string, cacheMb: number | null, artifactsMb: number | null, actionsMinutes: number | null): RepoQuotaUsage {
+    return { fullName, cacheMb, cacheCount: null, artifactsMb, actionsMinutes };
+  }
+
+  it("sums cache and artifacts as a rank key and treats a missing reading as unknown", () => {
+    expect(repoStorageMb(repo("a/x", 1536, 64, 10))).toBe(1600);
+    expect(repoStorageMb(repo("a/y", 0, 0, 10))).toBe(0);
+    expect(repoStorageMb(repo("a/z", null, null, 10))).toBeNull();
+    // One known inventory still ranks; the missing one does not become zero by accident.
+    expect(repoStorageMb(repo("a/w", 512, null, 10))).toBe(512);
+  });
+
+  it("orders by storage, then minutes descending, then name ascending", () => {
+    const ordered = sortQuotaRepos([
+      repo("zeta/small", 100, 0, 999),
+      repo("alpha/big", 2048, 0, 1),
+      repo("beta/tie", 512, 512, 4),
+      repo("delta/tie", 0, 1024, 10),
+      repo("gamma/only-minutes", null, null, 500),
+      repo("omega/nothing", null, null, null),
+    ], "usage");
+
+    expect(ordered.map((entry) => entry.fullName)).toEqual([
+      "alpha/big",
+      "delta/tie",
+      "beta/tie",
+      "zeta/small",
+      "gamma/only-minutes",
+      "omega/nothing",
+    ]);
+  });
+
+  it("breaks a complete tie on the repository name so the order never flickers", () => {
+    const left = repo("acme/same", 900, 0, 7);
+    const right = repo("acme/other", 900, 0, 7);
+    expect(compareReposByUsage(left, right)).toBeGreaterThan(0);
+    expect(compareReposByUsage(right, left)).toBeLessThan(0);
+  });
+
+  it("switches to plain alphabetical order without touching the input array", () => {
+    const input = [repo("zeta/small", 100, 0, 999), repo("alpha/big", 2048, 0, 1)];
+    const ordered = sortQuotaRepos(input, "name");
+
+    expect(ordered.map((entry) => entry.fullName)).toEqual(["alpha/big", "zeta/small"]);
+    expect(input.map((entry) => entry.fullName)).toEqual(["zeta/small", "alpha/big"]);
   });
 });
 
