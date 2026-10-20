@@ -857,6 +857,7 @@ export const es: MessageDictionary = {
   quotaAlertBannerTitle: "Cuota de GitHub cerca del límite",
   quotaAlertBannerBody: "Cuota mensual por encima del umbral de {threshold}%: {families}.",
   quotaAlertBannerLink: "Revisar cuotas",
+  quotaAccountScope: "Lectura de la cuenta: todos los repositorios muestran la misma cuota.",
   quotaPublicUnavailableTitle: "Cuotas no disponibles en el runtime publicado",
   quotaPublicUnavailableBody: "Las cuotas requieren un token autenticado y solo están disponibles en el runtime de escritorio o localhost.",
 };

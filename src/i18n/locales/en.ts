@@ -854,6 +854,7 @@ export const en = {
   quotaAlertBannerTitle: "GitHub quota near its limit",
   quotaAlertBannerBody: "Monthly quota above the {threshold}% threshold: {families}.",
   quotaAlertBannerLink: "Review quotas",
+  quotaAccountScope: "Account-wide reading: every repository shows the same quota.",
   quotaPublicUnavailableTitle: "Quotas unavailable in the published runtime",
   quotaPublicUnavailableBody: "Quotas require an authenticated token and are only available in the desktop or localhost runtime.",
 } satisfies Record<string, string>;

@@ -115,9 +115,15 @@ export function QuotaPressurePill({ pressure, className }: { pressure: QuotaPres
  */
 export function QuotaAlertLine({
   pressure,
+  scopeNote,
   className,
 }: {
   pressure: QuotaPressure | null | undefined;
+  /**
+   * Optional sentence rendered under the alert body. The repository detail
+   * passes the account-scope note; the fleet overview leaves it out.
+   */
+  scopeNote?: string;
   className?: string;
 }) {
   const { t } = useApp();
@@ -144,6 +150,9 @@ export function QuotaAlertLine({
       <TriangleAlert size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
       <p className="min-w-0 flex-1 break-words">
         <span className="font-semibold">{title}</span> <span className="opacity-80">{body}</span>
+        {scopeNote ? (
+          <span className="mt-1 block break-words text-[11px] leading-4 opacity-70">{scopeNote}</span>
+        ) : null}
       </p>
       <Link
         to="/app/settings#settings-quotas"

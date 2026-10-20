@@ -857,6 +857,7 @@ export const ptBR: MessageDictionary = {
   quotaAlertBannerTitle: "Cota do GitHub perto do limite",
   quotaAlertBannerBody: "Cota mensal acima do limite de {threshold}%: {families}.",
   quotaAlertBannerLink: "Revisar cotas",
+  quotaAccountScope: "Leitura da conta: todos os repositórios mostram a mesma cota.",
   quotaPublicUnavailableTitle: "Cotas indisponíveis no runtime publicado",
   quotaPublicUnavailableBody: "Cotas exigem um token autenticado e só estão disponíveis no runtime desktop ou localhost.",
 };

@@ -15,6 +15,7 @@ import { useRepoSnapshot, useAccountQuotas } from "@/hooks/useGitHub";
 import { formatDate } from "@/i18n";
 import { resolveDependabotReason } from "@/lib/github-copy";
 import { cn } from "@/lib/utils";
+import { accountPressure } from "@/quotas";
 import { LANGUAGE_COLORS, type DataDetailMode } from "@/types";
 
 export default function RepoDetail() {
@@ -33,6 +34,10 @@ export default function RepoDetail() {
     () => (data ? evaluateRepositoryHealth(contextFromSnapshotDetail(data, { quotas: quotaFamilies })) : null),
     [data, quotaFamilies],
   );
+  // One reading of the account, shared by both headers. The families are global
+  // to the token, so every repository page prints the same band and percentage;
+  // the repository data never enters this value.
+  const quotaPressure = useMemo(() => accountPressure(quotaFamilies), [quotaFamilies]);
 
   if (isLoading) {
     return <EmptyPanel title={t("loadingRepository")} body={t("loadingRepositoryBody")} />;
@@ -128,9 +133,10 @@ export default function RepoDetail() {
         runs={data.workflowRuns}
         pullRequests={data.pullRequests}
         updatedAt={data.status?.generatedAt}
+        quotaPressure={quotaPressure}
       />
 
-      <RepositoryHealthSection report={report} mode={viewMode} />
+      <RepositoryHealthSection report={report} mode={viewMode} quotaPressure={quotaPressure} />
 
       <div className="grid gap-6 xl:grid-cols-[1.48fr_1fr] xl:items-start">
         <WorkflowPulsePanel

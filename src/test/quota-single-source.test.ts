@@ -56,7 +56,10 @@ describe("quota presentation single source", () => {
       "src/components/layout/StatusBar.tsx",
       "src/components/console/DashboardPanel.tsx",
       "src/components/quotas/QuotaPressure.tsx",
+      "src/components/repository/RepositoryHero.tsx",
+      "src/components/repository/RepositoryHealthSection.tsx",
       "src/pages/Dashboard.tsx",
+      "src/pages/RepoDetail.tsx",
     ];
 
     for (const file of consumers) {
@@ -64,7 +67,20 @@ describe("quota presentation single source", () => {
       expect(text, `${file} divides the rate window itself`).not.toMatch(/remaining\s*[/+*-]/);
       expect(text, `${file} classifies a band itself`).not.toMatch(/quotaStatus\(|summarizeQuotas\(|evaluateQuota\(/);
       expect(text, `${file} applies the health penalty itself`).not.toMatch(/applyQuotaPenalty\(|quotaPenalty\(/);
+      expect(text, `${file} derives the quota percentage from used/limit`).not.toMatch(/\.used\s*[/*]/);
+      expect(text, `${file} reads the threshold table itself`).not.toMatch(/QUOTA_THRESHOLDS/);
     }
+  });
+
+  it("renders both repository headers from the one shared module", () => {
+    // Deleting the module breaks both surfaces, and neither can drift into a
+    // private copy of the pill.
+    expect(read("src/components/repository/RepositoryHero.tsx")).toContain(
+      'import { QuotaPressurePill } from "@/components/quotas/QuotaPressure"',
+    );
+    expect(read("src/components/repository/RepositoryHealthSection.tsx")).toContain(
+      'import { QuotaAlertLine } from "@/components/quotas/QuotaPressure"',
+    );
   });
 
   it("feeds the pill one interface instead of raw account or rate payloads", () => {

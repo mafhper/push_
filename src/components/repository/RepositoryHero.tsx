@@ -1,9 +1,12 @@
 import { Activity, ArrowLeft, Clock3, GitBranch, GitPullRequest, Shield, ShieldAlert, Star } from "lucide-react";
 import { Link } from "react-router";
+import { QuotaPressurePill } from "@/components/quotas/QuotaPressure";
 import { StatusPill } from "@/components/site/TerminalPrimitives";
 import { useApp } from "@/contexts/useApp";
 import { isZeroMetricValue } from "@/lib/metric-state";
 import { cn } from "@/lib/utils";
+import { isQuotaAlert } from "@/quotas";
+import type { QuotaPressure } from "@/quotas";
 import type { PullRequestSummary, WorkflowRun } from "@/types";
 import { formatRelativeTime } from "@/utils/health";
 
@@ -30,6 +33,7 @@ export function RepositoryHero({
   runs,
   pullRequests,
   updatedAt,
+  quotaPressure,
 }: {
   backLabel: string;
   sourceLabel: string;
@@ -51,6 +55,12 @@ export function RepositoryHero({
   runs: WorkflowRun[];
   pullRequests?: PullRequestSummary[];
   updatedAt?: string;
+  /**
+   * Account quota reading, already classified. The public page passes nothing,
+   * and a quiet reading is not rendered at all: this row already carries the
+   * source, health and freshness pills.
+   */
+  quotaPressure?: QuotaPressure | null;
 }) {
   const { t } = useApp();
   const freshnessLabel = updatedAt ? t("repoDataFreshness", { when: formatRelativeTime(updatedAt, t) }) : null;
@@ -84,6 +94,9 @@ export function RepositoryHero({
             <StatusPill tone={sourceTone}>{sourceLabel}</StatusPill>
             <StatusPill tone={healthTone}>{healthLabel}</StatusPill>
             {freshnessLabel ? <StatusPill tone="neutral">{freshnessLabel}</StatusPill> : null}
+            {quotaPressure && isQuotaAlert(quotaPressure.status) ? (
+              <QuotaPressurePill pressure={quotaPressure} />
+            ) : null}
           </div>
 
           <div className="inline-flex items-center gap-2 rounded-full ops-surface-soft px-4 py-2">
